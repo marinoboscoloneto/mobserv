@@ -194,6 +194,61 @@
             </ul>
         </section>
     </div>
+    <div class="view" id="configs">
+        <header class="header" id="header">
+            <h1>Configurações</h1>
+            <a class="item l1 menu icon-menu"></a>
+        </header>
+        <section class="section">
+            <ul class="grid">
+                <li><a data-view="gps" data-direction="forward"><strong class="icon-location">GPS</strong></a></li>
+            </ul>
+        </section>
+    </div>
+    <div class="view" id="gps">
+        <header class="header" id="header">
+            <h1>GPS</h1>
+            <a class="item l1 menu icon-menu"></a>
+            <a class="item l2 link icon-chevron-left" data-direction="back"></a>
+        </header>
+        <section class="section">
+        	<h2>Dados do receptor de GPS</h2>
+        	<table width="100%" border="0" cellspacing="1" cellpadding="1">
+              <tr>
+                <td>Latitude</td>
+                <td><strong id="gpslat">&nbsp;</strong></td>
+              </tr>
+              <tr>
+                <td>Longitude</td>
+                <td><strong id="gpslgn">&nbsp;</strong></td>
+              </tr>
+              <tr>
+                <td>Acurácia</td>
+                <td><strong id="gpsacr">&nbsp;</strong></td>
+              </tr>
+              <tr>
+                <td>Altitude</td>
+                <td><strong id="gpsalt">&nbsp;</strong></td>
+              </tr>
+              <tr>
+                <td>Direção</td>
+                <td><strong id="gpsdir">&nbsp;</strong></td>
+              </tr>
+              <tr>
+                <td>Velocidade</td>
+                <td><strong id="gpsvel">&nbsp;</strong></td>
+              </tr>
+              <tr>
+                <td>Timestamp</td>
+                <td><strong id="gpsstp">&nbsp;</strong></td>
+              </tr>
+            </table>
+        </section>
+    </div>
+    <div id="notify" class="notify">
+    	<strong>Error</strong>
+        <span>asd asdasd asd as asdasd</span>
+    </div>
 </main>
 <div class="spin"></div>
 </body>

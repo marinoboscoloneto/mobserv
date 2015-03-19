@@ -3,6 +3,31 @@
 var mobserv = {
 	zindex : 3,
 	history : [],
+	geolocation : {
+		watchID : null,
+		watchPosition : function($dom){
+			mobserv.geolocation.watchID = navigator.geolocation.watchPosition(function(pos){
+				if ($dom && $dom.attr('id') == 'gps'){
+					$dom.find('#gpslat').html(pos.coords.latitude); 		
+					$dom.find('#gpslng').html(pos.coords.longitude); 		
+					$dom.find('#gpsacr').html(pos.coords.accuracy); 		
+					$dom.find('#gpsalt').html(pos.coords.altitude); 		
+					$dom.find('#gpsact').html(pos.coords.altitudeAccuracy); 		
+					$dom.find('#gpsdir').html(pos.coords.heading); 		
+					$dom.find('#gpsstp').html(pos.timestamp); 		
+				}
+			}, function(error){
+				if ($dom && $dom.hasClass('view') == 'gps'){
+					mobserv.error($dom,'Erro',error);
+				}
+			}, { timeout: 60000 });
+		},
+		clearWatch : function(){
+			if (mobserv.geolocation.watchID){
+				navigator.geolocation.clearWatch(mobserv.geolocation.watchID);
+			}
+		}
+	},
 	nav : {
 		toView : function($view){
 			var $current = $('.view.current');
@@ -14,10 +39,13 @@ var mobserv = {
 				$view.css({left:0, opacity:0, 'z-index':mobserv.zindex}).show().transition({ opacity:1 }, 200, function(){
 					$view.addClass('current');
 				});
+				$view.trigger('show');
+				$current.trigger('hide');
 			} else if ($view.length == 1){
 				$view.css({left:0, opacity:0, 'z-index':mobserv.zindex}).show().transition({ opacity:1 }, 200, function(){
 					$view.addClass('current');
 				});
+				$view.trigger('show');
 			}
 			mobserv.zindex++;
 		},
@@ -32,6 +60,8 @@ var mobserv = {
 				$view.css({left:'50%', opacity:0, 'z-index':mobserv.zindex}).show().transition({ left:0, opacity:1 }, 200, function(){
 					$view.addClass('current');
 				});
+				$view.trigger('show');
+				$current.trigger('hide');
 			}
 			mobserv.zindex++;
 		},
@@ -47,6 +77,8 @@ var mobserv = {
 					$view.css({left:'-50%', opacity:0, 'z-index':mobserv.zindex}).show().transition({ left:0, opacity:1 }, 200, function(){
 						$view.addClass('current');
 					});
+					$view.trigger('show');
+					$current.trigger('hide');
 				}
 				mobserv.zindex++;
 			}
@@ -67,6 +99,18 @@ var mobserv = {
 				mobserv.nav.back();
 			}
 		},
+	},
+	error : function(name,error){
+		var $notify = $('#notify');
+		$notify.find('strong').text(name+' #'+error.code);
+		$notify.find('span').text(error.message);
+		$notify.removeClass('green orange blue').addClass('red').css({bottom:'-50%', opacity:0}).show().transition({ bottom:0, opacity:1 }, 400, function(){
+			setTimeout(function(){
+				$notify.transition({ opacity:0 }, 200, function(){
+					$notify.hide();
+				});
+			},5000);
+		});
 	}
 }
 
@@ -108,7 +152,21 @@ $(function(){
 				$('.view.current').transition({ left:'80%' }, 200);
 			}
 		})
+		
+		
+		
+		.on('show','#gps',function(){
+			var $this = $(this);
+			mobserv.geolocation.watchPosition($this);
+		})
+		.on('hide','#gps',function(){
+			mobserv.geolocation.clearWatch();
+		})
+		
 	;
+	
+	
+	
 	
 	setTimeout(function(){mobserv.nav.toView('home');},1000);
 	

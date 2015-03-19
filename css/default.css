@@ -3,7 +3,7 @@
 html, body, div, span, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, address, cite, code, del, dfn, em, img, ins, kbd, q, samp, small, strong, sub, sup, var, b, i, hr, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, main, aside, canvas, details, figure, figcaption, hgroup, menu, footer, header, nav, section, summary, time, mark, audio, video { margin: 0; padding: 0; border: 0; }
 main, main, aside, canvas, figure, figure img, figcaption, hgroup, footer, header, nav, section, audio, video { display: block; }
 
-* { outline: none; -webkit-text-size-adjust:100%; -webkit-tap-highlight-color: rgba(0,0,0,0); font-family:"Helvetica Neue", Helvetica, Arial, sans-serif; }
+* { outline: none;  -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box; -webkit-text-size-adjust:100%; -webkit-tap-highlight-color: rgba(0,0,0,0); font-family:"Helvetica Neue", Helvetica, Arial, sans-serif; }
 body, html { width:100%; height:100%; margin:0; padding:0; position:relative; background-color:#FFF; font-size:11px; -webkit-font-smoothing: antialiased; color:#444; }
 
 .table { display:table; }
@@ -53,9 +53,15 @@ body, html { width:100%; height:100%; margin:0; padding:0; position:relative; ba
 .section .list li .link .identifier {  padding:8px; width:48px; height:48px; text-align:center; background:#444; color:#FFF; }
 .section .list li .link .identifier strong { font-size:32px; display:block; }
 .section .list li .link mark { display:block; width:24px; height:24px; position:absolute; right:32px; top:8px; background:#F30; color:#FFF; font-size:12px; font-weight:bold; text-align:center; line-height:24px; border-radius:12px; }
+.section p, .section table, .section h1, .section h2, .section h3 { margin:8px; }
 
 .footer { position:absolute; bottom:0; left:0; width:100%; height:42px; background:#EEE; border-top:#BBB solid 1px; z-index:1; }
 
-
+.notify { display:none; position:absolute; bottom:0; left:0; width:100%; background:rgba(51,51,51,.8); z-index:100000000; padding:16px; color:#FFF; }
+.notify strong, .notify span { display:block; padding:4px; }
+.notify.red { background:rgba(255,0,0,.8);  }
+.notify.green { background:rgba(0,122,0,.8);  }
+.notify.orange { background:rgba(255,102,0,.8);  }
+.notify.blue { background:rgba(0,102,204,.8);  }
 
 
