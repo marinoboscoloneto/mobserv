@@ -14,7 +14,6 @@ var mobserv = {
 					$dom.find('#gpsalt').html(pos.coords.altitude); 		
 					$dom.find('#gpsact').html(pos.coords.altitudeAccuracy); 		
 					$dom.find('#gpsdir').html(pos.coords.heading); 		
-					$dom.find('#gpsstp').html(pos.timestamp); 		
 				}
 			}, function(error){
 				if ($dom && $dom.hasClass('view') == 'gps'){
