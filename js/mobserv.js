@@ -115,6 +115,8 @@ var mobserv = {
 
 $(function(){
 	
+	var startX, startY, endX, endY, pull;
+	
 	$(document)
 		.on('tap',function(event){
 			$('.hover').removeClass('hover');
@@ -151,7 +153,48 @@ $(function(){
 				$('.view.current').transition({ left:'80%' }, 200);
 			}
 		})
-		
+		.on('touchstart','.section',function(event){
+			startX = event.originalEvent.touches[0].pageX;
+			startY = event.originalEvent.touches[0].pageY;
+			var $section = $(this);
+			var $puller = $section.children('.puller');
+			var height;
+			if ($puller.length){
+				height = $puller.height()
+				$puller.data('height',height);
+				if (height == 0){
+					$puller.find('strong').text('Solte para atualizar');	
+				}
+			}
+		})
+		.on('touchmove','.section',function(event){
+			endX = event.originalEvent.touches[0].pageX;
+			endY = event.originalEvent.touches[0].pageY;
+			var $section = $(this);
+			var $puller = $section.children('.puller');
+			if ($puller.length > 0 && $section.scrollTop() == 0 && endY > startY){
+				var val = (endY-startY+$puller.data('height'))/2;
+				$puller.show().height(val).find('strong').css('opacity',val/40);
+				pull = $puller;
+			} else {
+				pull = null;	
+			}
+		})
+		.on('touchend','.section',function(event){
+			if (pull){
+				if (startY+60 > endY){
+					pull.transition({ height:0 }, 100);
+				} else {
+					pull.transition({ height:40 }, 200,function(){
+						pull.find('strong').text('Atualizando...');
+						pull.parent().trigger('pull');
+					});
+					setTimeout(function(){
+						pull.transition({ height:0 }, 100);
+					},3000);
+				}
+			}
+		})
 		
 		
 		.on('show','#gps',function(){
