@@ -32,16 +32,16 @@ var mobserv = {
 			var $current = $('.view.current');
 			$view = (typeof $view == 'string') ? $('#'+$view) : $view;
 			if ($current.length == 1 && $view.length == 1 && $current.attr('id') != $view.attr('id')){
-				$current.transition({ opacity:0 }, 200, function(){
+				$current.transition({ opacity:0 }, 1000, function(){
 					$current.hide().removeClass('current');
 				});
-				$view.css({left:0, opacity:0, 'z-index':mobserv.zindex}).show().transition({ opacity:1 }, 200, function(){
+				$view.css({x:0, opacity:0, 'z-index':mobserv.zindex}).show().transition({ opacity:1 }, 1000, function(){
 					$view.addClass('current');
 				});
 				$view.trigger('show');
 				$current.trigger('hide');
 			} else if ($view.length == 1){
-				$view.css({left:0, opacity:0, 'z-index':mobserv.zindex}).show().transition({ opacity:1 }, 200, function(){
+				$view.css({x:0, opacity:0, 'z-index':mobserv.zindex}).show().transition({ opacity:1 }, 1000, function(){
 					$view.addClass('current');
 				});
 				$view.trigger('show');
@@ -53,10 +53,10 @@ var mobserv = {
 			$view = (typeof $view == 'string') ? $('#'+$view) : $view;
 			if ($current.length == 1 && $view.length == 1 && $current.attr('id') != $view.attr('id')){
 				mobserv.history.push($current);
-				$current.transition({ left:'-50%', opacity:0 }, 200, function(){
+				$current.transition({ x:0, opacity:0 }, 1000, function(){
 					$current.hide().removeClass('current');
 				});
-				$view.css({left:'50%', opacity:0, 'z-index':mobserv.zindex}).show().transition({ left:0, opacity:1 }, 200, function(){
+				$view.css({x:'50%', opacity:0, 'z-index':mobserv.zindex}).show().transition({ x:0, opacity:1 }, 1000, function(){
 					$view.addClass('current');
 				});
 				$view.trigger('show');
@@ -70,10 +70,10 @@ var mobserv = {
 				$view = mobserv.history.pop();
 				console.log('link',$view,$current);
 				if ($current.length == 1 && $view.length == 1 && $current.attr('id') != $view.attr('id')){
-					$current.transition({ left:'50%', opacity:0 }, 200, function(){
+					$current.transition({ x:'50%', opacity:0 }, 1000, function(){
 						$current.hide().removeClass('current');
 					});
-					$view.css({left:'-50%', opacity:0, 'z-index':mobserv.zindex}).show().transition({ left:0, opacity:1 }, 200, function(){
+					$view.css({x:0, opacity:0, 'z-index':mobserv.zindex}).show().transition({ opacity:1 }, 1000, function(){
 						$view.addClass('current');
 					});
 					$view.trigger('show');
@@ -105,7 +105,7 @@ var mobserv = {
 		$notify.find('span').text(error.message);
 		$notify.removeClass('green orange blue').addClass('red').css({bottom:'-50%', opacity:0}).show().transition({ bottom:0, opacity:1 }, 400, function(){
 			setTimeout(function(){
-				$notify.transition({ opacity:0 }, 200, function(){
+				$notify.transition({ opacity:0 }, 1000, function(){
 					$notify.hide();
 				});
 			},5000);
@@ -118,39 +118,30 @@ $(function(){
 	var startX, startY, endX, endY, pull;
 	
 	$(document)
-		.on('tap',function(event){
+		.on('touchstart',function(event){
 			$('.hover').removeClass('hover');
 		})
-		.on('tapend','#nav a',function(){
-			$(this).addClass('hover');
-		})
-		.on('tapend','section a, section .link, header .link',function(){
-			$(this).addClass('hover');
-		})
-		.on('tapend','.menu',function(){
-			$(this).addClass('hover');
-		})
 		.on('tap','#nav a',function(){
-			$this = $(this).removeClass('hover');
-			$('.view.current').transition({ left:0 }, 200,function(){
+			var $this = $(this).addClass('hover');
+			$('.view.current').transition({ x:0 }, 1000,function(){
 				$('#nav').removeClass('active');
 				mobserv.nav.link($this);
 				mobserv.history = [];
 			});
 		})
 		.on('tap','section a, section .link, header .link',function(){
-			$this = $(this);
+			var $this = $(this).addClass('hover');
 			mobserv.nav.link($this);
 		})
 		.on('tap','.menu',function(){
-			$this = $(this);
+			var $this = $(this).addClass('hover');
 			if ($('#nav').hasClass('active')){
-				$('.view.current').transition({ left:0 }, 200,function(){
+				$('.view.current').transition({ x:0 }, 1000,function(){
 					$('#nav').removeClass('active');
 				});
 			} else {
 				$('#nav').addClass('active');
-				$('.view.current').transition({ left:'80%' }, 200);
+				$('.view.current').transition({ x:'80%' }, 1000);
 			}
 		})
 		.on('touchstart','.section',function(event){
@@ -182,7 +173,7 @@ $(function(){
 		})
 		.on('touchend','.section',function(event){
 			if (pull){
-				if (startY+60 > endY){
+				if (startY+80 > endY){
 					pull.transition({ height:0 }, 100);
 				} else {
 					pull.transition({ height:40 }, 200,function(){
@@ -207,9 +198,9 @@ $(function(){
 		
 	;
 	
-	
-	
-	
+		
 	setTimeout(function(){mobserv.nav.toView('home');},1000);
+	
+	if (device.platform == 'iOS') $('.view').addClass('ios');
 	
 });

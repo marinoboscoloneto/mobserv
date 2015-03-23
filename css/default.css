@@ -11,7 +11,7 @@ body, html { width:100%; height:100%; margin:0; padding:0; position:relative; ba
 
 .main { width:100%; height:100%; background:#FFF; overflow:hidden; position:relative;  }
 
-.nav { display:none; position:absolute; top:0; left:0; width:80%; height:100%; background:#333; overflow-y:scroll; -webkit-overflow-scrolling: touch; z-index:1; }
+.nav { display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:#333; overflow-y:scroll; -webkit-overflow-scrolling: touch; z-index:1; }
 .nav.active { display:block; }
 .nav ul { list-style:none; }
 .nav ul li { border-bottom:#444 solid 1px; }
@@ -22,14 +22,20 @@ body, html { width:100%; height:100%; margin:0; padding:0; position:relative; ba
 .nav ul li a [class*="icon-"]:before { margin-right:12px; }
 .nav ul li a.hover { background:#222; }
 
-.view { display:none; opacity:0; width:100%; height:100%; top:0; left:-50%; background:#FFF; overflow:hidden; position:absolute; z-index:2; -webkit-transform: translateZ(0); -webkit-backface-visibility: hidden; }
-.view.current { left:0; opacity:1; -webkit-transform: translateZ(0); -webkit-backface-visibility: hidden; }
-.view.inactive { left:80%; -webkit-transform: translateZ(0); -webkit-backface-visibility: hidden; }
+.view { display:none; opacity:0; width:100%; height:100%; top:0; background:#FFF; overflow:hidden; position:absolute; z-index:2; -webkit-backface-visibility: hidden; }
+.view.current { left:0; opacity:1; }
+.view.inactive { left:80%;  }
+/*
+.view.closed { left:80%; -webkit-transition: -webkit-transform 0.2s; -webkit-transform: translateX(0); }
+.view.opened { left:80%; -webkit-transition: -webkit-transform 0.2s; -webkit-transform: translateX(240px); }
+*/
 
 .header { position:absolute; top:0; left:0; width:100%; height:42px; background:#EEE; border-bottom:#BBB solid 1px; z-index:1; }
 .header .item { font-size:14px; color:#444; line-height:38px; position:absolute; min-height:42px; min-width:42px; }
 .header .item:before { font-size:32px; position:absolute; width:42px; text-align:center;  }
 .header .item.hover { background:#CCC; }
+.ios .header { padding-top:20px; height:62px; }
+
 
 .header .item.l1 { left:0; }
 .header .item.l2 { left:42px; }
@@ -39,6 +45,7 @@ body, html { width:100%; height:100%; margin:0; padding:0; position:relative; ba
 .section { position:absolute; top:42px; bottom:0; left:0px; width:100%; background:#FFF; overflow-y:scroll; -webkit-overflow-scrolling: touch; z-index:1; }
 .section .puller { width:100%; height:0; background:#BBB; position:relative; overflow:hidden; }
 .section .puller strong { display:block; position:absolute; top:50%; margin-top:-5px; width:100%; height:100%; color:#FFF; text-align:center; overflow:hidden;  }
+.ios .section { top:62px; }
 
 .section.short { bottom:42px; }
 .section ul { list-style:none; }
