@@ -116,7 +116,7 @@ var mobserv = {
 $(function(){
 	
 	$(document)
-		.on('tapstart scrollend',function(event){
+		.on('tap',function(event){
 			$('.hover').removeClass('hover');
 		})
 		.on('tapend','#nav a',function(){
@@ -128,7 +128,7 @@ $(function(){
 		.on('tapend','.menu',function(){
 			$(this).addClass('hover');
 		})
-		.on('singletap','#nav a',function(){
+		.on('tap','#nav a',function(){
 			$this = $(this).removeClass('hover');
 			$('.view.current').transition({ left:0 }, 200,function(){
 				$('#nav').removeClass('active');
@@ -136,11 +136,11 @@ $(function(){
 				mobserv.history = [];
 			});
 		})
-		.on('singletap','section a, section .link, header .link',function(){
+		.on('tap','section a, section .link, header .link',function(){
 			$this = $(this);
 			mobserv.nav.link($this);
 		})
-		.on('singletap','.menu',function(){
+		.on('tap','.menu',function(){
 			$this = $(this);
 			if ($('#nav').hasClass('active')){
 				$('.view.current').transition({ left:0 }, 200,function(){
