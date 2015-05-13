@@ -2,7 +2,30 @@
 
 var mobserv = {
 	zindex : 3,
+	preventTap : false,
+	timeoutTap : null,
 	history : [],
+	device : {
+		onready : function(){
+			var $dom = $("#deviceinfo");
+			if ($dom.length){
+				if (typeof device == 'object'){
+					if (device.platform == 'iOS') $('.view').addClass('ios');
+					$dom.find('#cordova').html(device.cordova); 		
+					$dom.find('#model').html(device.model); 		
+					$dom.find('#platform').html(device.platform); 		
+					$dom.find('#uuid').html(device.uuid); 
+					$dom.find('#version').html(device.version); 
+				} else {
+					mobserv.log({
+						type : 'error',
+						name : 'device.onready',
+						message : 'device property not available',
+					});	
+				}
+			}
+		}
+	},
 	geolocation : {
 		watchID : null,
 		watchPosition : function($dom){
@@ -15,9 +38,16 @@ var mobserv = {
 					$dom.find('#gpsact').html(pos.coords.altitudeAccuracy); 		
 					$dom.find('#gpsdir').html(pos.coords.heading); 		
 				}
+				var $map = $dom.find("img.map");
+				if (!$map.is(':visible')) $map.css({opacity:1}).attr("src",'http://maps.googleapis.com/maps/api/staticmap?center='+pos.coords.latitude+','+pos.coords.longitude+'&amp;zoom=14&amp;size='+$(window).width()+'x200&amp;sensor=false');
 			}, function(error){
 				if ($dom && $dom.hasClass('view') == 'gps'){
-					mobserv.error($dom,'Erro',error);
+					mobserv.log({
+						type : 'error',
+						name : 'geolocation.watchPosition',
+						code : error.code,
+						message : error.message,
+					});	
 				}
 			}, { timeout: 60000 });
 		},
@@ -32,16 +62,16 @@ var mobserv = {
 			var $current = $('.view.current');
 			$view = (typeof $view == 'string') ? $('#'+$view) : $view;
 			if ($current.length == 1 && $view.length == 1 && $current.attr('id') != $view.attr('id')){
-				$current.transition({ opacity:0 }, 1000, function(){
+				$current.transition({ opacity:0 }, 300, function(){
 					$current.hide().removeClass('current');
 				});
-				$view.css({x:0, opacity:0, 'z-index':mobserv.zindex}).show().transition({ opacity:1 }, 1000, function(){
+				$view.css({x:0, opacity:0, 'z-index':mobserv.zindex}).show().transition({ opacity:1 }, 300, function(){
 					$view.addClass('current');
 				});
 				$view.trigger('show');
 				$current.trigger('hide');
 			} else if ($view.length == 1){
-				$view.css({x:0, opacity:0, 'z-index':mobserv.zindex}).show().transition({ opacity:1 }, 1000, function(){
+				$view.css({x:0, opacity:0, 'z-index':mobserv.zindex}).show().transition({ opacity:1 }, 300, function(){
 					$view.addClass('current');
 				});
 				$view.trigger('show');
@@ -53,14 +83,15 @@ var mobserv = {
 			$view = (typeof $view == 'string') ? $('#'+$view) : $view;
 			if ($current.length == 1 && $view.length == 1 && $current.attr('id') != $view.attr('id')){
 				mobserv.history.push($current);
-				$current.transition({ x:0, opacity:0 }, 1000, function(){
+				$current.transition({ x:0, opacity:0 }, 300, function(){
 					$current.hide().removeClass('current');
 				});
-				$view.css({x:'50%', opacity:0, 'z-index':mobserv.zindex}).show().transition({ x:0, opacity:1 }, 1000, function(){
+				$view.css({x:'50%', opacity:0, 'z-index':mobserv.zindex}).show().transition({ x:0, opacity:1 }, 300, function(){
 					$view.addClass('current');
 				});
 				$view.trigger('show');
 				$current.trigger('hide');
+				console.log('forward',mobserv.history);
 			}
 			mobserv.zindex++;
 		},
@@ -68,21 +99,25 @@ var mobserv = {
 			if (mobserv.history.length > 0){
 				var $current = $('.view.current');
 				$view = mobserv.history.pop();
-				console.log('link',$view,$current);
 				if ($current.length == 1 && $view.length == 1 && $current.attr('id') != $view.attr('id')){
-					$current.transition({ x:'50%', opacity:0 }, 1000, function(){
+					$current.transition({ x:'50%', opacity:0 }, 400, function(){
 						$current.hide().removeClass('current');
 					});
-					$view.css({x:0, opacity:0, 'z-index':mobserv.zindex}).show().transition({ opacity:1 }, 1000, function(){
+					$view.css({x:0, opacity:0, 'z-index':mobserv.zindex}).show().transition({ opacity:1 }, 400, function(){
 						$view.addClass('current');
 					});
 					$view.trigger('show');
 					$current.trigger('hide');
+					console.log('back',mobserv.history);
 				}
 				mobserv.zindex++;
 			}
 		},
 		link : function($a){
+			if (mobserv.preventTap) return;
+			clearTimeout(mobserv.timeoutTap);
+			mobserv.preventTap = true;
+			mobserv.timeoutTap = setTimeout(function(){mobserv.preventTap = false},600);
 			var view = $a.data('view'), $view;
 			if (view){
 				$view = $('#'+view);
@@ -99,7 +134,7 @@ var mobserv = {
 			}
 		},
 	},
-	error : function(name,error){
+	notify : function(name,title,error){
 		var $notify = $('#notify');
 		$notify.find('strong').text(name+' #'+error.code);
 		$notify.find('span').text(error.message);
@@ -110,6 +145,28 @@ var mobserv = {
 				});
 			},5000);
 		});
+	},
+	'log' : function(obj){
+		console.log('log',obj);
+		var d = new Date,
+		fdate = [
+			d.getFullYear(),
+			("0" + (d.getMonth() + 1)).substr(-2),
+			("0" + d.getDate()).substr(-2)
+		].join('-')+' '+
+		[
+			("0" + d.getHours()).substr(-2),
+			("0" + d.getMinutes()).substr(-2),
+			("0" + d.getSeconds()).substr(-2)
+		].join(':');
+		var html = ''+
+		'<div class="logline '+((obj.type)?obj.type:'')+'"><b class="date">['+fdate+']</b> '+
+		((obj.name)?'<b class="name">'+obj.name+'</b> ':'')+
+		((obj.title)?'<b class="title">'+obj.title+'</b> ':'')+
+		((obj.code)?'<span class="code">'+obj.code+'</span> ':'')+
+		((obj.message)?'<span class="message">'+obj.message+'</span> ':'')+
+		'</div>';
+		$("#log .section").append(html);
 	}
 }
 
@@ -118,37 +175,53 @@ $(function(){
 	var startX, startY, endX, endY, pull;
 	
 	$(document)
+		/*
+		.on('swiperight','.view:not(.disable)',function(){
+			$(this).find('.menu').trigger('tap');
+		})
+		.on('swipeleft','.view.disable',function(){
+			$(this).find('.menu').trigger('tap');
+		})
+		*/
 		.on('touchstart',function(event){
 			$('.hover').removeClass('hover');
 		})
 		.on('tap','#nav a',function(){
 			var $this = $(this).addClass('hover');
-			$('.view.current').transition({ x:0 }, 1000,function(){
+			$('.view.current').find(".header, .section").transition({ opacity:1 }, 1000);
+			$('.footer').transition({ y:0 }, 300);
+			mobserv.nav.link($this);
+			$('.view.current').transition({ x:0 }, 300,function(){
 				$('#nav').removeClass('active');
-				mobserv.nav.link($this);
-				mobserv.history = [];
+				$('.view.disable').removeClass('disable');
 			});
 		})
-		.on('tap','section a, section .link, header .link',function(){
+		.on('tap','.view:not(.disable) section a, .view:not(.disable) section .link, .view:not(.disable) header .link, footer .link',function(){
 			var $this = $(this).addClass('hover');
 			mobserv.nav.link($this);
 		})
-		.on('tap','.menu',function(){
+		.on('tap','.view:not(.disable) .menu',function(){
 			var $this = $(this).addClass('hover');
-			if ($('#nav').hasClass('active')){
-				$('.view.current').transition({ x:0 }, 1000,function(){
-					$('#nav').removeClass('active');
-				});
-			} else {
+			if (!$('#nav').hasClass('active')){
+				$('.footer').transition({ y:'+=50px' }, 300);
 				$('#nav').addClass('active');
-				$('.view.current').transition({ x:'80%' }, 1000);
+				$('.view.current').addClass('disable').transition({ x:'80%' }, 300).find(".header, .section").transition({ opacity:.3 }, 300);
+			}
+		})
+		.on('tap','.view.disable',function(){
+			if ($('#nav').hasClass('active')){
+				$('.footer').transition({ y:'-=50px' }, 300);
+				$('.view.current').transition({ x:0 }, 300,function(){
+					$('.view.disable').removeClass('disable');
+					$('#nav').removeClass('active');
+				}).find(".header, .section").transition({ opacity:1 }, 300);
 			}
 		})
 		.on('touchstart','.section',function(event){
 			startX = event.originalEvent.touches[0].pageX;
 			startY = event.originalEvent.touches[0].pageY;
 			var $section = $(this);
-			var $puller = $section.children('.puller');
+			var $puller = $section.children('.puller:not(.courtain)');
 			var height;
 			if ($puller.length){
 				height = $puller.height()
@@ -162,10 +235,10 @@ $(function(){
 			endX = event.originalEvent.touches[0].pageX;
 			endY = event.originalEvent.touches[0].pageY;
 			var $section = $(this);
-			var $puller = $section.children('.puller');
+			var $puller = $section.children('.puller:not(.courtain)');
 			if ($puller.length > 0 && $section.scrollTop() == 0 && endY > startY){
 				var val = (endY-startY+$puller.data('height'))/2;
-				$puller.show().height(val).find('strong').css('opacity',val/40);
+				$puller.show().height(val).find('strong').css('opacity',val/($(window).height()/4));
 				pull = $puller;
 			} else {
 				pull = null;	
@@ -173,21 +246,36 @@ $(function(){
 		})
 		.on('touchend','.section',function(event){
 			if (pull){
-				if (startY+80 > endY){
-					pull.transition({ height:0 }, 100);
+				var p = pull;
+				if (startY+($(window).height()/3) > endY){
+					p.transition({ height:0 }, 200);
 				} else {
-					pull.transition({ height:40 }, 200,function(){
-						pull.find('strong').text('Atualizando...');
-						pull.parent().trigger('pull');
+					p.transition({ height:40 }, 200,function(){
+						p.addClass('courtain');
+						p.find('strong').text('Atualizando...');
+						p.parent().trigger('pull');
+						startX = null;
+						startY = null;
+						endX = null;
+						endY = null;
 					});
 					setTimeout(function(){
-						pull.transition({ height:0 }, 100);
-					},3000);
+						p.removeClass('courtain');
+						p.transition({ height:0 }, 200);
+						pull = null;
+					},2000);
 				}
 			}
 		})
 		
-		
+		.on('show','.view',function(){
+			var $this = $(this);
+			if (mobserv.history.length == 0){
+				$this.find('.header .back').hide();
+			} else {
+				$this.find('.header .back').show();
+			}
+		})
 		.on('show','#gps',function(){
 			var $this = $(this);
 			mobserv.geolocation.watchPosition($this);
@@ -199,8 +287,9 @@ $(function(){
 	;
 	
 		
-	setTimeout(function(){mobserv.nav.toView('home');},1000);
+	setTimeout(function(){mobserv.nav.toView('home');},300);
 	
-	if (device.platform == 'iOS') $('.view').addClass('ios');
+	document.addEventListener("deviceready", mobserv.device.onready, false);
+	mobserv.device.onready();
 	
 });

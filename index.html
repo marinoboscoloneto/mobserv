@@ -20,32 +20,34 @@
 <main class="main" id="main">
 	<nav class="nav" id="nav">
     	<ul>
-        	<li><a data-view="home"><span class="icon-home3">Home</span></a></li>
-        	<li><a data-view="services"><span class="icon-share">Serviços</span></a></li>
-        	<li><a data-view="messages"><span class="icon-mail">Mensagens</span></a></li>
-        	<li><a data-view="user"><span class="icon-user">Usuário</span></a></li>
-        	<li><a data-view="configs"><span class="icon-cog2">Configurações</span></a></li>
-        	<li><a data-view="logout"><span class="icon-plug">Sair</span></a></li>
+        	<li><a data-view="home" data-direction="forward"><span class="icon-home">Home</span></a></li>
+        	<li><a data-view="services" data-direction="forward"><span class="icon-package5">Serviços</span></a></li>
+        	<li><a data-view="messages" data-direction="forward"><span class="icon-paperplane">Mensagens</span></a></li>
+        	<li><a data-view="user" data-direction="forward"><span class="icon-user2">Usuário</span></a></li>
+        	<li><a data-view="configs" data-direction="forward"><span class="icon-cogs">Configurações</span></a></li>
+        	<li><a data-view="logout" data-direction="forward"><span class="icon-plug">Sair</span></a></li>
         </ul>
     </nav>
     <div class="view current" id="home">
         <header class="header" id="header">
-            <h1>Home</h1>
+            <h1 class="icon-home">Home</h1>
             <a class="item l1 menu icon-menu"></a>
+            <a class="item l2 link back icon-chevron-left" data-direction="back"></a>
         </header>
         <section class="section">
             <ul class="grid">
-                <li><a data-view="services"><strong class="icon-share">Serviços</strong><mark>3</mark></a></li>
-                <li><a data-view="messages"><strong class="icon-mail">Mensagens</strong><mark>12</mark></a></li>
-                <li><a data-view="user"><strong class="icon-user">Usuário</strong></a></li>
-                <li><a data-view="configs"><strong class="icon-cog2">Configurações</strong></a></li>
+                <li><a data-view="services" data-direction="forward"><strong class="icon-package5"></strong><span>Serviços</span><mark>1</mark></a></li>
+                <li><a data-view="messages" data-direction="forward"><strong class="icon-paperplane"></strong><span>Mensagens</span><mark>12</mark></a></li>
+                <li><a data-view="user" data-direction="forward"><strong class="icon-user2"></strong><span>Usuário</span></a></li>
+                <li><a data-view="configs" data-direction="forward"><strong class="icon-cogs"></strong><span>Configurações</span></a></li>
             </ul>
         </section>
     </div>
     <div class="view" id="services" data-source="services">
         <header class="header" id="header">
-            <h1>Serviços</h1>
+            <h1 class="icon-package5">Serviços</h1>
             <a class="item l1 menu icon-menu"></a>
+            <a class="item l2 link back icon-chevron-left" data-direction="back"></a>
         </header>
         <section class="section">
         	<div class="puller"><strong>Solte para atualizar</strong></div>
@@ -61,12 +63,12 @@
     </div>
     <div class="view" id="servicelist" data-source="services/service">
         <header class="header" id="header">
-            <h1>Rota 12</h1>
+            <h1 class="icon-package5">Rota 12</h1>
             <a class="item l1 menu icon-menu"></a>
-            <a class="item l2 link icon-chevron-left" data-direction="back"></a>
+            <a class="item l2 link back icon-chevron-left" data-direction="back"></a>
         </header>
         <section class="section">
-        	<div class="puller"></div>
+        	<div class="puller"><strong>Solte para atualizar</strong></div>
             <ul class="list">
                 <li>
                 	<div class="table link" data-view="services" >
@@ -199,24 +201,63 @@
     </div>
     <div class="view" id="configs">
         <header class="header" id="header">
-            <h1>Configurações</h1>
+            <h1 class="icon-cogs">Configurações</h1>
             <a class="item l1 menu icon-menu"></a>
+            <a class="item l2 link back icon-chevron-left2" data-direction="back"></a>
         </header>
         <section class="section">
             <ul class="grid">
-                <li><a data-view="gps" data-direction="forward"><strong class="icon-location">GPS</strong></a></li>
+                <li><a data-view="deviceinfo" data-direction="forward"><strong class="icon-mobile"></strong><span>Dados do Dispositivo</span></a></li>
+                <li><a data-view="connection" data-direction="forward"><strong class="icon-feed2"></strong><span>Info de Conexão</span></a></li>
+                <li><a data-view="gps" data-direction="forward"><strong class="icon-map3"></strong><span>Geoposição</span></a></li>
+                <li><a data-view="server" data-direction="forward"><strong class="icon-layers"></strong><span>Servidores de Serviços</span></a></li>
+                <li><a data-view="data" data-direction="forward"><strong class="icon-code"></strong><span>Fonte de Dados</span></a></li>
+                <li><a data-view="log" data-direction="forward"><strong class="icon-history2"></strong><span>Log</span><mark>86</mark></a></li>
+                <li><a data-view="help" data-direction="forward"><strong class="icon-help2"></strong><span>Sobre o Mobserv</span></a></li>
             </ul>
+        </section>
+    </div>
+    <div class="view" id="deviceinfo">
+        <header class="header" id="header">
+            <h1 class="icon-mobile">Dados do Dispositivo</h1>
+            <a class="item l1 menu icon-menu"></a>
+            <a class="item l2 link back icon-chevron-left" data-direction="back"></a>
+        </header>
+        <section class="section">
+        	<h2 style="text-align:center;">API Device</h2>
+        	<table width="96%" border="0" cellspacing="1" cellpadding="1">
+              <tr>
+                <td>Cordova</td>
+                <td><strong id="cordova">&nbsp;</strong></td>
+              </tr>
+              <tr>
+                <td>Modelo</td>
+                <td><strong id="model">&nbsp;</strong></td>
+              </tr>
+              <tr>
+                <td>Plataforma</td>
+                <td><strong id="platform">&nbsp;</strong></td>
+              </tr>
+              <tr>
+                <td>UUID</td>
+                <td><strong id="uuid">&nbsp;</strong></td>
+              </tr>
+              <tr>
+                <td>versão</td>
+                <td><strong id="version">&nbsp;</strong></td>
+              </tr>
+            </table>
         </section>
     </div>
     <div class="view" id="gps">
         <header class="header" id="header">
-            <h1>GPS</h1>
+            <h1>Geoposição</h1>
             <a class="item l1 menu icon-menu"></a>
-            <a class="item l2 link icon-chevron-left" data-direction="back"></a>
+            <a class="item l2 link back icon-chevron-left" data-direction="back"></a>
         </header>
         <section class="section">
-        	<h2>Dados do receptor de GPS</h2>
-        	<table width="100%" border="0" cellspacing="1" cellpadding="1">
+        	<h2 style="text-align:center;">Dados do receptor de GPS</h2>
+        	<table width="96%" border="0" cellspacing="1" cellpadding="1">
               <tr>
                 <td>Latitude</td>
                 <td><strong id="gpslat">&nbsp;</strong></td>
@@ -246,8 +287,24 @@
                 <td><strong id="gpsvel">&nbsp;</strong></td>
               </tr>
             </table>
+            <div class="mapwrap"><img border="0" class="map" style="width:100%; height:200px;" src=""></div>
         </section>
     </div>
+    <div class="view" id="log">
+        <header class="header" id="header">
+            <h1 class="icon-history2">Log</h1>
+            <a class="item l1 menu icon-menu"></a>
+            <a class="item l2 link back icon-chevron-left" data-direction="back"></a>
+        </header>
+        <section class="section">
+        </section>
+    </div>
+    <footer class="footer" id="footer">
+        <div class="user icon-user2"><strong>M01</strong><small>Nome do usuário</small></div>
+        <a class="item r1 link marked icon-package5" data-view="services" data-direction="forward"><mark>1</mark></a>
+        <a class="item r2 link icon-paperplane"></a>
+        <a class="item r3 link icon-history2"></a>
+    </footer>
     <div id="notify" class="notify">
     	<strong>Error</strong>
         <span>asd asdasd asd as asdasd</span>
