@@ -18,7 +18,11 @@
 </head>
 <body>
 <main class="main" id="main">
+	<div class="statustripe"></div>
 	<nav class="nav" id="nav">
+        <header class="header" id="header">
+        	<div class="company">Carriers</div>
+        </header>
     	<ul>
         	<li><a data-view="home" data-direction="forward"><span class="icon-home">Home</span></a></li>
         	<li><a data-view="services" data-direction="forward"><span class="icon-package5">Serviços</span></a></li>
@@ -32,7 +36,7 @@
         <header class="header" id="header">
             <h1 class="icon-home">Home</h1>
             <a class="item l1 menu icon-menu"></a>
-            <a class="item l2 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
         </header>
         <section class="section">
             <ul class="grid">
@@ -47,7 +51,7 @@
         <header class="header" id="header">
             <h1 class="icon-package5">Serviços</h1>
             <a class="item l1 menu icon-menu"></a>
-            <a class="item l2 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
         </header>
         <section class="section">
         	<div class="puller"><strong>Solte para atualizar</strong></div>
@@ -65,7 +69,7 @@
         <header class="header" id="header">
             <h1 class="icon-package5">Rota 12</h1>
             <a class="item l1 menu icon-menu"></a>
-            <a class="item l2 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
         </header>
         <section class="section">
         	<div class="puller"><strong>Solte para atualizar</strong></div>
@@ -203,12 +207,12 @@
         <header class="header" id="header">
             <h1 class="icon-cogs">Configurações</h1>
             <a class="item l1 menu icon-menu"></a>
-            <a class="item l2 link back icon-chevron-left2" data-direction="back"></a>
+            <a class="item r1 link back icon-chevron-left2" data-direction="back"></a>
         </header>
         <section class="section">
             <ul class="grid">
                 <li><a data-view="deviceinfo" data-direction="forward"><strong class="icon-mobile"></strong><span>Dados do Dispositivo</span></a></li>
-                <li><a data-view="connection" data-direction="forward"><strong class="icon-feed2"></strong><span>Info de Conexão</span></a></li>
+                <li><a data-view="connectioninfo" data-direction="forward"><strong class="icon-feed2"></strong><span>Info de Conexão</span></a></li>
                 <li><a data-view="gps" data-direction="forward"><strong class="icon-map3"></strong><span>Geoposição</span></a></li>
                 <li><a data-view="server" data-direction="forward"><strong class="icon-layers"></strong><span>Servidores de Serviços</span></a></li>
                 <li><a data-view="data" data-direction="forward"><strong class="icon-code"></strong><span>Fonte de Dados</span></a></li>
@@ -221,7 +225,7 @@
         <header class="header" id="header">
             <h1 class="icon-mobile">Dados do Dispositivo</h1>
             <a class="item l1 menu icon-menu"></a>
-            <a class="item l2 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
         </header>
         <section class="section">
         	<h2 style="text-align:center;">API Device</h2>
@@ -249,11 +253,31 @@
             </table>
         </section>
     </div>
+    <div class="view" id="connectioninfo">
+        <header class="header" id="header">
+            <h1 class="icon-feed2">Info de Conexão</h1>
+            <a class="item l1 menu icon-menu"></a>
+            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
+        </header>
+        <section class="section">
+        	<h2 style="text-align:center;">API Connection</h2>
+        	<table width="96%" border="0" cellspacing="1" cellpadding="1">
+              <tr>
+                <td>Status</td>
+                <td><strong id="connstatus">&nbsp;</strong></td>
+              </tr>
+              <tr>
+                <td>Tipo de Conexão</td>
+                <td><strong id="conntype">&nbsp;</strong></td>
+              </tr>
+            </table>
+        </section>
+    </div>
     <div class="view" id="gps">
         <header class="header" id="header">
             <h1>Geoposição</h1>
             <a class="item l1 menu icon-menu"></a>
-            <a class="item l2 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
         </header>
         <section class="section">
         	<h2 style="text-align:center;">Dados do receptor de GPS</h2>
@@ -294,16 +318,16 @@
         <header class="header" id="header">
             <h1 class="icon-history2">Log</h1>
             <a class="item l1 menu icon-menu"></a>
-            <a class="item l2 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
         </header>
         <section class="section">
         </section>
     </div>
     <footer class="footer" id="footer">
         <div class="user icon-user2"><strong>M01</strong><small>Nome do usuário</small></div>
-        <a class="item r1 link marked icon-package5" data-view="services" data-direction="forward"><mark>1</mark></a>
+        <a class="item r3 link marked icon-package5" data-view="services" data-direction="forward"><mark>1</mark></a>
         <a class="item r2 link icon-paperplane"></a>
-        <a class="item r3 link icon-history2"></a>
+        <a class="item r1 link icon-history2"></a>
     </footer>
     <div id="notify" class="notify">
     	<strong>Error</strong>

@@ -1,6 +1,99 @@
 // JavaScript Document
 
 var mobserv = {
+	server : {
+		pointer : 0,
+		list : [
+			{
+				type : 'license',
+				url : 'http://ws.sourcelab.com.br/mobserv/rest/',
+				online : false,	
+				status : null,
+				lastRequest : null
+			},{
+				type : 'license',
+				url : 'http://sourcelab.com.br/webservice/mobserv/rest/',
+				online : false,	
+				status : null,
+				lastRequest : null
+			},{
+				type : 'license',
+				url : 'http://slab.ddns.net/metagen4/webservice/mobserv/rest/',
+				online : false,	
+				status : null,
+				lastRequest : null
+			},{
+				type : 'service',
+				url : 'http://carriers.ddns.com.br/tms/mobserv/',
+				online : false,	
+				status : null,
+				lastRequest : null
+			}
+		],
+		online : {
+			license : false,
+			service : false
+		},
+		test : function(type){
+			if (!mobserv.connection.test()) return;
+			var pointer = mobserv.server.pointer;
+			var server = mobserv.server.list[pointer];
+			if (server){
+				if (type === server.type){
+					server.status = 'Conectando';
+					$.ajax({
+						type: 'GET', 
+						url: server.url, 
+						dataType: 'xml', 
+						success: function(response,st,xhr){
+							if (response !== '' && $(response).find('mobserv').length == 1){
+								server.online = true;
+								server.status = 'Conectado';
+								server.lastRequest = mobserv.now();
+								mobserv.server.online.license = server;
+								mobserv.log({
+									type : 'info',
+									name : 'server.test',
+									message : server.url+' test successful',
+								});
+							} else {
+								server.online = false;
+								server.status = 'Erro de Parser';
+								server.lastRequest = mobserv.now();
+								mobserv.log({
+									type : 'error',
+									name : 'server.test',
+									message : server.url+' response invalid xml',
+								});
+								mobserv.server.pointer++;
+								mobserv.server.test(type);	
+							}
+						}, 
+						error: function(xhr,st,err){
+							server.online = false;
+							server.status = 'Erro de Conexão';
+							server.lastRequest = mobserv.now();
+							mobserv.log({
+								type : 'error',
+								name : 'server.test',
+								message : server.url+' response error ('+((err)?err:'unknown')+')',
+							});
+							mobserv.server.pointer++;
+							mobserv.server.test(type);	
+						}, 
+						complete: function(){
+							if (mobserv.server.pointer == mobserv.server.list.length){
+								mobserv.server.pointer = 0;	
+							}
+						}
+					});
+				} else {
+					mobserv.server.pointer++;
+					mobserv.server.test(type);	
+				}
+			}
+		}
+	},
 	zindex : 3,
 	preventTap : false,
 	timeoutTap : null,
@@ -25,6 +118,44 @@ var mobserv = {
 				}
 			}
 		}
+	},
+	connection : {
+		online : false,
+		test : function(type){
+			var $dom = $("#connectioninfo");
+			if (navigator.connection){
+				var networkState = navigator.connection.type;
+				var states = {};
+				states[Connection.UNKNOWN]  = 'Unknown connection';
+				states[Connection.ETHERNET] = 'Ethernet connection';
+				states[Connection.WIFI]     = 'WiFi connection';
+				states[Connection.CELL_2G]  = 'Cell 2G connection';
+				states[Connection.CELL_3G]  = 'Cell 3G connection';
+				states[Connection.CELL_4G]  = 'Cell 4G connection';
+				states[Connection.CELL]     = 'Cell generic connection';
+				states[Connection.NONE]     = 'No network connection';
+				$dom.find('#conntype').html(states[networkState]);
+				if (navigator.connection.type == Connection.NONE){
+					$dom.find('#connstatus').html('Offline');
+					mobserv.connection.online = false
+					mobserv.log({
+						type : 'alert',
+						name : 'connection.test',
+						message : 'no internet connection',
+					});
+					return false;
+				} else {
+					$dom.find('#connstatus').html('Online');
+					mobserv.connection.online = true;
+					return true;
+				}
+			} else {
+				$dom.find('#connstatus').html('Online (default)');
+				$dom.find('#conntype').html('Test impossible');	
+				mobserv.connection.online = true;
+				return true;
+			}
+		},
 	},
 	geolocation : {
 		watchID : null,
@@ -147,9 +278,18 @@ var mobserv = {
 		});
 	},
 	'log' : function(obj){
-		console.log('log',obj);
-		var d = new Date,
-		fdate = [
+		var html = ''+
+		'<div class="logline '+((obj.type)?obj.type:'')+'"><b class="date">['+mobserv.now()+']</b> '+
+		((obj.name)?'<b class="name">'+obj.name+'</b> ':'')+
+		((obj.title)?'<b class="title">'+obj.title+'</b> ':'')+
+		((obj.code)?'<span class="code">'+obj.code+'</span> ':'')+
+		((obj.message)?'<span class="message">'+obj.message+'</span> ':'')+
+		'</div>';
+		$("#log .section").append(html);
+	},
+	now : function(){
+		var d = new Date;
+		return [
 			d.getFullYear(),
 			("0" + (d.getMonth() + 1)).substr(-2),
 			("0" + d.getDate()).substr(-2)
@@ -159,14 +299,6 @@ var mobserv = {
 			("0" + d.getMinutes()).substr(-2),
 			("0" + d.getSeconds()).substr(-2)
 		].join(':');
-		var html = ''+
-		'<div class="logline '+((obj.type)?obj.type:'')+'"><b class="date">['+fdate+']</b> '+
-		((obj.name)?'<b class="name">'+obj.name+'</b> ':'')+
-		((obj.title)?'<b class="title">'+obj.title+'</b> ':'')+
-		((obj.code)?'<span class="code">'+obj.code+'</span> ':'')+
-		((obj.message)?'<span class="message">'+obj.message+'</span> ':'')+
-		'</div>';
-		$("#log .section").append(html);
 	}
 }
 
@@ -217,7 +349,7 @@ $(function(){
 				}).find(".header, .section").transition({ opacity:1 }, 300);
 			}
 		})
-		.on('touchstart','.section',function(event){
+		.on('touchstart','.view.current .section',function(event){
 			startX = event.originalEvent.touches[0].pageX;
 			startY = event.originalEvent.touches[0].pageY;
 			var $section = $(this);
@@ -231,7 +363,7 @@ $(function(){
 				}
 			}
 		})
-		.on('touchmove','.section',function(event){
+		.on('touchmove','.view.current .section',function(event){
 			endX = event.originalEvent.touches[0].pageX;
 			endY = event.originalEvent.touches[0].pageY;
 			var $section = $(this);
@@ -244,7 +376,7 @@ $(function(){
 				pull = null;	
 			}
 		})
-		.on('touchend','.section',function(event){
+		.on('touchend','.view.current .section',function(event){
 			if (pull){
 				var p = pull;
 				if (startY+($(window).height()/3) > endY){
@@ -285,11 +417,29 @@ $(function(){
 		})
 		
 	;
-	
-		
-	setTimeout(function(){mobserv.nav.toView('home');},300);
-	
+	window.addEventListener("error", function(error, url, line){
+		mobserv.log({
+			type : 'error',
+			name : 'JS',
+			title : 'javascript error',
+			message : error+' ('+line+')',
+		});	
+	}, false);
+	document.addEventListener("offline", function(){
+		$('.statustripe').addClass('red').fadeIn();
+		$('button, submit, reset').addClass('disable').prop('disabled',true);
+	}, false);
+	document.addEventListener("online", function(){
+		$('.statustripe').addClass('blue').fadeOut();
+		$('button, submit, reset').removeClass('disable').prop('disabled',false);
+	}, false);
 	document.addEventListener("deviceready", mobserv.device.onready, false);
-	mobserv.device.onready();
+	
+	setTimeout(function(){ // isso precisa ir para o ondeviceready
+		$('.footer').transition({ y:0 }, 500);
+		mobserv.nav.toView('home');
+		mobserv.server.test('license');
+	},300);
+
 	
 });

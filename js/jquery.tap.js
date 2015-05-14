@@ -5,7 +5,7 @@ $.event.special.tap = {
 		swipeDistance : 100,
 		holdTime : 500
 	},
-	// Abort tap if touch moves further than 10 pixels in any direction
+	// Abort tap if touch moves further than 20 pixels in any direction
 	// Abort tap if touch lasts longer than half a second
 	setup: function() {
 		var self = this,
@@ -34,6 +34,7 @@ $.event.special.tap = {
 				// so, fire a click.
 				if (target == endEvent.target) {
 					$.event.simulate('tap', self, endEvent);
+					//setTimeout(function(){$.event.simulate('tap', self, endEvent);},80);
 				}
 			};
 			
