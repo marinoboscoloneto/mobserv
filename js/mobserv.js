@@ -117,6 +117,7 @@ var mobserv = {
 					});	
 				}
 			}
+			mobserv.server.test('license');
 		}
 	},
 	connection : {
