@@ -431,7 +431,7 @@ $(function(){
 		$('button, submit, reset').addClass('disable').prop('disabled',true);
 	}, false);
 	document.addEventListener("online", function(){
-		$('.statustripe').addClass('blue').fadeOut();
+		$('.statustripe').removeClass('red').fadeOut();
 		$('button, submit, reset').removeClass('disable').prop('disabled',false);
 	}, false);
 	document.addEventListener("deviceready", mobserv.device.onready, false);
@@ -439,7 +439,6 @@ $(function(){
 	setTimeout(function(){ // isso precisa ir para o ondeviceready
 		$('.footer').transition({ y:0 }, 500);
 		mobserv.nav.toView('home');
-		mobserv.server.test('license');
 	},300);
 
 	
