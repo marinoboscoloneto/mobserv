@@ -5,24 +5,28 @@ var mobserv = {
 		pointer : 0,
 		list : [
 			{
+				id : 'srv0',
 				type : 'license',
 				url : 'http://ws.sourcelab.com.br/mobserv/rest/',
 				online : false,	
 				status : null,
 				lastRequest : null
 			},{
+				id : 'srv1',
 				type : 'license',
 				url : 'http://sourcelab.com.br/webservice/mobserv/rest/',
 				online : false,	
 				status : null,
 				lastRequest : null
 			},{
+				id : 'srv2',
 				type : 'license',
 				url : 'http://slab.ddns.net/metagen4/webservice/mobserv/rest/',
 				online : false,	
 				status : null,
 				lastRequest : null
 			},{
+				id : 'srv3',
 				type : 'service',
 				url : 'http://carriers.ddns.com.br/tms/mobserv/',
 				online : false,	
@@ -34,32 +38,51 @@ var mobserv = {
 			license : false,
 			service : false
 		},
+		data : function(server){
+			$dom = $('#servers');
+			$table = $dom.find('#'+server.id);
+			if (!$table.length){
+				$table = $dom.find('table.template').clone();
+				$table.removeClass('template').attr('id',server.id).appendTo("#servers .section");
+			}
+			$table.find('#srvid').html(server.id);
+			$table.find('#srvtype').html(server.type);
+			$table.find('#srvurl').html(server.url);
+			$table.find('#srvonline').css('color',(server.online)?'#09F':'#F00').html((server.online)?'Sim':'Não');
+			$table.find('#srvstatus').html(server.status);
+			$table.find('#srvlastrequest').html(server.lastRequest);
+		},
 		test : function(type){
 			if (!mobserv.connection.test()) return;
 			var pointer = mobserv.server.pointer;
 			var server = mobserv.server.list[pointer];
 			if (server){
+				mobserv.log({
+					name : 'server.test',
+					message : 'init test on '+server.url,
+				});
 				if (type === server.type){
 					server.status = 'Conectando';
-					$.ajax({
+					var aborttime;
+					var xhr = $.ajax({
 						type: 'GET', 
 						url: server.url, 
 						dataType: 'xml', 
-						success: function(response,st,xhr){
+						done: function(response,st,xhr){
+							console.log('done',server,mobserv.server.pointer);
 							if (response !== '' && $(response).find('mobserv').length == 1){
 								server.online = true;
 								server.status = 'Conectado';
-								server.lastRequest = mobserv.now();
-								mobserv.server.online.license = server;
+								mobserv.server.online[type] = server;
+								mobserv.server.pointer = 0;
 								mobserv.log({
 									type : 'info',
 									name : 'server.test',
-									message : server.url+' test successful',
+									message : server.url+' is now the online '+type+' server',
 								});
 							} else {
 								server.online = false;
 								server.status = 'Erro de Parser';
-								server.lastRequest = mobserv.now();
 								mobserv.log({
 									type : 'error',
 									name : 'server.test',
@@ -69,10 +92,10 @@ var mobserv = {
 								mobserv.server.test(type);	
 							}
 						}, 
-						error: function(xhr,st,err){
+						fail: function(xhr,st,err){
+							console.log('fail',server,mobserv.server.pointer);
 							server.online = false;
-							server.status = 'Erro de Conexão';
-							server.lastRequest = mobserv.now();
+							server.status = 'Erro de Resposta';
 							mobserv.log({
 								type : 'error',
 								name : 'server.test',
@@ -81,25 +104,117 @@ var mobserv = {
 							mobserv.server.pointer++;
 							mobserv.server.test(type);	
 						}, 
-						complete: function(){
+						always: function(){
+							console.log('always',server,mobserv.server.pointer);
+							server.lastRequest = mobserv.now();
+							mobserv.server.data(server);
 							if (mobserv.server.pointer == mobserv.server.list.length){
 								mobserv.server.pointer = 0;	
 							}
+							clearTimeout(aborttime);
 						}
 					});
+					aborttime = setTimeout(function(){
+						xhr.abort();
+						server.online = false;
+						server.status = 'Tempo de resposta esgotado';
+						mobserv.log({
+							type : 'error',
+							name : 'server.test',
+							message : server.url+' response timeout)',
+						});
+					},30000);
 				} else {
+					console.log('not '+type,server,mobserv.server.pointer);
 					mobserv.server.pointer++;
 					mobserv.server.test(type);	
 				}
 			}
+		},
+		loopcall : function(type,data,ondone,onerror){
+			mobserv.server.test(type);
+			var server;
+			var limit = 30;
+			var interval = setInterval(function(){
+				server = mobserv.server.online[type];
+				if (server){
+					mobserv.server.call(type,data,ondone,onerror,true);
+					clearInterval(interval);
+				}
+				if (limit === 0){
+					mobserv.log({
+						type : 'error',
+						name : 'server.loopcall',
+						message : 'no '+type+' servers available',
+					});
+					if(onerror) onerror('Os servidores de '+((server.type == 'license')?'validação de licença':'serviço do cliente')+' não responderam');
+					clearInterval(interval);
+				}
+				limit--;
+			},1000);
+		},
+		call : function(type,data,ondone,onerror,loop){
+			var server = mobserv.server.online[type];
+			if ((!server || !server.online) && !loop){
+				mobserv.log({
+					type : 'alert',
+					name : 'server.call',
+					message : 'default '+type+' server is offline',
+				});
+				mobserv.server.loopcall(type,data,ondone,onerror);
+				return false;
+			}
+			server.status = 'Conectando';
+			$.ajax({
+				type: 'GET', 
+				url: server.url, 
+				dataType: 'xml',
+				data: data,
+				done: function(response,st,xhr){
+					if (response !== '' && $(response).find('mobserv').length == 1){
+						server.online = true;
+						server.status = 'Conectado';
+						server.lastRequest = mobserv.now();
+						mobserv.server.online[type] = server;
+						mobserv.log({
+							type : 'info',
+							name : 'server.call',
+							message : 'default online '+type+' server call done',
+						});
+						if(ondone) ondone(response,st,xhr);
+					} else {
+						server.online = false;
+						server.status = 'Erro de Parser';
+						server.lastRequest = mobserv.now();
+						mobserv.log({
+							type : 'error',
+							name : 'server.call',
+							message : server.url+' response invalid xml',
+						});
+						mobserv.server.loopcall(type,data,ondone,onerror);
+					}
+				},
+				fail: function(xhr,st,err){
+					server.online = false;
+					server.status = 'Erro de Conexão';
+					mobserv.log({
+						type : 'error',
+						name : 'server.call',
+						message : server.url+' response error ('+((err)?err:'unknown')+')',
+					});
+					mobserv.server.loopcall(type,data,ondone,onerror);
+				}, 
+				always: function(){
+					server.lastRequest = mobserv.now();
+					mobserv.server.data(server);
+				}
+			});
 		}
 	},
-	zindex : 3,
-	preventTap : false,
-	timeoutTap : null,
-	history : [],
 	device : {
+		data : {},
 		onready : function(){
+			mobserv.device.data = device;
 			var $dom = $("#deviceinfo");
 			if ($dom.length){
 				if (typeof device == 'object'){
@@ -109,6 +224,10 @@ var mobserv = {
 					$dom.find('#platform').html(device.platform); 		
 					$dom.find('#uuid').html(device.uuid); 
 					$dom.find('#version').html(device.version); 
+					mobserv.log({
+						name : 'device.onready',
+						message : 'device is ready',
+					});	
 				} else {
 					mobserv.log({
 						type : 'error',
@@ -118,6 +237,7 @@ var mobserv = {
 				}
 			}
 			mobserv.server.test('license');
+			mobserv.bgmode.init();
 		}
 	},
 	connection : {
@@ -189,6 +309,108 @@ var mobserv = {
 			}
 		}
 	},
+	sqlite : {
+		db : null,
+		init : function(){
+			var db = mobserv.sqlite.db = window.sqlitePlugin.openDatabase({name: "mobserv.db",  androidLockWorkaround: 1, location: 2});
+			db.transaction(
+				function(tx){
+					tx.executeSql(''+
+						'CREATE TABLE IF NOT EXISTS clients ('+
+							'id integer primary key, '+
+							'code text, '+
+							'file text, '+
+							'default integer '+
+						')'
+					);
+					tx.executeSql(''+
+						'CREATE TABLE IF NOT EXISTS services ('+
+							'id integer primary key, '+
+							'date text, '+
+							'client integer, '+
+							'file text, '+
+							'default integer '+
+						')'
+					);
+					tx.executeSql(''+
+						'CREATE TABLE IF NOT EXISTS messages ('+
+							'id integer primary key, '+
+							'client integer, '+
+							'file text '+
+						')'
+					);
+					mobserv.log({
+						name : 'sqlite.open',
+						message : 'db mobserv.db is idle',
+					});	
+				},
+				function(e) {
+					mobserv.log({
+						type : 'error',
+						name : 'sqlite.init',
+						message : 'transaction error: '+e.message,
+					});	
+				}
+			);
+		},
+		drop : function(){
+			window.sqlitePlugin.deleteDatabase({name: "mobserv.db", location: 2},
+				function(){
+					mobserv.log({
+						name : 'sqlite.drop',
+						message : 'mobserv.db droped',
+					});	
+				},
+				function(e){
+					mobserv.log({
+						type : 'error',
+						name : 'sqlite.drop',
+						message : 'mobserv.db was not droped: '+e.message,
+					});	
+				}
+			);	
+		},
+		query : function(query,callback){
+			var db = mobserv.sqlite.db;
+			if (db && query){
+				db.transaction(function(tx) {
+					tx.executeSql(query, [],
+						function(tx, res){
+							if (callback) callback(res);
+							mobserv.log({
+								name : 'sqlite.query',
+								message : 'query executed: '+query,
+							});	
+						}, 
+						function(){
+							mobserv.log({
+								type : 'error',
+								name : 'sqlite.query',
+								message : 'query error: '+e.message,
+							});	
+						} 
+					);
+				});
+			}
+		}
+	},
+	bgmode : {
+		init : function(){
+			cordova.plugins.backgroundMode.enable();
+			cordova.plugins.backgroundMode.onactivate = function () {
+				setTimeout(function () {
+					// Modify the currently displayed notification
+					cordova.plugins.backgroundMode.configure({
+						text:'Running in background for more than 5s now.'
+					});
+				}, 5000);
+			}				
+		}
+	},
+	zindex : 3,
+	preventTap : false,
+	timeoutTap : null,
+	history : [],
 	nav : {
 		toView : function($view){
 			var $current = $('.view.current');
@@ -218,7 +440,7 @@ var mobserv = {
 				$current.transition({ x:0, opacity:0 }, 300, function(){
 					$current.hide().removeClass('current');
 				});
-				$view.css({x:'50%', opacity:0, 'z-index':mobserv.zindex}).show().transition({ x:0, opacity:1 }, 300, function(){
+				$view.css({x:'30%', opacity:0, 'z-index':mobserv.zindex}).show().transition({ x:0, opacity:1 }, 300, function(){
 					$view.addClass('current');
 				});
 				$view.trigger('show');
@@ -232,10 +454,10 @@ var mobserv = {
 				var $current = $('.view.current');
 				$view = mobserv.history.pop();
 				if ($current.length == 1 && $view.length == 1 && $current.attr('id') != $view.attr('id')){
-					$current.transition({ x:'50%', opacity:0 }, 400, function(){
+					$current.transition({ x:'30%', opacity:0 }, 300, function(){
 						$current.hide().removeClass('current');
 					});
-					$view.css({x:0, opacity:0, 'z-index':mobserv.zindex}).show().transition({ opacity:1 }, 400, function(){
+					$view.css({x:0, opacity:0, 'z-index':mobserv.zindex}).show().transition({ opacity:1 }, 500, function(){
 						$view.addClass('current');
 					});
 					$view.trigger('show');
@@ -266,11 +488,11 @@ var mobserv = {
 			}
 		},
 	},
-	notify : function(name,title,error){
+	notify : function(notify){
 		var $notify = $('#notify');
-		$notify.find('strong').text(name+' #'+error.code);
-		$notify.find('span').text(error.message);
-		$notify.removeClass('green orange blue').addClass('red').css({bottom:'-50%', opacity:0}).show().transition({ bottom:0, opacity:1 }, 400, function(){
+		$notify.find('strong').text((notify.name)?notify.name:'sdsda');
+		$notify.find('span').text((notify.message)?notify.message:'');
+		$notify.removeClass('error alert info notice').addClass((notify.type)?notify.type:'').css({bottom:'-50%', opacity:0}).show().transition({ bottom:0, opacity:1 }, 400, function(){
 			setTimeout(function(){
 				$notify.transition({ opacity:0 }, 1000, function(){
 					$notify.hide();
@@ -287,6 +509,7 @@ var mobserv = {
 		((obj.message)?'<span class="message">'+obj.message+'</span> ':'')+
 		'</div>';
 		$("#log .section").append(html);
+		console.log(obj);
 	},
 	now : function(){
 		var d = new Date;
@@ -308,6 +531,55 @@ $(function(){
 	var startX, startY, endX, endY, pull;
 	
 	$(document)
+		.on('tap','#formclient .submit',function(){
+			var data = {
+				'exec': 'getLicense',
+				'in': mobserv.device.data.uuid
+			};
+			var valid = true;
+			var $submit = $(this);
+			var $form = $submit.closest('form');
+			data.cid = $form.find('#cid').val();
+			data.pw = $form.find('#pw').val();
+			data.pw = (data.pw?$.md5(data.pw):null);
+			if (!data.cid || !data.pw){
+				valid = false;	
+			}
+			if (valid){
+				$form.find('.input, .submit').addClass('disable').prop('disabled',true);
+				mobserv.server.call('license',data,function(response){
+					var $response = $(response);
+					var $valid = $response.find('validation:eq(0)');
+					if ($valid.length){
+						var status = $valid.attr('status');
+						mobserv.log({
+							type : status,
+							name : 'client.validation',
+							message : status+' validation: '+$valid.text(),
+						});
+						if (status == 'info'){
+							mobserv.nav.toView('home');
+						} else {
+							mobserv.notify({
+								type : status,
+								name : 'Validação de Cliente',
+								message : $valid.text()
+							});	
+							$form.find('.input, submit').removeClass('disable').prop('disabled',false);
+						}
+						
+					}
+				},
+				function(){
+				
+				});
+			} else {
+				mobserv.notify({
+					type : 'error',
+					message : 'Os campos são requiridos'
+				});	
+			}
+		})
 		/*
 		.on('swiperight','.view:not(.disable)',function(){
 			$(this).find('.menu').trigger('tap');
@@ -338,7 +610,7 @@ $(function(){
 			if (!$('#nav').hasClass('active')){
 				$('.footer').transition({ y:'+=50px' }, 300);
 				$('#nav').addClass('active');
-				$('.view.current').addClass('disable').transition({ x:'80%' }, 300).find(".header, .section").transition({ opacity:.3 }, 300);
+				$('.view.current').addClass('disable').transition({ x:'80%' }, 300).find(".header, .section").transition({ opacity:.3 }, 400);
 			}
 		})
 		.on('tap','.view.disable',function(){
@@ -369,8 +641,9 @@ $(function(){
 			endY = event.originalEvent.touches[0].pageY;
 			var $section = $(this);
 			var $puller = $section.children('.puller:not(.courtain)');
-			if ($puller.length > 0 && $section.scrollTop() == 0 && endY > startY){
-				var val = (endY-startY+$puller.data('height'))/2;
+			if ($puller.length > 0 && $section.scrollTop() < 5 && endY > startY){
+				$section.scrollTop(0).addClass('noscroll');
+				var val = (endY-startY+$puller.data('height'))/2.3;
 				$puller.show().height(val).find('strong').css('opacity',val/($(window).height()/4));
 				pull = $puller;
 			} else {
@@ -378,8 +651,10 @@ $(function(){
 			}
 		})
 		.on('touchend','.view.current .section',function(event){
+			var $section = $(this);
 			if (pull){
 				var p = pull;
+				$section.removeClass('noscroll').scrollTop(0);
 				if (startY+($(window).height()/3) > endY){
 					p.transition({ height:0 }, 200);
 				} else {
@@ -437,8 +712,8 @@ $(function(){
 	document.addEventListener("deviceready", mobserv.device.onready, false);
 	
 	setTimeout(function(){ // isso precisa ir para o ondeviceready
-		$('.footer').transition({ y:0 }, 500);
-		mobserv.nav.toView('home');
+		//$('.footer').transition({ y:0 }, 500);
+		mobserv.nav.toView('formclient');
 	},300);
 
 	
