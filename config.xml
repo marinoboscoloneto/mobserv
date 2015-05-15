@@ -4,7 +4,7 @@
         id          = "com.sourcelab.mobserv"
         versionCode = "10" 
         version     = "1.0.12" >
-    <name>mobserv</name>
+    <name>Mobserv</name>
     <description>
         Mobile Services Application for SourceLab Systems
     </description>
