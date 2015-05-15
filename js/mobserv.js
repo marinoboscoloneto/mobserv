@@ -1,7 +1,23 @@
 // JavaScript Document
 
 var mobserv = {
+	globals : {
+		client : {},
+		user : {}	
+	},
+	debug : {
+		active : false,
+		on : function(){
+			$('#main').addClass('debug');
+			mobserv.debug.active = true;
+		},
+		off : function(){
+			$('#main').removeClass('debug');
+			mobserv.debug.active = false;
+		}
+	},
 	server : {
+		timeout : 30000,
 		pointer : 0,
 		list : [
 			{
@@ -59,17 +75,17 @@ var mobserv = {
 			if (server){
 				mobserv.log({
 					name : 'server.test',
-					message : 'init test on '+server.url,
+					message : 'init test on '+type+' server '+server.url,
 				});
 				if (type === server.type){
 					server.status = 'Conectando';
 					var aborttime;
 					var xhr = $.ajax({
+						cache: false,
 						type: 'GET', 
 						url: server.url, 
 						dataType: 'xml', 
-						done: function(response,st,xhr){
-							console.log('done',server,mobserv.server.pointer);
+						success: function(response,st,xhr){
 							if (response !== '' && $(response).find('mobserv').length == 1){
 								server.online = true;
 								server.status = 'Conectado';
@@ -92,8 +108,7 @@ var mobserv = {
 								mobserv.server.test(type);	
 							}
 						}, 
-						fail: function(xhr,st,err){
-							console.log('fail',server,mobserv.server.pointer);
+						error: function(xhr,st,err){
 							server.online = false;
 							server.status = 'Erro de Resposta';
 							mobserv.log({
@@ -104,8 +119,7 @@ var mobserv = {
 							mobserv.server.pointer++;
 							mobserv.server.test(type);	
 						}, 
-						always: function(){
-							console.log('always',server,mobserv.server.pointer);
+						complete: function(){
 							server.lastRequest = mobserv.now();
 							mobserv.server.data(server);
 							if (mobserv.server.pointer == mobserv.server.list.length){
@@ -123,7 +137,7 @@ var mobserv = {
 							name : 'server.test',
 							message : server.url+' response timeout)',
 						});
-					},30000);
+					},mobserv.server.timeout);
 				} else {
 					console.log('not '+type,server,mobserv.server.pointer);
 					mobserv.server.pointer++;
@@ -134,7 +148,7 @@ var mobserv = {
 		loopcall : function(type,data,ondone,onerror){
 			mobserv.server.test(type);
 			var server;
-			var limit = 30;
+			var limit = mobserv.server.timeout/100;
 			var interval = setInterval(function(){
 				server = mobserv.server.online[type];
 				if (server){
@@ -151,7 +165,7 @@ var mobserv = {
 					clearInterval(interval);
 				}
 				limit--;
-			},1000);
+			},100);
 		},
 		call : function(type,data,ondone,onerror,loop){
 			var server = mobserv.server.online[type];
@@ -164,13 +178,18 @@ var mobserv = {
 				mobserv.server.loopcall(type,data,ondone,onerror);
 				return false;
 			}
+			mobserv.log({
+				name : 'server.call',
+				message : 'default '+type+' server request called',
+			});
 			server.status = 'Conectando';
-			$.ajax({
+			var aborttime;
+			var xhr = $.ajax({
 				type: 'GET', 
 				url: server.url, 
 				dataType: 'xml',
 				data: data,
-				done: function(response,st,xhr){
+				success: function(response,st,xhr){
 					if (response !== '' && $(response).find('mobserv').length == 1){
 						server.online = true;
 						server.status = 'Conectado';
@@ -179,7 +198,7 @@ var mobserv = {
 						mobserv.log({
 							type : 'info',
 							name : 'server.call',
-							message : 'default online '+type+' server call done',
+							message : 'default '+type+' server request complete',
 						});
 						if(ondone) ondone(response,st,xhr);
 					} else {
@@ -189,41 +208,54 @@ var mobserv = {
 						mobserv.log({
 							type : 'error',
 							name : 'server.call',
-							message : server.url+' response invalid xml',
+							message : 'default '+type+' server response invalid xml',
 						});
 						mobserv.server.loopcall(type,data,ondone,onerror);
 					}
 				},
-				fail: function(xhr,st,err){
+				error: function(xhr,st,err){
 					server.online = false;
 					server.status = 'Erro de Conexão';
 					mobserv.log({
 						type : 'error',
 						name : 'server.call',
-						message : server.url+' response error ('+((err)?err:'unknown')+')',
+						message : 'default '+type+' server response error ('+((err)?err:'unknown')+')',
 					});
 					mobserv.server.loopcall(type,data,ondone,onerror);
 				}, 
-				always: function(){
+				complete: function(){
 					server.lastRequest = mobserv.now();
 					mobserv.server.data(server);
+					clearTimeout(aborttime);
 				}
 			});
+			aborttime = setTimeout(function(){
+				xhr.abort();
+				server.online = false;
+				server.status = 'Tempo de resposta esgotado';
+				mobserv.log({
+					type : 'error',
+					name : 'server.call',
+					message : 'default '+type+' server response timeout)',
+				});
+			},mobserv.server.timeout);
 		}
 	},
 	device : {
+		ready : false,
 		data : {},
-		onready : function(){
+		init : function(){
 			mobserv.device.data = device;
 			var $dom = $("#deviceinfo");
 			if ($dom.length){
 				if (typeof device == 'object'){
-					if (device.platform == 'iOS') $('.view').addClass('ios');
+					if (device.platform == 'iOS') $('#main').addClass('ios');
 					$dom.find('#cordova').html(device.cordova); 		
 					$dom.find('#model').html(device.model); 		
 					$dom.find('#platform').html(device.platform); 		
 					$dom.find('#uuid').html(device.uuid); 
 					$dom.find('#version').html(device.version); 
+					mobserv.device.ready = true;
 					mobserv.log({
 						name : 'device.onready',
 						message : 'device is ready',
@@ -236,8 +268,6 @@ var mobserv = {
 					});	
 				}
 			}
-			mobserv.server.test('license');
-			mobserv.bgmode.init();
 		}
 	},
 	connection : {
@@ -288,10 +318,10 @@ var mobserv = {
 					$dom.find('#gpsacr').html(pos.coords.accuracy); 		
 					$dom.find('#gpsalt').html(pos.coords.altitude); 		
 					$dom.find('#gpsact').html(pos.coords.altitudeAccuracy); 		
-					$dom.find('#gpsdir').html(pos.coords.heading); 		
+					$dom.find('#gpsdir').html(pos.coords.heading); 	
+					var $map = $dom.find("img.map");
+					$map.show().css({opacity:1}).get(0).src = 'http://maps.googleapis.com/maps/api/staticmap?center='+pos.coords.latitude+','+pos.coords.longitude+'&zoom=14&size='+$(window).width()+'x200&sensor=false';
 				}
-				var $map = $dom.find("img.map");
-				if (!$map.is(':visible')) $map.css({opacity:1}).attr("src",'http://maps.googleapis.com/maps/api/staticmap?center='+pos.coords.latitude+','+pos.coords.longitude+'&amp;zoom=14&amp;size='+$(window).width()+'x200&amp;sensor=false');
 			}, function(error){
 				if ($dom && $dom.hasClass('view') == 'gps'){
 					mobserv.log({
@@ -311,43 +341,100 @@ var mobserv = {
 	},
 	sqlite : {
 		db : null,
+		plugin : {},
 		init : function(){
-			var db = mobserv.sqlite.db = window.sqlitePlugin.openDatabase({name: "mobserv.db",  androidLockWorkaround: 1, location: 2});
+			mobserv.log({
+				name : 'sqlite.init',
+				message : 'db mobserv.db initializing',
+			});	
+			var db;
+			if (!window.sqlitePlugin && window.openDatabase){
+				db = mobserv.sqlite.db = window.openDatabase("mobserv.db", "1.0", "Mobserv Local Database", 200000);
+			} else {
+				db = mobserv.sqlite.db = window.sqlitePlugin.openDatabase({name: "mobserv.db",  androidLockWorkaround: 1, location: 2});
+			}
+			//mobserv.sqlite.clear();
+			mobserv.sqlite.create();
+		},
+		create : function(){
+			var db = mobserv.sqlite.db;
 			db.transaction(
 				function(tx){
 					tx.executeSql(''+
-						'CREATE TABLE IF NOT EXISTS clients ('+
-							'id integer primary key, '+
-							'code text, '+
-							'file text, '+
-							'default integer '+
+						'CREATE TABLE IF NOT EXISTS sl_clients ('+
+							'Cli_Id integer primary key, '+
+							'Cli_Name text, '+
+							'Cli_Code text, '+
+							'Cli_Pw text, '+
+							'Cli_License text, '+
+							'Cli_Install text, '+
+							'Cli_Default integer '+
 						')'
 					);
 					tx.executeSql(''+
-						'CREATE TABLE IF NOT EXISTS services ('+
-							'id integer primary key, '+
-							'date text, '+
-							'client integer, '+
-							'file text, '+
-							'default integer '+
+						'CREATE TABLE IF NOT EXISTS sl_users ('+
+							'Usr_Id integer primary key, '+
+							'Cli_Code text, '+
+							'Usr_Login text, '+
+							'Usr_Pw text, '+
+							'Usr_Name text, '+
+							'Usr_Default integer '+
 						')'
 					);
 					tx.executeSql(''+
-						'CREATE TABLE IF NOT EXISTS messages ('+
-							'id integer primary key, '+
-							'client integer, '+
-							'file text '+
+						'CREATE TABLE IF NOT EXISTS sl_services ('+
+							'Srv_Id integer primary key, '+
+							'Cli_Id integer, '+
+							'Usr_Id integer, '+
+							'Srv_Date text, '+
+							'Srv_Xml text, '+
+							'Srv_Status text '+
+						')'
+					);
+					tx.executeSql(''+
+						'CREATE TABLE IF NOT EXISTS sl_messages ('+
+							'Msg_Id integer primary key, '+
+							'Cli_Id integer, '+
+							'Usr_Id integer, '+
+							'Msg_Xml text, '+
+							'Msg_Read integer, '+
+							'Msg_Status text '+
 						')'
 					);
 					mobserv.log({
-						name : 'sqlite.open',
-						message : 'db mobserv.db is idle',
+						type : 'info',
+						name : 'sqlite.create',
+						message : 'tables in mobserv.db are idle',
 					});	
 				},
 				function(e) {
 					mobserv.log({
 						type : 'error',
-						name : 'sqlite.init',
+						name : 'sqlite.create',
+						message : 'transaction error: '+e.message,
+					});	
+				}
+			);
+		},
+		clear : function(){
+			var db = mobserv.sqlite.db;
+			db.transaction(
+				function(tx){
+					tx.executeSql('DROP TABLE IF EXISTS sl_clients');
+					tx.executeSql('DROP TABLE IF EXISTS sl_users');
+					tx.executeSql('DROP TABLE IF EXISTS sl_services');
+					tx.executeSql('DROP TABLE IF EXISTS sl_messages');
+					mobserv.log({
+						type : 'info',
+						name : 'sqlite.clear',
+						message : 'tables in mobserv.db was cleared',
+					});
+					mobserv.sqlite.create();
+				},
+				function(e) {
+					mobserv.log({
+						type : 'error',
+						name : 'sqlite.clear',
 						message : 'transaction error: '+e.message,
 					});	
 				}
@@ -370,26 +457,60 @@ var mobserv = {
 				}
 			);	
 		},
-		query : function(query,callback){
+		loop : function(query,ondone,onerror){
+			var limit = mobserv.server.timeout/100;
+			var interval = setInterval(function(){
+				var db = mobserv.sqlite.db;
+				if (db){
+					mobserv.sqlite.query(query,ondone,onerror,true);
+					clearInterval(interval);
+				}
+				if (limit === 0){
+					mobserv.log({
+						type : 'error',
+						name : 'sqlite.loop',
+						message : 'no database available',
+					});
+					if(onerror) onerror('O banco de dados não está disponível');
+					clearInterval(interval);
+				}
+				limit--;
+			},100);
+		},
+		query : function(query,ondone,onerror,loop){
 			var db = mobserv.sqlite.db;
+			var interval;
+			if (!db && !loop){
+				mobserv.log({
+					type : 'alert',
+					name : 'sqlite.query',
+					message : 'databse is stoped',
+				});
+				mobserv.sqlite.loop(query,ondone,onerror);	
+				return false;
+			}
 			if (db && query){
 				db.transaction(function(tx) {
 					tx.executeSql(query, [],
 						function(tx, res){
-							if (callback) callback(res);
+							if (ondone) ondone(res);
 							mobserv.log({
+								type : 'info',
 								name : 'sqlite.query',
 								message : 'query executed: '+query,
+								detail : 'rowsAffected: '+res.rowsAffected,
 							});	
-						}, 
-						function(){
-							mobserv.log({
-								type : 'error',
-								name : 'sqlite.query',
-								message : 'query error: '+e.message,
-							});	
-						} 
+						}
 					);
+				},
+				function(e){
+					if (onerror) onerror(e.message);
+					mobserv.log({
+						type : 'error',
+						name : 'sqlite.query',
+						message : 'query error: '+e.message,
+						detail : query,
+					});	
 				});
 			}
 		}
@@ -407,13 +528,242 @@ var mobserv = {
 			}				
 		}
 	},
+	auth : {
+		clientdom : function(){
+			var client = mobserv.globals.client;
+			$('#formuser .client').text(client.Cli_Name);
+			$('#nav .client').text(client.Cli_Name);
+		},
+		userdom : function(){
+			var user = mobserv.globals.user;
+			$('#footer .user strong').text(user.Usr_Login);
+			$('#footer .user small').text(user.Usr_Name);
+		},
+		client : function(res,data,ondone,onerror) {
+			var client = mobserv.globals.client;
+			mobserv.server.call('license',data,function(response){
+				var $response = $(response);
+				var $valid = $response.find('validation:eq(0)');
+				if ($valid.length){
+					var status = $valid.attr('status');
+					mobserv.log({
+						type : status,
+						name : 'auth.init.client',
+						message : status+' validation: '+$valid.text(),
+					});
+					if (status == 'info'){
+						var $lic = $response.find('licence:eq(0)');
+						client.Cli_Name = $lic.attr('name');
+						client.Cli_Code = $lic.attr('customer');
+						client.Cli_License = $lic.attr('id');
+						client.Cli_Install = $lic.attr('installNumber');
+						client.Cli_Default = 1;
+						if (res.rows.length == 0){
+							mobserv.sqlite.query(
+								'insert into sl_clients ('+
+									'Cli_Name, '+
+									'Cli_Code, '+
+									'Cli_Pw, '+
+									'Cli_License, '+
+									'Cli_Install, '+
+									'Cli_Default'+
+								') values ('+
+									'"'+client.Cli_Name+'",'+
+									'"'+client.Cli_Code+'",'+
+									'"'+client.Cli_Pw+'",'+
+									'"'+client.Cli_License+'",'+
+									'"'+client.Cli_Install+'",'+
+									'"'+client.Cli_Default+'"'+
+								')',
+								function(res){
+									client.Cli_Id = res.insertId;	
+								}
+							);	
+						} else {
+							mobserv.sqlite.query(
+								'update sl_clients set '+
+									'Cli_Name = "'+client.Cli_Name+'", '+
+									'Cli_Code = "'+client.Cli_Code+'", '+
+									'Cli_Pw = "'+client.Cli_Pw+'", '+
+									'Cli_License = "'+client.Cli_License+'", '+
+									'Cli_Install = "'+client.Cli_Install+'", '+
+									'Cli_Default = "'+client.Cli_Default+'" '+
+								'where Cli_Id = "'+client.Cli_Id+'"'
+							);
+						}
+						mobserv.auth.clientdom();
+						if(ondone) ondone($valid.text());
+					} else {
+						mobserv.notify.open({
+							type : status,
+							name : 'Validação de Cliente',
+							message : $valid.text()
+						});
+						if(onerror) onerror(response);
+					}
+				}
+			},
+			function(error){
+				mobserv.notify.open({
+					type : 'error',
+					name : 'Erro do Servidor',
+					message : error
+				});	
+				if(onerror) onerror(response);
+			});
+		},
+		user : function(res,data,ondone,onerror) {
+			var client = mobserv.globals.client;
+			var user = mobserv.globals.user;
+			mobserv.server.call('service',data,function(response){
+				var $response = $(response);
+				var $valid = $response.find('validation:eq(0)');
+				if ($valid.length){
+					var status = $valid.attr('status');
+					mobserv.log({
+						type : status,
+						name : 'auth.user',
+						message : status+' validation: '+$valid.text(),
+					});
+					if (status == 'info'){
+						var $oauth = $response.find('oauth:eq(0)');
+						user.Cli_Code = $oauth.attr('customer');
+						user.Usr_Name = $oauth.attr('name');
+						user.Usr_Login = $oauth.attr('user');
+						user.Usr_Default = 1;
+						if (res.rows.length == 0){
+							mobserv.sqlite.query(
+								'insert into sl_users ('+
+									'Cli_Code, '+
+									'Usr_Name, '+
+									'Usr_Login, '+
+									'Usr_Pw, '+
+									'Usr_Default'+
+								') values ('+
+									'"'+client.Cli_Code+'",'+
+									'"'+user.Usr_Name+'",'+
+									'"'+user.Usr_Login+'",'+
+									'"'+user.Usr_Pw+'",'+
+									'"'+user.Usr_Default+'"'+
+								')',
+								function(res){
+									user.Usr_Id = res.insertId;	
+								}
+							);	
+						} else {
+							mobserv.sqlite.query(
+								'update sl_users set '+
+									'Cli_Code = "'+user.Cli_Code+'", '+
+									'Usr_Name = "'+user.Usr_Name+'", '+
+									'Usr_Login = "'+user.Usr_Login+'", '+
+									'Usr_Pw = "'+user.Usr_Pw+'", '+
+									'Usr_Default = "'+user.Usr_Default+'" '+
+								'where Usr_Id = "'+client.Usr_Id+'"'
+							);
+						}
+						mobserv.auth.userdom();
+						if(ondone) ondone($valid.text());
+					} else {
+						mobserv.notify.open({
+							type : 'error',
+							name : 'Autenticação de Usuário',
+							message : $valid.text()
+						});	
+						if(onerror) onerror(response);
+					}
+				}
+			},
+			function(error){
+				mobserv.notify.open({
+					type : 'error',
+					name : 'Erro do Servidor',
+					message : error
+				});	
+				if(onerror) onerror(error);
+			});
+		},
+		init : function(){
+			mobserv.log({
+				name : 'auth.init',
+				message : 'auth initialized',
+			});
+			mobserv.sqlite.query(
+				'select * from sl_clients where Cli_Default = 1',
+				function(res){
+					if (res.rows.length == 0){
+						mobserv.nav.toView('formclient');
+					} else {
+						$('#preload .loadinfo').text('Validando cliente...');
+						var client = mobserv.globals.client = res.rows.item(0);
+						var data = {
+							'exec': 'getLicense',
+							'in': client.Cli_Install,
+							'cid': client.Cli_Code,
+							'pw': client.Cli_Pw
+						};
+						mobserv.auth.client(res,data,function(validation){
+							mobserv.sqlite.query(
+								'select * from sl_users where Cli_Code = '+client.Cli_Code+' and Usr_Default = 1',
+								function(res){
+									if (res.rows.length == 0){
+										mobserv.nav.toView('formuser');
+										mobserv.notify.open({
+											type : 'info',
+											name : 'Validação de Cliente',
+											message : validation
+										});	
+									} else {
+										$('#preload .loadinfo').text('Autenticando o usuário...');
+										var user = mobserv.globals.user = res.rows.item(0);
+										var data = {
+											'exec': 'authUser',
+											'in': client.Cli_Install,
+											'cid': client.Cli_Code,
+											'us': user.Usr_Login,
+											'pw': user.Usr_Pw
+										};
+										mobserv.auth.user(res,data,function(){
+											$('.footer').transition({ y:0 }, 300);
+											mobserv.nav.toView('home');
+										},
+										function(){
+											mobserv.nav.toView('formuser');
+										});
+									}
+								},
+								function(error){
+									mobserv.nav.toView('formuser');	
+									mobserv.notify.open({
+										type : 'error',
+										name : 'SQLite',
+										message : error
+									});	
+								}
+							);
+						},
+						function(){
+							mobserv.nav.toView('formclient');
+						});
+					}
+				},
+				function(error){
+					mobserv.nav.toView('formclient');	
+					mobserv.notify.open({
+						type : 'error',
+						name : 'SQLite',
+						message : error
+					});	
+				}
+			);
+		}
+	},
 	zindex : 3,
 	preventTap : false,
 	timeoutTap : null,
 	history : [],
 	nav : {
 		toView : function($view){
-			var $current = $('.view.current');
+			var $current = $('.view.current:last');
 			$view = (typeof $view == 'string') ? $('#'+$view) : $view;
 			if ($current.length == 1 && $view.length == 1 && $current.attr('id') != $view.attr('id')){
 				$current.transition({ opacity:0 }, 300, function(){
@@ -432,8 +782,26 @@ var mobserv = {
 			}
 			mobserv.zindex++;
 		},
+		foreground : function($view){
+			$view = (typeof $view == 'string') ? $('#'+$view) : $view;
+			if ($view.length == 1){
+				$view.css({x:0, opacity:0, 'z-index':mobserv.zindex}).show().transition({ opacity:1 }, 300);
+			}
+			$view.trigger('show');
+			mobserv.zindex++;
+		},
+		close : function($view){
+			$view = (typeof $view == 'string') ? $('#'+$view) : $view;
+			if ($view.length == 1){
+				$view.transition({ opacity:0 }, 300,function(){
+					$view.hide();
+					$view.trigger('hide');
+				});
+			}
+		},
 		forward : function($view){
-			var $current = $('.view.current');
+			var $current = $('.view.current:last');
+			console.log($view,$current);
 			$view = (typeof $view == 'string') ? $('#'+$view) : $view;
 			if ($current.length == 1 && $view.length == 1 && $current.attr('id') != $view.attr('id')){
 				mobserv.history.push($current);
@@ -451,7 +819,7 @@ var mobserv = {
 		},
 		back : function(){
 			if (mobserv.history.length > 0){
-				var $current = $('.view.current');
+				var $current = $('.view.current:last');
 				$view = mobserv.history.pop();
 				if ($current.length == 1 && $view.length == 1 && $current.attr('id') != $view.attr('id')){
 					$current.transition({ x:'30%', opacity:0 }, 300, function(){
@@ -480,6 +848,10 @@ var mobserv = {
 			if ($view){
 				if (direction == 'forward'){
 					mobserv.nav.forward($view);
+				} else if (direction == 'foreground'){
+					mobserv.nav.foreground($view);
+				} else if (direction == 'close'){
+					mobserv.nav.close($view);
 				} else {
 					mobserv.nav.toView($view);
 				}
@@ -488,28 +860,64 @@ var mobserv = {
 			}
 		},
 	},
-	notify : function(notify){
-		var $notify = $('#notify');
-		$notify.find('strong').text((notify.name)?notify.name:'sdsda');
-		$notify.find('span').text((notify.message)?notify.message:'');
-		$notify.removeClass('error alert info notice').addClass((notify.type)?notify.type:'').css({bottom:'-50%', opacity:0}).show().transition({ bottom:0, opacity:1 }, 400, function(){
-			setTimeout(function(){
-				$notify.transition({ opacity:0 }, 1000, function(){
-					$notify.hide();
+	notify : {
+		list : [],
+		exec : function(){
+			if (mobserv.notify.list.length){
+				var notify = mobserv.notify.list[0];
+				var $notify = $('#notify');
+				$notify.find('strong').text((notify.name)?notify.name:'');
+				$notify.find('span').text((notify.message)?notify.message:'');
+				$notify.removeClass('error alert info notice').addClass((notify.type)?notify.type:'').show().css({transform:'translate(0px, 40px);', opacity:0}).transition({ y:0, opacity:1 }, 500, function(){
+					notify.timeout = setTimeout(function(){
+						mobserv.notify.close();
+					},notify.duration);
 				});
-			},5000);
-		});
+				$notify.off('tap');
+				$notify.one('tap',function(){
+					mobserv.notify.close();
+				});
+			}
+		},
+		close : function(){
+			var notify = mobserv.notify.list[0];
+			var $notify = $('#notify');
+			clearTimeout(notify.timeout);
+			$notify.transition({ y:'40px', opacity:0 }, 500, function(){
+				$notify.hide();
+				mobserv.notify.list.shift();
+				mobserv.notify.exec();
+			});
+		},
+		open : function(notify){
+			notify.id = $.md5(notify.type+notify.name+notify.message);
+			notify.duration = notify.duration || 3000;
+			notify.timeout = null;
+			$.each(mobserv.notify.list||[],function(i,n){
+				if(n.id == notify.id) notify.ignore = true;
+			});
+			if (!notify.ignore){
+				if (mobserv.notify.list.length == 0){
+					mobserv.notify.list.push(notify);
+					mobserv.notify.exec();
+				} else {
+					mobserv.notify.list.push(notify);	
+				}
+			}
+		}
 	},
 	'log' : function(obj){
-		var html = ''+
-		'<div class="logline '+((obj.type)?obj.type:'')+'"><b class="date">['+mobserv.now()+']</b> '+
-		((obj.name)?'<b class="name">'+obj.name+'</b> ':'')+
-		((obj.title)?'<b class="title">'+obj.title+'</b> ':'')+
-		((obj.code)?'<span class="code">'+obj.code+'</span> ':'')+
-		((obj.message)?'<span class="message">'+obj.message+'</span> ':'')+
-		'</div>';
-		$("#log .section").append(html);
-		console.log(obj);
+		if (mobserv.debug.active || (!mobserv.debug.active && obj.type == 'error')){
+			var html = ''+
+			'<div class="logline '+((obj.type)?obj.type:'')+'"><b class="date">['+mobserv.now()+' '+Date.now()+']</b> '+
+			((obj.name)?'<b class="name">'+obj.name+'</b> ':'')+
+			((obj.title)?'<b class="title">'+obj.title+'</b> ':'')+
+			((obj.message)?'<br><span class="message">'+obj.message+'</span> ':'')+
+			((obj.detail)?'<br><span class="detail">'+obj.detail+'</span> ':'')+
+			'</div>';
+			$("#log .section").append(html);
+		}
+		console.log('log',obj);
 	},
 	now : function(){
 		var d = new Date;
@@ -523,198 +931,6 @@ var mobserv = {
 			("0" + d.getMinutes()).substr(-2),
 			("0" + d.getSeconds()).substr(-2)
 		].join(':');
-	}
+	},
 }
 
-$(function(){
-	
-	var startX, startY, endX, endY, pull;
-	
-	$(document)
-		.on('tap','#formclient .submit',function(){
-			var data = {
-				'exec': 'getLicense',
-				'in': mobserv.device.data.uuid
-			};
-			var valid = true;
-			var $submit = $(this);
-			var $form = $submit.closest('form');
-			data.cid = $form.find('#cid').val();
-			data.pw = $form.find('#pw').val();
-			data.pw = (data.pw?$.md5(data.pw):null);
-			if (!data.cid || !data.pw){
-				valid = false;	
-			}
-			if (valid){
-				$form.find('.input, .submit').addClass('disable').prop('disabled',true);
-				mobserv.server.call('license',data,function(response){
-					var $response = $(response);
-					var $valid = $response.find('validation:eq(0)');
-					if ($valid.length){
-						var status = $valid.attr('status');
-						mobserv.log({
-							type : status,
-							name : 'client.validation',
-							message : status+' validation: '+$valid.text(),
-						});
-						if (status == 'info'){
-							mobserv.nav.toView('home');
-						} else {
-							mobserv.notify({
-								type : status,
-								name : 'Validação de Cliente',
-								message : $valid.text()
-							});	
-							$form.find('.input, submit').removeClass('disable').prop('disabled',false);
-						}
-						
-					}
-				},
-				function(){
-				
-				});
-			} else {
-				mobserv.notify({
-					type : 'error',
-					message : 'Os campos são requiridos'
-				});	
-			}
-		})
-		/*
-		.on('swiperight','.view:not(.disable)',function(){
-			$(this).find('.menu').trigger('tap');
-		})
-		.on('swipeleft','.view.disable',function(){
-			$(this).find('.menu').trigger('tap');
-		})
-		*/
-		.on('touchstart',function(event){
-			$('.hover').removeClass('hover');
-		})
-		.on('tap','#nav a',function(){
-			var $this = $(this).addClass('hover');
-			$('.view.current').find(".header, .section").transition({ opacity:1 }, 1000);
-			$('.footer').transition({ y:0 }, 300);
-			mobserv.nav.link($this);
-			$('.view.current').transition({ x:0 }, 300,function(){
-				$('#nav').removeClass('active');
-				$('.view.disable').removeClass('disable');
-			});
-		})
-		.on('tap','.view:not(.disable) section a, .view:not(.disable) section .link, .view:not(.disable) header .link, footer .link',function(){
-			var $this = $(this).addClass('hover');
-			mobserv.nav.link($this);
-		})
-		.on('tap','.view:not(.disable) .menu',function(){
-			var $this = $(this).addClass('hover');
-			if (!$('#nav').hasClass('active')){
-				$('.footer').transition({ y:'+=50px' }, 300);
-				$('#nav').addClass('active');
-				$('.view.current').addClass('disable').transition({ x:'80%' }, 300).find(".header, .section").transition({ opacity:.3 }, 400);
-			}
-		})
-		.on('tap','.view.disable',function(){
-			if ($('#nav').hasClass('active')){
-				$('.footer').transition({ y:'-=50px' }, 300);
-				$('.view.current').transition({ x:0 }, 300,function(){
-					$('.view.disable').removeClass('disable');
-					$('#nav').removeClass('active');
-				}).find(".header, .section").transition({ opacity:1 }, 300);
-			}
-		})
-		.on('touchstart','.view.current .section',function(event){
-			startX = event.originalEvent.touches[0].pageX;
-			startY = event.originalEvent.touches[0].pageY;
-			var $section = $(this);
-			var $puller = $section.children('.puller:not(.courtain)');
-			var height;
-			if ($puller.length){
-				height = $puller.height()
-				$puller.data('height',height);
-				if (height == 0){
-					$puller.find('strong').text('Solte para atualizar');	
-				}
-			}
-		})
-		.on('touchmove','.view.current .section',function(event){
-			endX = event.originalEvent.touches[0].pageX;
-			endY = event.originalEvent.touches[0].pageY;
-			var $section = $(this);
-			var $puller = $section.children('.puller:not(.courtain)');
-			if ($puller.length > 0 && $section.scrollTop() < 5 && endY > startY){
-				$section.scrollTop(0).addClass('noscroll');
-				var val = (endY-startY+$puller.data('height'))/2.3;
-				$puller.show().height(val).find('strong').css('opacity',val/($(window).height()/4));
-				pull = $puller;
-			} else {
-				pull = null;	
-			}
-		})
-		.on('touchend','.view.current .section',function(event){
-			var $section = $(this);
-			if (pull){
-				var p = pull;
-				$section.removeClass('noscroll').scrollTop(0);
-				if (startY+($(window).height()/3) > endY){
-					p.transition({ height:0 }, 200);
-				} else {
-					p.transition({ height:40 }, 200,function(){
-						p.addClass('courtain');
-						p.find('strong').text('Atualizando...');
-						p.parent().trigger('pull');
-						startX = null;
-						startY = null;
-						endX = null;
-						endY = null;
-					});
-					setTimeout(function(){
-						p.removeClass('courtain');
-						p.transition({ height:0 }, 200);
-						pull = null;
-					},2000);
-				}
-			}
-		})
-		
-		.on('show','.view',function(){
-			var $this = $(this);
-			if (mobserv.history.length == 0){
-				$this.find('.header .back').hide();
-			} else {
-				$this.find('.header .back').show();
-			}
-		})
-		.on('show','#gps',function(){
-			var $this = $(this);
-			mobserv.geolocation.watchPosition($this);
-		})
-		.on('hide','#gps',function(){
-			mobserv.geolocation.clearWatch();
-		})
-		
-	;
-	window.addEventListener("error", function(error, url, line){
-		mobserv.log({
-			type : 'error',
-			name : 'JS',
-			title : 'javascript error',
-			message : error+' ('+line+')',
-		});	
-	}, false);
-	document.addEventListener("offline", function(){
-		$('.statustripe').addClass('red').fadeIn();
-		$('button, submit, reset').addClass('disable').prop('disabled',true);
-	}, false);
-	document.addEventListener("online", function(){
-		$('.statustripe').removeClass('red').fadeOut();
-		$('button, submit, reset').removeClass('disable').prop('disabled',false);
-	}, false);
-	document.addEventListener("deviceready", mobserv.device.onready, false);
-	
-	setTimeout(function(){ // isso precisa ir para o ondeviceready
-		//$('.footer').transition({ y:0 }, 500);
-		mobserv.nav.toView('formclient');
-	},300);
-
-	
-});

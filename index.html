@@ -14,6 +14,8 @@
 <script src="js/jquery.transit.js"></script>
 <script src="js/jquery.hash.js"></script>
 <script src="js/mobserv.js"></script>
+<script src="js/default.js"></script>
+<script src="js/gmap3.min.js"></script>
 <link href="fonts/icomoon/style.css" rel="stylesheet" type="text/css">
 <link href="css/default.css" rel="stylesheet" type="text/css">
 </head>
@@ -22,7 +24,7 @@
 	<div class="statustripe"></div>
 	<nav class="nav" id="nav">
         <header class="header" id="header">
-        	<div class="company">Carriers</div>
+        	<div class="client">{Client}</div>
         </header>
     	<ul>
         	<li><a data-view="home" data-direction="forward"><span class="icon-home">Home</span></a></li>
@@ -33,18 +35,29 @@
         	<li><a data-view="logout" data-direction="forward"><span class="icon-plug">Sair</span></a></li>
         </ul>
     </nav>
-    <div class="view gray current" id="formclient">
-        <header class="header" id="header">
-            <h1 class="icon-home">Auth</h1>
-            <a class="item l1 menu icon-menu"></a>
-            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
-        </header>
-        <form class="auth" action="" onsubmit="return false;">
+    <div class="view gray current courtain" id="preload" style="display:block;">
+    	<div class="loadinfo">Inicializando...</div>
+    </div>
+    <div class="view gray" id="formclient">
+        <form class="auth" action="">
         	<div class="logo"></div>
             <p class="description">Validação do Cliente MobServ</p>
-            <div><input class="input text" type="number" id="cid" placeholder="Código do Cliente" /></div>
-            <div><input class="input text" type="number" id="pw" placeholder="Senha de Acesso" /></div>
+            <div><input class="input text command" type="text" id="cid" placeholder="Código do Cliente" /></div>
+            <div><input class="input text" type="password" id="cpw" placeholder="Senha de Acesso" /></div>
             <div><button class="submit">Validar Cliente</button></div>
+            <a class="link icon-history2 fordebug" data-view="log" data-direction="foreground"></a>
+        </form>
+    </div>
+    <div class="view gray" id="formuser">
+        <form class="auth" action="">
+        	<div class="logo"></div>
+            <p class="description"><strong class="client">{client}</strong></p>
+            <p class="description">Autenticação de Usuário</p>
+            <div><input class="input text command" type="text" id="us" placeholder="Login do Usuário" /></div>
+            <div><input class="input text" type="password" id="upw" placeholder="Senha de Acesso" /></div>
+            <div><button class="submit">Autenticar</button></div>
+            <p class="description bottom">Não é <b class="client">{client}</b>? <a class="logoutclient">Troque o cliente.</a></p>
+            <a class="link icon-history2 fordebug" data-view="log" data-direction="foreground"></a>
         </form>
     </div>
     <div class="view" id="home">
@@ -236,8 +249,8 @@
                 <li><a data-view="connectioninfo" data-direction="forward"><strong class="icon-feed2"></strong><span>Info de Conexão</span></a></li>
                 <li><a data-view="gps" data-direction="forward"><strong class="icon-map3"></strong><span>Geoposição</span></a></li>
                 <li><a data-view="servers" data-direction="forward"><strong class="icon-layers"></strong><span>Servidores de Serviços</span></a></li>
-                <li><a data-view="data" data-direction="forward"><strong class="icon-code"></strong><span>Fonte de Dados</span></a></li>
-                <li><a data-view="log" data-direction="forward"><strong class="icon-history2"></strong><span>Log</span><mark>86</mark></a></li>
+                <li class="fordebug"><a data-view="data" data-direction="forward"><strong class="icon-code"></strong><span>Fonte de Dados</span></a></li>
+                <li class="fordebug"><a data-view="log" data-direction="foreground"><strong class="icon-history2"></strong><span>Log</span><mark>86</mark></a></li>
                 <li><a data-view="help" data-direction="forward"><strong class="icon-help2"></strong><span>Sobre o Mobserv</span></a></li>
             </ul>
         </section>
@@ -342,7 +355,7 @@
             <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
         </header>
         <section class="section">
-        	<h2 style="text-align:center;">Dados dos Servidore</h2>
+        	<h2 style="text-align:center;">Dados dos Servidores</h2>
         	<table class="template" width="96%" border="0" cellspacing="1" cellpadding="1">
               <tr>
                 <td>ID</td>
@@ -365,27 +378,25 @@
                 <td><strong id="srvstatus">&nbsp;</strong></td>
               </tr>
               <tr>
-                <td>Ultima chamada</td>
+                <td>Data</td>
                 <td><strong id="srvlastrequest">&nbsp;</strong></td>
               </tr>
             </table>
-            <div class="mapwrap"><img border="0" class="map" style="width:100%; height:200px;" src=""></div>
         </section>
     </div>
     <div class="view" id="log">
         <header class="header" id="header">
             <h1 class="icon-history2">Log</h1>
-            <a class="item l1 menu icon-menu"></a>
-            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item r1 link close icon-delete2" data-view="log" data-direction="close"></a>
         </header>
         <section class="section">
         </section>
     </div>
     <footer class="footer" id="footer">
         <div class="user icon-user2"><strong>M01</strong><small>Nome do usuário</small></div>
-        <a class="item r3 link marked icon-package5" data-view="services" data-direction="forward"><mark>1</mark></a>
-        <a class="item r2 link icon-paperplane"></a>
-        <a class="item r1 link icon-history2"></a>
+        <a class="item r3 link icon-history2 fordebug" data-view="log" data-direction="foreground"></a>
+        <a class="item r2 link marked icon-package5" data-view="services" data-direction="forward"><mark>1</mark></a>
+        <a class="item r1 link icon-paperplane" data-view="messages" data-direction="forward"></a>
     </footer>
     <div id="notify" class="notify">
     	<strong></strong>
