@@ -40,6 +40,7 @@ $(function(){
 						mobserv.auth.client(res,data,function(validation){
 							mobserv.nav.toView('formuser');
 							$form.find('.input, .submit').removeClass('courtain');
+							$form.find('.input').val('');
 							mobserv.notify.open({
 								type : 'info',
 								name : 'Validação de Cliente',
@@ -82,6 +83,7 @@ $(function(){
 							$('.footer').transition({ y:0 }, 300);
 							mobserv.nav.toView('home');
 							$form.find('.input, .submit').removeClass('courtain');
+							$form.find('.input').val('');
 							mobserv.notify.open({
 								type : 'info',
 								name : 'Autenticação de Usuário',
@@ -100,6 +102,9 @@ $(function(){
 					message : 'Os campos são requiridos'
 				});	
 			}
+		})
+		.on('tap','#formuser .logoutclient',function(){
+			mobserv.nav.toView('formclient');
 		})
 		/*
 		.on('swiperight','.view:not(.disable)',function(){
@@ -204,6 +209,9 @@ $(function(){
 			} else {
 				$this.find('.header .back').show();
 			}
+		})
+		.on('show','#formclient',function(){
+			mobserv.auth.logout();
 		})
 		.on('show','#gps',function(){
 			var $this = $(this);

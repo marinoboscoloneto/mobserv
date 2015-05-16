@@ -137,7 +137,7 @@ var mobserv = {
 							name : 'server.test',
 							message : server.url+' response timeout)',
 						});
-					},mobserv.server.timeout);
+					},mobserv.server.timeout/2);
 				} else {
 					console.log('not '+type,server,mobserv.server.pointer);
 					mobserv.server.pointer++;
@@ -148,7 +148,7 @@ var mobserv = {
 		loopcall : function(type,data,ondone,onerror){
 			mobserv.server.test(type);
 			var server;
-			var limit = mobserv.server.timeout/100;
+			var limit = (mobserv.server.timeout*2)/100;
 			var interval = setInterval(function(){
 				server = mobserv.server.online[type];
 				if (server){
@@ -539,6 +539,46 @@ var mobserv = {
 			$('#footer .user strong').text(user.Usr_Login);
 			$('#footer .user small').text(user.Usr_Name);
 		},
+		logout : function(what){
+			var client = mobserv.globals.client;
+			var user = mobserv.globals.user;
+			if(user.Usr_Id && (what == 'client' || what == 'user' || !what)){
+				var $form = $('#formuser');
+				mobserv.sqlite.query(
+					'update sl_users set Usr_Default = 0 where Usr_Id = "'+user.Usr_Id+'"',
+					function(res){
+						user.Usr_Default = 0;
+						$form.find('.input').val('');
+						$form.find('.input, .submit').removeClass('courtain disable');
+						if(what == 'user'){
+							$('.footer').transition({ y:'+=50px' }, 300);
+						}
+						mobserv.log({
+							type : 'info',
+							name : 'auth.logout.user',
+							message : 'user '+user.Usr_Login+' was loged out'
+						});	
+					}
+				);
+			}
+			if(client.Cli_Id && (what == 'client' || !what)){
+				var $form = $('#formclient');
+				mobserv.sqlite.query(
+					'update sl_clients set Cli_Default = 0 where Cli_Id = "'+client.Cli_Id+'"',
+					function(res){
+						client.Cli_Default = 0;
+						$form.find('.input').val('');
+						$form.find('.input, .submit').removeClass('courtain disable');
+						$('.footer').transition({ y:'+=50px' }, 300);
+						mobserv.log({
+							type : 'info',
+							name : 'auth.logout.client',
+							message : 'client '+client.Cli_Code+' was loged out'
+						});	
+					}
+				);
+			}
+		},
 		client : function(res,data,ondone,onerror) {
 			var client = mobserv.globals.client;
 			mobserv.server.call('license',data,function(response){
@@ -588,7 +628,7 @@ var mobserv = {
 									'Cli_License = "'+client.Cli_License+'", '+
 									'Cli_Install = "'+client.Cli_Install+'", '+
 									'Cli_Default = "'+client.Cli_Default+'" '+
-								'where Cli_Id = "'+client.Cli_Id+'"'
+								'where Cli_Code = "'+client.Cli_Code+'"'
 							);
 						}
 						mobserv.auth.clientdom();
