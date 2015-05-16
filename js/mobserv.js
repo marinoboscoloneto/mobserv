@@ -580,6 +580,7 @@ var mobserv = {
 			}
 		},
 		client : function(res,data,ondone,onerror) {
+			if(!mobserv.connection.test()) return false;
 			var client = mobserv.globals.client;
 			mobserv.server.call('license',data,function(response){
 				var $response = $(response);
@@ -653,6 +654,7 @@ var mobserv = {
 			});
 		},
 		user : function(res,data,ondone,onerror) {
+			if(!mobserv.connection.test()) return false;
 			var client = mobserv.globals.client;
 			var user = mobserv.globals.user;
 			mobserv.server.call('service',data,function(response){
@@ -723,6 +725,11 @@ var mobserv = {
 			});
 		},
 		init : function(){
+			if(!mobserv.connection.test()){
+				$('#preload').removeClass('courtain');
+				$('#preload .loadinfo').text('Sem internet :(');
+				return false;
+			}
 			mobserv.log({
 				name : 'auth.init',
 				message : 'auth initialized',
