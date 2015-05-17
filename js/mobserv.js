@@ -41,15 +41,9 @@ var mobserv = {
 				online : false,	
 				status : null,
 				lastRequest : null
-			},{
-				id : 'srv3',
-				type : 'service',
-				url : 'http://carriers.ddns.com.br/tms/mobserv/',
-				online : false,	
-				status : null,
-				lastRequest : null
 			}
 		],
+		queue : [],
 		online : {
 			license : false,
 			service : false
@@ -79,8 +73,9 @@ var mobserv = {
 				});
 				if (type === server.type){
 					server.status = 'Conectando';
-					var aborttime;
-					var xhr = $.ajax({
+					var cfg = {
+						xhrobj : null,
+						aborttime : null,
 						cache: false,
 						type: 'GET', 
 						url: server.url, 
@@ -125,21 +120,23 @@ var mobserv = {
 							if (mobserv.server.pointer == mobserv.server.list.length){
 								mobserv.server.pointer = 0;	
 							}
-							clearTimeout(aborttime);
+							clearTimeout(cfg.aborttime);
+						},
+						timeout : function(){
+							cfg.aborttime = setTimeout(function(){
+								cfg.xhrobj.abort();
+								server.online = false;
+								server.status = 'Tempo de resposta esgotado';
+								mobserv.log({
+									type : 'error',
+									name : 'server.test',
+									message : server.url+' response timeout)',
+								});
+							},mobserv.server.timeout/2);
 						}
-					});
-					aborttime = setTimeout(function(){
-						xhr.abort();
-						server.online = false;
-						server.status = 'Tempo de resposta esgotado';
-						mobserv.log({
-							type : 'error',
-							name : 'server.test',
-							message : server.url+' response timeout)',
-						});
-					},mobserv.server.timeout/2);
+					};
+					cfg.xhrobj = mobserv.server.ajax(cfg);
 				} else {
-					console.log('not '+type,server,mobserv.server.pointer);
 					mobserv.server.pointer++;
 					mobserv.server.test(type);	
 				}
@@ -183,8 +180,9 @@ var mobserv = {
 				message : 'default '+type+' server request called',
 			});
 			server.status = 'Conectando';
-			var aborttime;
-			var xhr = $.ajax({
+			var cfg = {
+				xhrobj : null,
+				aborttime : null,
 				type: 'GET', 
 				url: server.url, 
 				dataType: 'xml',
@@ -199,6 +197,7 @@ var mobserv = {
 							type : 'info',
 							name : 'server.call',
 							message : 'default '+type+' server request complete',
+							detail : decodeURIComponent($.param(data)).replace(/\&/g,"<br>&")
 						});
 						if(ondone) ondone(response,st,xhr);
 					} else {
@@ -209,6 +208,7 @@ var mobserv = {
 							type : 'error',
 							name : 'server.call',
 							message : 'default '+type+' server response invalid xml',
+							detail : decodeURIComponent( $.param(data)).replace(/\&/g,"<br>&")
 						});
 						mobserv.server.loopcall(type,data,ondone,onerror);
 					}
@@ -220,25 +220,40 @@ var mobserv = {
 						type : 'error',
 						name : 'server.call',
 						message : 'default '+type+' server response error ('+((err)?err:'unknown')+')',
+						detail : decodeURIComponent( $.param(data)).replace(/\&/g,"<br>&")
 					});
 					mobserv.server.loopcall(type,data,ondone,onerror);
 				}, 
 				complete: function(){
 					server.lastRequest = mobserv.now();
 					mobserv.server.data(server);
-					clearTimeout(aborttime);
+					clearTimeout(cfg.aborttime);
+				},
+				timeout : function(){
+					cfg.aborttime = setTimeout(function(){
+						cfg.xhrobj.abort();
+						server.online = false;
+						server.status = 'Tempo de resposta esgotado';
+						mobserv.log({
+							type : 'error',
+							name : 'server.call',
+							message : 'default '+type+' server response timeout)',
+							detail : decodeURIComponent( $.param(data)).replace(/\&/g,"<br>&")
+						});
+					},mobserv.server.timeout/2);
 				}
-			});
-			aborttime = setTimeout(function(){
-				xhr.abort();
-				server.online = false;
-				server.status = 'Tempo de resposta esgotado';
-				mobserv.log({
-					type : 'error',
-					name : 'server.call',
-					message : 'default '+type+' server response timeout)',
-				});
-			},mobserv.server.timeout);
+			};
+			cfg.xhrobj = mobserv.server.ajax(cfg);
+		},
+		ajax : function(cfg){
+			if (!mobserv.connection.test()){
+				cfg.queued = true;
+				mobserv.server.queue.push(cfg);
+			} else {
+				if (cfg.timeout) cfg.timeout();
+				var xhr = $.ajax(cfg);
+				return xhr;
+			}
 		}
 	},
 	device : {
@@ -498,7 +513,7 @@ var mobserv = {
 								type : 'info',
 								name : 'sqlite.query',
 								message : 'query executed: '+query,
-								detail : 'rowsAffected: '+res.rowsAffected,
+								detail : 'rows: '+res.rows.length+', rowsAffected: '+res.rowsAffected,
 							});	
 						}
 					);
@@ -526,6 +541,11 @@ var mobserv = {
 					});
 				}, 5000);
 			}				
+		}
+	},
+	keyboard : {
+		close  : function(){
+			if (cordova && cordova.plugins && cordova.plugins.Keyboard) cordova.plugins.Keyboard.close();	
 		}
 	},
 	auth : {
@@ -589,7 +609,7 @@ var mobserv = {
 					var status = $valid.attr('status');
 					mobserv.log({
 						type : status,
-						name : 'auth.init.client',
+						name : 'auth.client',
 						message : status+' validation: '+$valid.text(),
 					});
 					if (status == 'info'){
@@ -614,7 +634,7 @@ var mobserv = {
 									'"'+client.Cli_Pw+'",'+
 									'"'+client.Cli_License+'",'+
 									'"'+client.Cli_Install+'",'+
-									'"'+client.Cli_Default+'"'+
+									''+client.Cli_Default+''+
 								')',
 								function(res){
 									client.Cli_Id = res.insertId;	
@@ -628,9 +648,44 @@ var mobserv = {
 									'Cli_Pw = "'+client.Cli_Pw+'", '+
 									'Cli_License = "'+client.Cli_License+'", '+
 									'Cli_Install = "'+client.Cli_Install+'", '+
-									'Cli_Default = "'+client.Cli_Default+'" '+
+									'Cli_Default = '+client.Cli_Default+' '+
 								'where Cli_Code = "'+client.Cli_Code+'"'
 							);
+						}
+						var $service = $response.find('configs service');
+						if ($service.length > 0){
+							$service.each(function(){
+								var $srv = $(this);
+								var server = $srv.attr('server');
+								var sinterval = $srv.attr('interval');
+								if (server){
+									mobserv.server.list.push({
+										id : 'srv'+mobserv.server.list.length,
+										type : 'service',
+										url : server,
+										online : false,	
+										status : null,
+										lastRequest : null,
+										interval : parseInt((sinterval)?sinterval:300)
+									});
+									mobserv.log({
+										type : 'notice',
+										name : 'auth.client.serviceserver',
+										message : 'added service server: '+server,
+									});
+								} else {
+									mobserv.log({
+										type : 'error',
+										name : 'auth.client',
+										message : 'client do not have a service server',
+									});
+									mobserv.notify.open({
+										type : 'error',
+										name : 'Validação do Cliente',
+										message : 'O cliente não possui um servidor de serviços'
+									});	
+								}
+							});	
 						}
 						mobserv.auth.clientdom();
 						if(ondone) ondone($valid.text());
@@ -686,7 +741,7 @@ var mobserv = {
 									'"'+user.Usr_Name+'",'+
 									'"'+user.Usr_Login+'",'+
 									'"'+user.Usr_Pw+'",'+
-									'"'+user.Usr_Default+'"'+
+									''+user.Usr_Default+''+
 								')',
 								function(res){
 									user.Usr_Id = res.insertId;	
@@ -697,10 +752,9 @@ var mobserv = {
 								'update sl_users set '+
 									'Cli_Code = "'+user.Cli_Code+'", '+
 									'Usr_Name = "'+user.Usr_Name+'", '+
-									'Usr_Login = "'+user.Usr_Login+'", '+
 									'Usr_Pw = "'+user.Usr_Pw+'", '+
-									'Usr_Default = "'+user.Usr_Default+'" '+
-								'where Usr_Id = "'+client.Usr_Id+'"'
+									'Usr_Default = '+user.Usr_Default+' '+
+								'where Usr_Login = "'+user.Usr_Login+'"'
 							);
 						}
 						mobserv.auth.userdom();

@@ -3,7 +3,7 @@
         xmlns:gap   = "http://phonegap.com/ns/1.0"
         id          = "com.sourcelab.mobserv"
         versionCode = "10" 
-        version     = "1.0.14" >
+        version     = "1.0.15" >
     <name>Mobserv</name>
     <description>
         Mobile Services Application for SourceLab Systems
@@ -39,6 +39,7 @@
 	<gap:plugin name="org.apache.cordova.vibration" version="0.3.11" />
 	<!--<gap:plugin name="de.appplant.cordova.plugin.background-mode" version="0.6.4" />-->
 	<gap:plugin name="com.brodysoft.sqliteplugin" version="1.0.6" />
+	<gap:plugin name="com.ionic.keyboard" version="1.0.3" />
 	
     <icon src="icon.png" />
     <icon src="res/icon/android/icon-36-ldpi.png"   gap:platform="android"    gap:qualifier="ldpi" />
@@ -66,6 +67,10 @@
     <gap:config-file platform="ios" parent="CFBundleShortVersionString">
     <string>100</string>
     </gap:config-file>
+	
+	<feature name="Keyboard">
+		<param name="ios-package" value="IonicKeyboard" onload="true" />
+	</feature>	
 	
 	<access origin="*"/>
 	

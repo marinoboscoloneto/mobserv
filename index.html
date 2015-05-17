@@ -42,9 +42,9 @@
         <form class="auth" action="">
         	<div class="logo"></div>
             <p class="description">Validação do Cliente MobServ</p>
-            <div><input class="input text command" type="text" id="cid" placeholder="Código do Cliente" /></div>
-            <div><input class="input text" type="password" id="cpw" placeholder="Senha de Acesso" /></div>
-            <div><button class="submit">Validar Cliente</button></div>
+            <div><input class="input text command" type="text" id="cid" placeholder="Código do Cliente"  autocorrect="off" autocapitalize="none" /></div>
+            <div><input class="input text" type="password" id="cpw" placeholder="Senha de Validação" autocorrect="off" autocapitalize="none" /></div>
+            <div><input type="submit" class="submit" value="Validar Cliente" /></div>
             <a class="link icon-history2 fordebug" data-view="log" data-direction="foreground"></a>
         </form>
     </div>
@@ -53,10 +53,10 @@
         	<div class="logo"></div>
             <p class="description"><strong class="client">{client}</strong></p>
             <p class="description">Autenticação de Usuário</p>
-            <div><input class="input text command" type="text" id="us" placeholder="Login do Usuário" /></div>
-            <div><input class="input text" type="password" id="upw" placeholder="Senha de Acesso" /></div>
-            <div><button class="submit">Autenticar</button></div>
-            <p class="description bottom">Não é <b class="client">{client}</b>? <a class="logoutclient">Troque o cliente.</a></p>
+            <div><input class="input text command" type="text" id="us" placeholder="Login do Usuário" autocorrect="off" autocapitalize="none" /></div>
+            <div><input class="input text" type="password" id="upw" placeholder="Senha de Acesso" autocorrect="off" autocapitalize="none" /></div>
+            <div><input type="submit" class="submit yellow" value="Entrar" /></div>
+            <p class="description bottom">Não está em <b class="client">{client}</b>? <a class="logoutclient">Troque o cliente.</a></p>
             <a class="link icon-history2 fordebug" data-view="log" data-direction="foreground"></a>
         </form>
     </div>
@@ -83,6 +83,7 @@
         </header>
         <section class="section">
         	<div class="puller"><strong>Solte para atualizar</strong></div>
+            <form class="onlist search icon-search2" action=""><input class="input text command" type="text" id="search" placeholder="Pesquisar" /></form>
             <ul class="list">
                 <li>
                 	<div class="table link" data-view="servicelist" data-direction="forward">

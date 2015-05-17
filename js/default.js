@@ -11,20 +11,31 @@ $(function(){
 			var $command = $form.find('.command');
 			if ($command.length){
 				var cmd = $command.val().toLowerCase();
-				if (cmd == 'debug:on') { mobserv.debug.on(); $command.val(''); }
-				if (cmd == 'debug:off') { mobserv.debug.off(); $command.val(''); }	
-			} else {
-				$form.find('.submit').trigger('tap');	
+				var executed = false
+				if (cmd == 'debug:on') { mobserv.debug.on(); $command.val(''); executed = true; }
+				if (cmd == 'debug:off') { mobserv.debug.off(); $command.val(''); executed = true; }	
+				if (cmd == 'sqlite:reset') { mobserv.sqlite.clear(); mobserv.sqlite.create(); $command.val(''); executed = true; }
+				if (cmd == 'app:restart' || cmd == 'app:reload') { setTimeout(function(){ location.reload(true); },1000); executed = true; }
+				if (executed){
+					mobserv.notify.open({
+						type : 'alert',
+						name : 'Comando',
+						message : 'Comando '+cmd+' executado'
+					});	
+				} else {
+					$form.trigger('send');
+				}
 			}
+			mobserv.keyboard.close();
 			event.preventDefault();
 			return false;
 		})
-		.on('tap','#formclient .submit',function(){
+		.on('send','#formclient',function(){
 			var client = mobserv.globals.client;
-			var $submit = $(this);
-			var $form = $submit.closest('form');
+			var $form = $(this);
+			var $submit = $form.find('.submit');
 			client.Cli_Install = $.md5(mobserv.device.data.uuid);
-			client.Cli_Code = $form.find('#cid').val();
+			client.Cli_Code = $form.find('#cid').val().toLowerCase();
 			client.Cli_Pw = ($form.find('#cpw').val()) ? $.md5($form.find('#cpw').val()) : '';
 			if (client.Cli_Code && client.Cli_Pw){
 				var data = {
@@ -60,12 +71,12 @@ $(function(){
 				});	
 			}
 		})
-		.on('tap','#formuser .submit',function(){
+		.on('send','#formuser',function(){
 			var client = mobserv.globals.client;
 			var user = mobserv.globals.user;
-			var $submit = $(this);
-			var $form = $submit.closest('form');
-			user.Usr_Login = $form.find('#us').val();
+			var $form = $(this);
+			var $submit = $form.find('.submit');
+			user.Usr_Login = $form.find('#us').val().toLowerCase();
 			user.Usr_Pw = ($form.find('#upw').val()) ? $.md5($form.find('#upw').val()) : '';
 			if (client.Cli_Code && client.Cli_Pw){
 				var data = {
@@ -114,6 +125,10 @@ $(function(){
 			$(this).find('.menu').trigger('tap');
 		})
 		*/
+		.on('tap','button.disable, .button.disable, .submit.disable',function(event){
+			event.preventDefault();
+			return false;
+		})
 		.on('touchstart',function(event){
 			$('.hover').removeClass('hover');
 		})
@@ -235,11 +250,14 @@ $(function(){
 	}, false);
 	document.addEventListener("offline", function(){
 		$('.statustripe').addClass('red').fadeIn();
-		$('button, submit, reset').addClass('disable').prop('disabled',true);
+		$('button, .button, .submit').addClass('disable').prop('disabled',true);
 	}, false);
 	document.addEventListener("online", function(){
-		$('.statustripe').removeClass('red').fadeOut();
-		$('button, submit, reset').removeClass('disable').prop('disabled',false);
+		$('.statustripe').removeClass('red').delay(1000).fadeOut();
+		$('button, .button, .submit').removeClass('disable').prop('disabled',false);
+		$.each(mobserv.server.queue||[],function(q,queue){
+			mobserv.server.ajax(queue);
+		});
 	}, false);
 	document.addEventListener("deviceready", function(){
 		mobserv.debug.on();
