@@ -272,6 +272,7 @@ var mobserv = {
 					$dom.find('#version').html(device.version); 
 					mobserv.device.ready = true;
 					mobserv.log({
+						name : 'info',
 						name : 'device.onready',
 						message : 'device is ready',
 					});	
@@ -417,7 +418,7 @@ var mobserv = {
 						')'
 					);
 					mobserv.log({
-						type : 'info',
+						type : 'notice',
 						name : 'sqlite.create',
 						message : 'tables in mobserv.db are idle',
 					});	

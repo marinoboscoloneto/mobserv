@@ -134,12 +134,13 @@ input:invalid { box-shadow:none; }
 .logline.error { color:#F00; }
 .logline.alert { color:#F50; }
 .logline.info { color:#09F; }
+.logline.notice { color:#090; }
 
 .fordebug { display:none !important; }
 .debug .fordebug { display:block !important; }
 
 form.onlist { border-bottom:#DDD solid 1px; background:#FFF; margin:0; padding:0; position:relative; }
-form.onlist:before { color:#999; position:absolute; top:10px; left:11px; }
+form.onlist:before { color:#999; position:absolute; top:12px; left:11px; }
 form.onlist .input { border:#FFF solid 1px; padding:10px; background:#FFF; width:100%; }
 form.onlist[class*="icon-"] .input { padding-left:32px; }
 

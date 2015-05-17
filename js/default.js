@@ -262,7 +262,7 @@ $(function(){
 	document.addEventListener("deviceready", function(){
 		mobserv.debug.on();
 		mobserv.device.init();
-		//mobserv.bgmode.init();
+		mobserv.bgmode.init();
 		mobserv.sqlite.init();
 		mobserv.auth.init();
 	}, false);
