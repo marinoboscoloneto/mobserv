@@ -87,7 +87,7 @@ var mobserv = {
 								mobserv.server.online[type] = server;
 								mobserv.server.pointer = 0;
 								mobserv.log({
-									type : 'info',
+									type : 'notice',
 									name : 'server.test',
 									message : server.url+' is now the online '+type+' server',
 								});
@@ -272,7 +272,7 @@ var mobserv = {
 					$dom.find('#version').html(device.version); 
 					mobserv.device.ready = true;
 					mobserv.log({
-						name : 'info',
+						type : 'notice',
 						name : 'device.onready',
 						message : 'device is ready',
 					});	
@@ -441,7 +441,7 @@ var mobserv = {
 					tx.executeSql('DROP TABLE IF EXISTS sl_services');
 					tx.executeSql('DROP TABLE IF EXISTS sl_messages');
 					mobserv.log({
-						type : 'info',
+						type : 'notice',
 						name : 'sqlite.clear',
 						message : 'tables in mobserv.db was cleared',
 					});
@@ -460,6 +460,7 @@ var mobserv = {
 			window.sqlitePlugin.deleteDatabase({name: "mobserv.db", location: 2},
 				function(){
 					mobserv.log({
+						type : 'notice',
 						name : 'sqlite.drop',
 						message : 'mobserv.db droped',
 					});	
@@ -575,7 +576,7 @@ var mobserv = {
 							$('.footer').transition({ y:'+=50px' }, 300);
 						}
 						mobserv.log({
-							type : 'info',
+							type : 'notice',
 							name : 'auth.logout.user',
 							message : 'user '+user.Usr_Login+' was loged out'
 						});	
