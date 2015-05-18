@@ -256,6 +256,12 @@ $(function(){
 		$('.statustripe').removeClass('red').delay(1000).fadeOut();
 		$('button, .button, .submit').removeClass('disable').prop('disabled',false);
 		$.each(mobserv.server.queue||[],function(q,queue){
+			mobserv.log({
+				type : 'notice',
+				name : 'server.ajax.queue',
+				message : queue.url+' request triggered frmom queue',
+				detail : decodeURIComponent( $.param(queue.data)).replace(/\&/g,"<br>")
+			});
 			mobserv.server.ajax(queue);
 		});
 	}, false);
@@ -265,6 +271,10 @@ $(function(){
 		//mobserv.bgmode.init();
 		mobserv.sqlite.init();
 		mobserv.auth.init();
+		document.addEventListener("backbutton", function(event){
+			event.preventDefault();
+			$(".view.current .back").trigger("tap");
+		}, false);
 	}, false);
 	
 	setTimeout(function(){

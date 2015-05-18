@@ -208,7 +208,7 @@ var mobserv = {
 							type : 'error',
 							name : 'server.call',
 							message : 'default '+type+' server response invalid xml',
-							detail : decodeURIComponent( $.param(data)).replace(/\&/g,"<br>&")
+							detail : decodeURIComponent( $.param(data)).replace(/\&/g,"<br>")
 						});
 						mobserv.server.loopcall(type,data,ondone,onerror);
 					}
@@ -220,7 +220,7 @@ var mobserv = {
 						type : 'error',
 						name : 'server.call',
 						message : 'default '+type+' server response error ('+((err)?err:'unknown')+')',
-						detail : decodeURIComponent( $.param(data)).replace(/\&/g,"<br>&")
+						detail : decodeURIComponent( $.param(data)).replace(/\&/g,"<br>")
 					});
 					mobserv.server.loopcall(type,data,ondone,onerror);
 				}, 
@@ -238,7 +238,7 @@ var mobserv = {
 							type : 'error',
 							name : 'server.call',
 							message : 'default '+type+' server response timeout)',
-							detail : decodeURIComponent( $.param(data)).replace(/\&/g,"<br>&")
+							detail : decodeURIComponent( $.param(data)).replace(/\&/g,"<br>")
 						});
 					},mobserv.server.timeout/2);
 				}
@@ -249,6 +249,12 @@ var mobserv = {
 			if (!mobserv.connection.test()){
 				cfg.queued = true;
 				mobserv.server.queue.push(cfg);
+				mobserv.log({
+					type : 'alert',
+					name : 'server.ajax.queue',
+					message : cfg.url+' request pushed to queue',
+					detail : decodeURIComponent( $.param(cfg.data)).replace(/\&/g,"<br>")
+				});
 			} else {
 				if (cfg.timeout) cfg.timeout();
 				var xhr = $.ajax(cfg);
