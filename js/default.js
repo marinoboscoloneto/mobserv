@@ -100,6 +100,7 @@ $(function(){
 								name : 'Autenticação de Usuário',
 								message : validation
 							});	
+							mobserv.services.get();
 						},
 						function(){
 							$form.find('.input, .submit').removeClass('courtain disable').prop('disabled',false);
@@ -117,6 +118,9 @@ $(function(){
 		.on('tap','#formuser .logoutclient',function(){
 			mobserv.nav.toView('formclient');
 		})
+		.on('tap','.input',function(){
+			$(this).focus();
+		})
 		/*
 		.on('swiperight','.view:not(.disable)',function(){
 			$(this).find('.menu').trigger('tap');
@@ -124,11 +128,11 @@ $(function(){
 		.on('swipeleft','.view.disable',function(){
 			$(this).find('.menu').trigger('tap');
 		})
-		*/
 		.on('tap','button.disable, .button.disable, .submit.disable',function(event){
 			event.preventDefault();
 			return false;
 		})
+		*/
 		.on('touchstart',function(event){
 			$('.hover').removeClass('hover');
 		})
@@ -142,21 +146,26 @@ $(function(){
 				$('.view.disable').removeClass('disable');
 			});
 		})
-		.on('tap','.view:not(.disable) section a, .view:not(.disable) form .link, .view:not(.disable) section .link, .view:not(.disable) header .link, footer .link',function(){
+		.on('tap','.view:not(.disable) section a, .view:not(.disable) form .link, .view:not(.disable) section .link, .view:not(.disable) header .link, footer .link, .overall button',function(){
 			var $this = $(this).addClass('hover');
 			mobserv.nav.link($this);
+		})
+		.on('tap','.overall button',function(){
+			var $this = $(this).addClass('hover');
+			var $view = $this.closest('.view');
+			mobserv.nav.close($view);
 		})
 		.on('tap','.view:not(.disable) .menu',function(){
 			var $this = $(this).addClass('hover');
 			if (!$('#nav').hasClass('active')){
-				$('.footer').transition({ y:'+=50px' }, 300);
+				$('.footer').transition({ y:'50px' }, 300);
 				$('#nav').addClass('active');
 				$('.view.current').addClass('disable').transition({ x:'80%' }, 300).find(".header, .section").transition({ opacity:.3 }, 400);
 			}
 		})
 		.on('tap','.view.disable',function(){
 			if ($('#nav').hasClass('active')){
-				$('.footer').transition({ y:'-=50px' }, 300);
+				$('.footer').transition({ y:0 }, 300);
 				$('.view.current').transition({ x:0 }, 300,function(){
 					$('.view.disable').removeClass('disable');
 					$('#nav').removeClass('active');
@@ -215,8 +224,8 @@ $(function(){
 					},2000);
 				}
 			}
+			event.preventDefault();
 		})
-		
 		.on('show','.view',function(){
 			var $this = $(this);
 			if (mobserv.history.length == 0){
@@ -225,12 +234,26 @@ $(function(){
 				$this.find('.header .back').show();
 			}
 		})
+		.on('show','#formuser',function(){
+			$this = $(this);
+			$('.footer').transition({ y:'50px' }, 300);
+			mobserv.auth.logout('user');
+			$this.find('button, .button, .submit, .input').removeClass('courtain disable').prop('disabled',false);
+			$this.find('.input').val('');
+		})
 		.on('show','#formclient',function(){
+			$this = $(this);
+			$('.footer').transition({ y:'50px' }, 300);
 			mobserv.auth.logout();
+			$this.find('button, .button, .submit, .input').removeClass('courtain disable').prop('disabled',false);
+			$this.find('.input').val('');
 		})
 		.on('show','#gps',function(){
-			var $this = $(this);
-			mobserv.geolocation.watchPosition($this);
+			mobserv.geolocation.watchPosition({
+				enableHighAccuracy : true,
+				timeout : 10000,
+				maximumAge : 60000
+			});
 		})
 		.on('hide','#gps',function(){
 			mobserv.geolocation.clearWatch();
@@ -249,37 +272,38 @@ $(function(){
 		return false;
 	}, false);
 	document.addEventListener("offline", function(){
-		$('.statustripe').addClass('red').fadeIn();
-		$('button, .button, .submit').addClass('disable').prop('disabled',true);
+		$('.statustripe').addClass('orange').fadeIn();
 	}, false);
 	document.addEventListener("online", function(){
-		$('.statustripe').removeClass('red').delay(1000).fadeOut();
-		$('button, .button, .submit').removeClass('disable').prop('disabled',false);
-		$.each(mobserv.server.queue||[],function(q,queue){
+		$('.statustripe').removeClass('orange').delay(1000).fadeOut();
+		$.each(mobserv.server.queue||[],function(c,cfg){
+			mobserv.server.ajax(cfg);
 			mobserv.log({
 				type : 'notice',
 				name : 'server.ajax.queue',
-				message : queue.url+' request triggered frmom queue',
-				detail : decodeURIComponent( $.param(queue.data)).replace(/\&/g,"<br>")
+				message : 'requests from queue triggered'
 			});
-			mobserv.server.ajax(queue);
-		});
+			return false;	
+		})
 	}, false);
 	document.addEventListener("deviceready", function(){
 		mobserv.debug.on();
 		mobserv.device.init();
+		mobserv.geolocation.autoPosition();
 		//mobserv.bgmode.init();
 		mobserv.sqlite.init();
 		mobserv.auth.init();
 		document.addEventListener("backbutton", function(event){
 			event.preventDefault();
-			$(".view.current .back").trigger("tap");
+			if (mobserv.history.length > 0)	$(".view.current .back, .view.current .close").trigger("tap");
+			else mobserv.nav.foreground('confirmexit');
 		}, false);
 	}, false);
 	
 	setTimeout(function(){
 		if (!mobserv.device.ready){
 			mobserv.debug.on();
+			mobserv.geolocation.autoPosition();
 			mobserv.sqlite.init();
 			mobserv.auth.init();
 		}

@@ -21,7 +21,7 @@ input:invalid { box-shadow:none; }
 .main { width:100%; height:100%; background:#FFF; overflow:hidden; position:relative;  }
 
 .statustripe { display:none; width:100%; height:3px; position:absolute; top:0; z-index:999999; background:#4284C6; }
-.statustripe.red { background:#EF3434; }
+.statustripe.orange { background:#F50; }
 .ios .statustripe { height:21px; }
 
 .loadinfo { position:absolute; width:100%; top:40%; color:#999; font-size:16px; font-weight:bold; letter-spacing:-1px; text-align:center; }
@@ -72,11 +72,21 @@ input:invalid { box-shadow:none; }
 .view.current { left:0; opacity:1; }
 .view.inactive { left:80%;  }
 .view.gray { background-color:#EEE; }
+.view.overall { background-color:rgba(51,51,51,.9); z-index:999999999999 !important; }
+.view.overall .btngroup { position:absolute; bottom:0px; padding:6%; width:100%; }
+.view.overall .btngroup p { color:#FFF; padding:12px 0; font-size:14px; }
+.view.overall .btngroup button { width:100%; padding:8px; margin:16px 0 0 0; font-size:14px; background-color:#333; border:none; color:#FFF; font-weight:bold; border-radius:6px; text-align:center; }
+.view.overall .btngroup button.red { background-color:#F00; }
+.view.overall .btngroup button.orange { background-color:#F40; }
+.view.overall .btngroup button.yellow { background-color:#F60; }
+.view.overall .btngroup button.green { background-color:#090; }
+.view.overall .btngroup button.blue { background-color:#09F; }
+.view.overall .btngroup button.gray { background-color:#999; }
+
 /*
 .view.closed { left:80%; -webkit-transition: -webkit-transform 0.2s; -webkit-transform: translateX(0); }
 .view.opened { left:80%; -webkit-transition: -webkit-transform 0.2s; -webkit-transform: translateX(240px); }
 */
-
 
 .section { position:absolute; top:42px; bottom:42px; left:0px; width:100%; background:#FFF; overflow-y:scroll; -webkit-overflow-scrolling: touch; z-index:1; }
 .section.noscroll { overflow-y:hidden !important; }

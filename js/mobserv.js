@@ -3,7 +3,12 @@
 var mobserv = {
 	globals : {
 		client : {},
-		user : {}	
+		user : {},
+		services : {},
+		translate : {
+			license : 'Servidor de Licenças',
+			service : 'Servidor de Serviços'	
+		}
 	},
 	debug : {
 		active : false,
@@ -17,7 +22,7 @@ var mobserv = {
 		}
 	},
 	server : {
-		timeout : 30000,
+		timeout : 60000,
 		pointer : 0,
 		list : [
 			{
@@ -43,7 +48,7 @@ var mobserv = {
 				lastRequest : null
 			}
 		],
-		queue : [],
+		queue : {},
 		online : {
 			license : false,
 			service : false
@@ -63,7 +68,6 @@ var mobserv = {
 			$table.find('#srvlastrequest').html(server.lastRequest);
 		},
 		test : function(type){
-			if (!mobserv.connection.test()) return;
 			var pointer = mobserv.server.pointer;
 			var server = mobserv.server.list[pointer];
 			if (server){
@@ -76,6 +80,7 @@ var mobserv = {
 					var cfg = {
 						xhrobj : null,
 						aborttime : null,
+						message : 'Testando '+mobserv.globals.translate[type]+'...',
 						cache: false,
 						type: 'GET', 
 						url: server.url, 
@@ -120,6 +125,15 @@ var mobserv = {
 							if (mobserv.server.pointer == mobserv.server.list.length){
 								mobserv.server.pointer = 0;	
 							}
+							$('#preload').removeClass('courtain');
+							$('#preload .loadinfo').text('Concluído.');
+							if (cfg.queued){
+								delete mobserv.server.queue[cfg.id];
+								$.each(mobserv.server.queue||[],function(c,cfg){
+									mobserv.server.ajax(cfg);
+									return false;	
+								})
+							}
 							clearTimeout(cfg.aborttime);
 						},
 						timeout : function(){
@@ -152,14 +166,18 @@ var mobserv = {
 					mobserv.server.call(type,data,ondone,onerror,true);
 					clearInterval(interval);
 				}
-				if (limit === 0){
-					mobserv.log({
-						type : 'error',
-						name : 'server.loopcall',
-						message : 'no '+type+' servers available',
-					});
-					if(onerror) onerror('Os servidores de '+((server.type == 'license')?'validação de licença':'serviço do cliente')+' não responderam');
-					clearInterval(interval);
+				if (mobserv.connection.test()){
+					if (limit === 0){
+						mobserv.log({
+							type : 'error',
+							name : 'server.loopcall',
+							message : 'no '+type+' servers available',
+						});
+						if(onerror) onerror('Os servidores de '+((server.type == 'license')?'validação de licença':'serviço do cliente')+' não responderam');
+						clearInterval(interval);
+					}
+				} else {
+					clearInterval(interval);	
 				}
 				limit--;
 			},100);
@@ -183,6 +201,7 @@ var mobserv = {
 			var cfg = {
 				xhrobj : null,
 				aborttime : null,
+				message : 'Conectando ao '+mobserv.globals.translate[type]+'...',
 				type: 'GET', 
 				url: server.url, 
 				dataType: 'xml',
@@ -197,7 +216,7 @@ var mobserv = {
 							type : 'info',
 							name : 'server.call',
 							message : 'default '+type+' server request complete',
-							detail : decodeURIComponent($.param(data)).replace(/\&/g,"<br>&")
+							detail : (data)?decodeURIComponent($.param(data)).replace(/\&/g,"<br>"):''
 						});
 						if(ondone) ondone(response,st,xhr);
 					} else {
@@ -208,7 +227,7 @@ var mobserv = {
 							type : 'error',
 							name : 'server.call',
 							message : 'default '+type+' server response invalid xml',
-							detail : decodeURIComponent( $.param(data)).replace(/\&/g,"<br>")
+							detail : (data)?decodeURIComponent($.param(data)).replace(/\&/g,"<br>"):''
 						});
 						mobserv.server.loopcall(type,data,ondone,onerror);
 					}
@@ -220,13 +239,22 @@ var mobserv = {
 						type : 'error',
 						name : 'server.call',
 						message : 'default '+type+' server response error ('+((err)?err:'unknown')+')',
-						detail : decodeURIComponent( $.param(data)).replace(/\&/g,"<br>")
+						detail : (data)?decodeURIComponent($.param(data)).replace(/\&/g,"<br>"):''
 					});
 					mobserv.server.loopcall(type,data,ondone,onerror);
 				}, 
 				complete: function(){
 					server.lastRequest = mobserv.now();
 					mobserv.server.data(server);
+					$('#preload').removeClass('courtain');
+					$('#preload .loadinfo').text('Concluído.');
+					if (cfg.queued){
+						delete mobserv.server.queue[cfg.id];
+						$.each(mobserv.server.queue||[],function(c,cfg){
+							mobserv.server.ajax(cfg);
+							return false;	
+						})
+					}
 					clearTimeout(cfg.aborttime);
 				},
 				timeout : function(){
@@ -238,7 +266,7 @@ var mobserv = {
 							type : 'error',
 							name : 'server.call',
 							message : 'default '+type+' server response timeout)',
-							detail : decodeURIComponent( $.param(data)).replace(/\&/g,"<br>")
+							detail : (data)?decodeURIComponent($.param(data)).replace(/\&/g,"<br>"):''
 						});
 					},mobserv.server.timeout/2);
 				}
@@ -246,16 +274,35 @@ var mobserv = {
 			cfg.xhrobj = mobserv.server.ajax(cfg);
 		},
 		ajax : function(cfg){
+			cfg.id = $.md5(cfg.url+((cfg.data)?decodeURIComponent($.param(cfg.data)):''));
+			if (cfg.data){
+				var pos = mobserv.geolocation.position;
+				cfg.data.lat = pos.latitude;
+				cfg.data.lon = pos.longitude;
+				cfg.data.acr = pos.accuracy;
+				cfg.data.alt = pos.altitudeAccuracy;
+				cfg.data.head = pos.heading;
+				cfg.data.gpstimestamp = pos.timestamp;
+			}
 			if (!mobserv.connection.test()){
+				$('#preload').removeClass('courtain');
+				$('#preload .loadinfo').text('Sem internet :(');
 				cfg.queued = true;
-				mobserv.server.queue.push(cfg);
+				mobserv.server.queue[cfg.id] = cfg;
 				mobserv.log({
 					type : 'alert',
 					name : 'server.ajax.queue',
 					message : cfg.url+' request pushed to queue',
-					detail : decodeURIComponent( $.param(cfg.data)).replace(/\&/g,"<br>")
+					detail : (cfg.data)?decodeURIComponent($.param(cfg.data)).replace(/\&/g,"<br>"):''
 				});
+				mobserv.notify.open({
+					type : 'alert',
+					name : 'Sem internet',
+					message : 'A transação será enviada quando a conexão for reestabelicida'
+				});	
 			} else {
+				$('#preload').addClass('courtain');
+				$('#preload .loadinfo').text((cfg.message)?cfg.message:'Conectando...');
 				if (cfg.timeout) cfg.timeout();
 				var xhr = $.ajax(cfg);
 				return xhr;
@@ -331,34 +378,101 @@ var mobserv = {
 		},
 	},
 	geolocation : {
+		position : {},
+		interval : null,
 		watchID : null,
-		watchPosition : function($dom){
-			mobserv.geolocation.watchID = navigator.geolocation.watchPosition(function(pos){
-				if ($dom && $dom.attr('id') == 'gps'){
-					$dom.find('#gpslat').html(pos.coords.latitude); 		
-					$dom.find('#gpslng').html(pos.coords.longitude); 		
-					$dom.find('#gpsacr').html(pos.coords.accuracy); 		
-					$dom.find('#gpsalt').html(pos.coords.altitude); 		
-					$dom.find('#gpsact').html(pos.coords.altitudeAccuracy); 		
-					$dom.find('#gpsdir').html(pos.coords.heading); 	
-					var $map = $dom.find("img.map");
-					$map.show().css({opacity:1}).get(0).src = 'http://maps.googleapis.com/maps/api/staticmap?center='+pos.coords.latitude+','+pos.coords.longitude+'&zoom=14&size='+$(window).width()+'x200&sensor=false';
-				}
+		parsedom : function(){
+			var $dom = $('#gps');
+			$dom.find('#gpslat').html(mobserv.geolocation.position.latitude); 		
+			$dom.find('#gpslng').html(mobserv.geolocation.position.longitude); 		
+			$dom.find('#gpsacr').html(mobserv.geolocation.position.accuracy); 		
+			$dom.find('#gpsalt').html(mobserv.geolocation.position.altitude); 		
+			$dom.find('#gpsact').html(mobserv.geolocation.position.altitudeAccuracy); 		
+			$dom.find('#gpsdir').html(mobserv.geolocation.position.heading); 	
+			var $map = $dom.find("img.map");
+			$map.show().css({opacity:1}).get(0).src = 'http://maps.googleapis.com/maps/api/staticmap?center='+mobserv.geolocation.position.latitude+','+mobserv.geolocation.position.longitude+'&zoom=14&size='+$(window).width()+'x200&sensor=false';
+		},
+		autoPosition : function(options){
+			options = options||{};
+			mobserv.geolocation.getPosition(options);
+			if(mobserv.geolocation.interval) clearInterval(mobserv.geolocation.interval);
+			mobserv.geolocation.interval = setInterval(function(){
+				mobserv.geolocation.getPosition(options);
+			},60000);
+			mobserv.log({
+				name : 'geolocation.autoPosition',
+				message : 'auto position started',
+			});	
+		},
+		getPosition : function(options){
+			options = options||{};
+			navigator.geolocation.getCurrentPosition(function(pos){
+				mobserv.geolocation.position.latitude = pos.coords.latitude;
+				mobserv.geolocation.position.longitude = pos.coords.longitude;
+				mobserv.geolocation.position.accuracy = pos.coords.accuracy;
+				mobserv.geolocation.position.altitudeAccuracy = pos.coords.altitudeAccuracy;
+				mobserv.geolocation.position.heading = pos.coords.heading;
+				mobserv.geolocation.position.timestamp = pos.timestamp;
+				mobserv.geolocation.parsedom();
+				mobserv.log({
+					type : 'notice',
+					name : 'geolocation.getPosition',
+					message : 'position has gotten',
+					detail : 'lat: '+pos.coords.latitude+', lng: '+pos.coords.longitude,
+				});	
 			}, function(error){
-				if ($dom && $dom.hasClass('view') == 'gps'){
-					mobserv.log({
-						type : 'error',
-						name : 'geolocation.watchPosition',
-						code : error.code,
-						message : error.message,
+				mobserv.log({
+					type : 'error',
+					name : 'geolocation.getPosition',
+					code : error.code,
+					message : error.message,
+				});	
+				if (error.PERMISSION_DENIED){
+					mobserv.notify.open({
+						type : 'alert',
+						name : 'Geoposição desabilitada',
+						message : 'Habilite a permissão para acesso a geoposições pelo Mobserv nas configurações do seu aparelho'
 					});	
 				}
-			}, { timeout: 60000 });
+			}, options);
+		},
+		watchPosition : function(options){
+			mobserv.log({
+				name : 'geolocation.watchPosition',
+				message : 'watch position started',
+			});	
+			options = options||{};
+			if(mobserv.geolocation.watchID) clearInterval(mobserv.geolocation.watchID);
+			mobserv.geolocation.watchID = navigator.geolocation.watchPosition(function(pos){
+				mobserv.geolocation.position.latitude = pos.coords.latitude;
+				mobserv.geolocation.position.longitude = pos.coords.longitude;
+				mobserv.geolocation.position.accuracy = pos.coords.accuracy;
+				mobserv.geolocation.position.altitudeAccuracy = pos.coords.altitudeAccuracy;
+				mobserv.geolocation.position.heading = pos.coords.heading;
+				mobserv.geolocation.position.timestamp = pos.timestamp;
+				mobserv.geolocation.parsedom();
+			}, function(error){
+				mobserv.log({
+					type : 'error',
+					name : 'geolocation.getPosition',
+					code : error.code,
+					message : error.message,
+				});	
+				if (error.PERMISSION_DENIED){
+					mobserv.notify.open({
+						type : 'alert',
+						name : 'Geoposição desabilitada',
+						message : 'Habilite a permissão para acesso a geoposições pelo Mobserv nas configurações do seu aparelho'
+					});	
+				}
+			}, options);
 		},
 		clearWatch : function(){
-			if (mobserv.geolocation.watchID){
-				navigator.geolocation.clearWatch(mobserv.geolocation.watchID);
-			}
+			mobserv.log({
+				name : 'geolocation.clearWatch',
+				message : 'watch position cleared',
+			});	
+			if (mobserv.geolocation.watchID) navigator.geolocation.clearWatch(mobserv.geolocation.watchID);
 		}
 	},
 	sqlite : {
@@ -399,6 +513,7 @@ var mobserv = {
 							'Cli_Code text, '+
 							'Usr_Login text, '+
 							'Usr_Pw text, '+
+							'Usr_Last_Oauth text, '+
 							'Usr_Name text, '+
 							'Usr_Default integer '+
 						')'
@@ -406,8 +521,8 @@ var mobserv = {
 					tx.executeSql(''+
 						'CREATE TABLE IF NOT EXISTS sl_services ('+
 							'Srv_Id integer primary key, '+
-							'Cli_Id integer, '+
-							'Usr_Id integer, '+
+							'Cli_Code text, '+
+							'Usr_Login text, '+
 							'Srv_Date text, '+
 							'Srv_Xml text, '+
 							'Srv_Status text '+
@@ -416,8 +531,8 @@ var mobserv = {
 					tx.executeSql(''+
 						'CREATE TABLE IF NOT EXISTS sl_messages ('+
 							'Msg_Id integer primary key, '+
-							'Cli_Id integer, '+
-							'Usr_Id integer, '+
+							'Cli_Code text, '+
+							'Usr_Login text, '+
 							'Msg_Xml text, '+
 							'Msg_Read integer, '+
 							'Msg_Status text '+
@@ -570,17 +685,17 @@ var mobserv = {
 		logout : function(what){
 			var client = mobserv.globals.client;
 			var user = mobserv.globals.user;
-			if(user.Usr_Id && (what == 'client' || what == 'user' || !what)){
+			mobserv.log({
+				name : 'auth.logout',
+				message : ((what)?what:'general')+' logout started'
+			});	
+			if(user.Usr_Login && (what == 'client' || what == 'user' || !what)){
 				var $form = $('#formuser');
 				mobserv.sqlite.query(
-					'update sl_users set Usr_Default = 0 where Usr_Id = "'+user.Usr_Id+'"',
+					'update sl_users set Usr_Default = 0, Usr_Oauth = "" where Usr_Login = "'+user.Usr_Login+'"',
 					function(res){
 						user.Usr_Default = 0;
-						$form.find('.input').val('');
-						$form.find('.input, .submit').removeClass('courtain disable');
-						if(what == 'user'){
-							$('.footer').transition({ y:'+=50px' }, 300);
-						}
+						user.Usr_Oauth = null;
 						mobserv.log({
 							type : 'notice',
 							name : 'auth.logout.user',
@@ -589,15 +704,12 @@ var mobserv = {
 					}
 				);
 			}
-			if(client.Cli_Id && (what == 'client' || !what)){
+			if(client.Cli_Code && (what == 'client' || !what)){
 				var $form = $('#formclient');
 				mobserv.sqlite.query(
-					'update sl_clients set Cli_Default = 0 where Cli_Id = "'+client.Cli_Id+'"',
+					'update sl_clients set Cli_Default = 0 where Cli_Code = "'+client.Cli_Code+'"',
 					function(res){
 						client.Cli_Default = 0;
-						$form.find('.input').val('');
-						$form.find('.input, .submit').removeClass('courtain disable');
-						$('.footer').transition({ y:'+=50px' }, 300);
 						mobserv.log({
 							type : 'info',
 							name : 'auth.logout.client',
@@ -605,10 +717,12 @@ var mobserv = {
 						});	
 					}
 				);
+				$.each(mobserv.server.list||[],function(s,server){
+					if (server.type == 'service') delete server;
+				});
 			}
 		},
 		client : function(res,data,ondone,onerror) {
-			if(!mobserv.connection.test()) return false;
 			var client = mobserv.globals.client;
 			mobserv.server.call('license',data,function(response){
 				var $response = $(response);
@@ -637,11 +751,11 @@ var mobserv = {
 									'Cli_Install, '+
 									'Cli_Default'+
 								') values ('+
-									'"'+client.Cli_Name+'",'+
-									'"'+client.Cli_Code+'",'+
-									'"'+client.Cli_Pw+'",'+
-									'"'+client.Cli_License+'",'+
-									'"'+client.Cli_Install+'",'+
+									'"'+client.Cli_Name+'", '+
+									'"'+client.Cli_Code+'", '+
+									'"'+client.Cli_Pw+'", '+
+									'"'+client.Cli_License+'", '+
+									'"'+client.Cli_Install+'", '+
 									''+client.Cli_Default+''+
 								')',
 								function(res){
@@ -713,11 +827,10 @@ var mobserv = {
 					name : 'Erro do Servidor',
 					message : error
 				});	
-				if(onerror) onerror(response);
+				if(onerror) onerror(error);
 			});
 		},
 		user : function(res,data,ondone,onerror) {
-			if(!mobserv.connection.test()) return false;
 			var client = mobserv.globals.client;
 			var user = mobserv.globals.user;
 			mobserv.server.call('service',data,function(response){
@@ -735,6 +848,8 @@ var mobserv = {
 						user.Cli_Code = $oauth.attr('customer');
 						user.Usr_Name = $oauth.attr('name');
 						user.Usr_Login = $oauth.attr('user');
+						user.Usr_Oauth = $oauth.text();
+						console.log('user',$oauth.text(),user);
 						user.Usr_Default = 1;
 						if (res.rows.length == 0){
 							mobserv.sqlite.query(
@@ -743,12 +858,14 @@ var mobserv = {
 									'Usr_Name, '+
 									'Usr_Login, '+
 									'Usr_Pw, '+
+									'Usr_Last_Oauth, '+
 									'Usr_Default'+
 								') values ('+
-									'"'+client.Cli_Code+'",'+
-									'"'+user.Usr_Name+'",'+
-									'"'+user.Usr_Login+'",'+
-									'"'+user.Usr_Pw+'",'+
+									'"'+client.Cli_Code+'", '+
+									'"'+user.Usr_Name+'", '+
+									'"'+user.Usr_Login+'", '+
+									'"'+user.Usr_Pw+'", '+
+									'"'+user.Usr_Oauth+'", '+
 									''+user.Usr_Default+''+
 								')',
 								function(res){
@@ -761,6 +878,7 @@ var mobserv = {
 									'Cli_Code = "'+user.Cli_Code+'", '+
 									'Usr_Name = "'+user.Usr_Name+'", '+
 									'Usr_Pw = "'+user.Usr_Pw+'", '+
+									'Usr_Last_Oauth = "'+user.Usr_Oauth+'", '+
 									'Usr_Default = '+user.Usr_Default+' '+
 								'where Usr_Login = "'+user.Usr_Login+'"'
 							);
@@ -787,11 +905,6 @@ var mobserv = {
 			});
 		},
 		init : function(){
-			if(!mobserv.connection.test()){
-				$('#preload').removeClass('courtain');
-				$('#preload .loadinfo').text('Sem internet :(');
-				return false;
-			}
 			mobserv.log({
 				name : 'auth.init',
 				message : 'auth initialized',
@@ -802,7 +915,6 @@ var mobserv = {
 					if (res.rows.length == 0){
 						mobserv.nav.toView('formclient');
 					} else {
-						$('#preload .loadinfo').text('Validando cliente...');
 						var client = mobserv.globals.client = res.rows.item(0);
 						var data = {
 							'exec': 'getLicense',
@@ -812,7 +924,7 @@ var mobserv = {
 						};
 						mobserv.auth.client(res,data,function(validation){
 							mobserv.sqlite.query(
-								'select * from sl_users where Cli_Code = '+client.Cli_Code+' and Usr_Default = 1',
+								'select * from sl_users where Cli_Code = "'+client.Cli_Code+'" and Usr_Default = 1',
 								function(res){
 									if (res.rows.length == 0){
 										mobserv.nav.toView('formuser');
@@ -822,7 +934,6 @@ var mobserv = {
 											message : validation
 										});	
 									} else {
-										$('#preload .loadinfo').text('Autenticando o usuário...');
 										var user = mobserv.globals.user = res.rows.item(0);
 										var data = {
 											'exec': 'authUser',
@@ -834,6 +945,7 @@ var mobserv = {
 										mobserv.auth.user(res,data,function(){
 											$('.footer').transition({ y:0 }, 300);
 											mobserv.nav.toView('home');
+											mobserv.services.get();
 										},
 										function(){
 											mobserv.nav.toView('formuser');
@@ -864,6 +976,53 @@ var mobserv = {
 					});	
 				}
 			);
+		}
+	},
+	services : {
+		list : {},
+		parsedom : function(){
+			
+		},
+		clear : function(){
+		
+		},
+		get : function(){
+			var client = mobserv.globals.client;
+			var user = mobserv.globals.user;
+			var services = mobserv.globals.services;
+			var data = {
+				'exec': 'getServices',
+				'cid': client.Cli_Code,
+				'oa': user.Usr_Oauth,
+				'upt': (services.Srv_Date)?services.Srv_Date:'000-00-00 00:00:00'
+			};
+			mobserv.server.call('service',data,function(response){
+				var $response = $(response);
+				var $valid = $response.find('validation');
+				var $services = $response.find('services');
+				$valid.each(function(){
+					var $v = $(this);
+					var status = $v.attr('status');
+					mobserv.log({
+						type : status,
+						name : 'services.get',
+						message : status+' validation: '+$v.text(),
+					});
+					mobserv.notify.open({
+						type : status,
+						name : 'Serviços',
+						message : $v.text()
+					});	
+				});
+			},
+			function(error){
+				mobserv.notify.open({
+					type : 'error',
+					name : 'Erro do Servidor',
+					message : error
+				});	
+				if(onerror) onerror(error);
+			});
 		}
 	},
 	zindex : 3,
@@ -910,7 +1069,6 @@ var mobserv = {
 		},
 		forward : function($view){
 			var $current = $('.view.current:last');
-			console.log($view,$current);
 			$view = (typeof $view == 'string') ? $('#'+$view) : $view;
 			if ($current.length == 1 && $view.length == 1 && $current.attr('id') != $view.attr('id')){
 				mobserv.history.push($current);
@@ -922,7 +1080,6 @@ var mobserv = {
 				});
 				$view.trigger('show');
 				$current.trigger('hide');
-				console.log('forward',mobserv.history);
 			}
 			mobserv.zindex++;
 		},
@@ -939,7 +1096,6 @@ var mobserv = {
 					});
 					$view.trigger('show');
 					$current.trigger('hide');
-					console.log('back',mobserv.history);
 				}
 				mobserv.zindex++;
 			}
@@ -1000,7 +1156,7 @@ var mobserv = {
 		},
 		open : function(notify){
 			notify.id = $.md5(notify.type+notify.name+notify.message);
-			notify.duration = notify.duration || 3000;
+			notify.duration = notify.duration || 5000;
 			notify.timeout = null;
 			$.each(mobserv.notify.list||[],function(i,n){
 				if(n.id == notify.id) notify.ignore = true;
@@ -1028,18 +1184,39 @@ var mobserv = {
 		}
 		console.log('log',obj);
 	},
-	now : function(){
+	now : function(type){
+		type = (!type)?'datetime':type;
 		var d = new Date;
-		return [
-			d.getFullYear(),
-			("0" + (d.getMonth() + 1)).substr(-2),
-			("0" + d.getDate()).substr(-2)
-		].join('-')+' '+
-		[
-			("0" + d.getHours()).substr(-2),
-			("0" + d.getMinutes()).substr(-2),
-			("0" + d.getSeconds()).substr(-2)
-		].join(':');
+		if (type == 'datetime'){
+			return [
+				d.getFullYear(),
+				("0" + (d.getMonth() + 1)).substr(-2),
+				("0" + d.getDate()).substr(-2)
+			].join('-')+' '+
+			[
+				("0" + d.getHours()).substr(-2),
+				("0" + d.getMinutes()).substr(-2),
+				("0" + d.getSeconds()).substr(-2)
+			].join(':');
+		} else if (type == 'date') {
+			return [
+				d.getFullYear(),
+				("0" + (d.getMonth() + 1)).substr(-2),
+				("0" + d.getDate()).substr(-2)
+			].join('-');
+		} else if (type == 'time') {
+			return [
+				("0" + d.getHours()).substr(-2),
+				("0" + d.getMinutes()).substr(-2),
+				("0" + d.getSeconds()).substr(-2)
+			].join(':');
+		}
 	},
+	exit : function(){
+		if (navigator && navigator.app) navigator.app.exitApp();
+		else if (navigator && navigator.device) navigator.device.exitApp();
+		else return false;
+		return true;	
+	}
 }
 

@@ -33,12 +33,28 @@
         	<li><a data-view="messages" data-direction="forward"><span class="icon-paperplane">Mensagens</span></a></li>
         	<li><a data-view="user" data-direction="forward"><span class="icon-user2">Usuário</span></a></li>
         	<li><a data-view="configs" data-direction="forward"><span class="icon-cogs">Configurações</span></a></li>
-        	<li><a data-view="formclient" data-direction="forward"><span class="icon-plug">Sair</span></a></li>
+        	<li><a data-view="confirmlogout" data-direction="foreground"><span class="icon-plug">Logout</span></a></li>
+        	<li id="exitapp"><a data-view="confirmexit" data-direction="foreground"><span class="icon-switch2">Fechar</span></a></li>
         </ul>
     </nav>
+    <div class="view overall" id="confirmlogout">
+       <div class="btngroup">
+       		<p>Você está prestes a efetuar logout.<br>O que você pretende?</p>
+       		<button class="orange" data-view="formuser" data-direction="foreground">Trocar usuário</button>
+       		<button class="yellow" data-view="formclient" data-direction="foreground">Trocar cliente</button>
+       		<button class="gray">Cancelar</button>
+       </div>        
+    </div>
+    <div class="view overall" id="confirmexit">
+       <div class="btngroup">
+       		<p>Você quer mesmo fechar o Mobserv?</p>
+       		<button class="orange exit">Sim, quero fechar</button>
+       		<button class="gray">Cancelar</button>
+       </div>        
+    </div>
     <div class="view gray current courtain" id="preload" style="display:block;">
     	<div class="loadinfo">Inicializando...</div>
-         <form class="auth" action="">
+        <form class="auth" action="">
             <a class="link icon-history2 fordebug" data-view="log" data-direction="foreground"></a>
         </form>         
     </div>
