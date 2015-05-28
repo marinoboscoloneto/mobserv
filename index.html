@@ -209,6 +209,7 @@
         <header class="header" id="header">
             <h1 class="icon-map3">Geoposição</h1>
             <a class="item l1 menu icon-menu"></a>
+            <a class="item r2 link gmap iconsmall icon-map3" data-view="map" data-direction="forward" data-source="gps"></a>
             <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
         </header>
         <section class="section">
@@ -243,7 +244,10 @@
                 <td><strong id="gpsvel">&nbsp;</strong></td>
               </tr>
             </table>
-            <div class="mapwrap"><img class="mydevice" src="pic/marker-mobserv.png"><img border="0" class="map" style="width:100%; height:200px;" src=""></div>
+            <div class="mapwrap">
+                <img class="mydevice" src="pic/marker-mobserv.png">
+                <img border="0" class="smap link" style="width:100%; height:200px;" src="" data-view="map" data-direction="forward" data-source="gps">
+            </div>
         </section>
     </div>
     <div class="view" id="servers">

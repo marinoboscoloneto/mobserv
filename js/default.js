@@ -262,11 +262,7 @@ $(function(){
 			mobserv.services.parsedom('jobdetails',$this.data('id'));
 		})
 		.on('show','#gps',function(){
-			mobserv.geolocation.watchPosition({
-				enableHighAccuracy : true,
-				timeout : 10000,
-				maximumAge : 60000
-			});
+			mobserv.geolocation.getPosition();
 		})
 		.on('show','#map',function(){
 			mobserv.geolocation.watchPosition({
@@ -333,6 +329,9 @@ $(function(){
 					mapTypeControl: false,	
 					navigationControl: false,
 					streetViewControl: false,
+					scaleControl: false,
+					zoomControl: false,
+					rotateControl: false,
 					scrollwheel: false,
 					/*
 					styles : [{
@@ -367,7 +366,7 @@ $(function(){
 			}
 			$(".map").gmap3({map:map,marker:marker},autofit);
 		})
-		.on('hide','#gps, #map',function(){
+		.on('hide','#map',function(){
 			mobserv.geolocation.clearWatch();
 			$('.map').gmap3('destroy');
 		})

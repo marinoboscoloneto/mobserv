@@ -427,9 +427,9 @@ var mobserv = {
 			$dom.find('#gpsact').html(mobserv.geolocation.position.altitudeAccuracy); 		
 			$dom.find('#gpsdir').html(mobserv.geolocation.position.heading); 
 			mobserv.geolocation.panMap();
-			var $map = $dom.find("img.map");
-			if ($map.length && $map.attr('src') == ''){
-			$map.show().css({opacity:1}).get(0).src = 'http://maps.googleapis.com/maps/api/staticmap?center='+mobserv.geolocation.position.latitude+','+mobserv.geolocation.position.longitude+'&zoom=10&size='+$(window).width()+'x200&sensor=false';
+			var $smap = $dom.find("img.smap");
+			if ($smap.length && $smap.attr('src') == ''){
+				$smap.show().css({opacity:1}).get(0).src = 'http://maps.googleapis.com/maps/api/staticmap?center='+mobserv.geolocation.position.latitude+','+mobserv.geolocation.position.longitude+'&zoom=10&size='+$(window).width()+'x200&sensor=false';
 			}
 		},
 		autoPosition : function(options){
@@ -481,8 +481,8 @@ var mobserv = {
 				name : 'geolocation.watchPosition',
 				message : 'watch position started',
 			});	
+			if(mobserv.geolocation.watchID) return;
 			options = options||{};
-			if(mobserv.geolocation.watchID) clearInterval(mobserv.geolocation.watchID);
 			mobserv.geolocation.watchID = navigator.geolocation.watchPosition(function(pos){
 				mobserv.geolocation.position.latitude = pos.coords.latitude;
 				mobserv.geolocation.position.longitude = pos.coords.longitude;
