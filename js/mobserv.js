@@ -774,7 +774,7 @@ var mobserv = {
 						name : 'auth.client',
 						message : status+' validation: '+$valid.text(),
 					});
-					if (status == 'info'){
+					if (status == 'info' || status == 'notice'){
 						var $lic = $response.find('license:eq(0)');
 						client.name = $lic.attr('client');
 						client.code = $lic.attr('cid');
@@ -894,7 +894,7 @@ var mobserv = {
 						name : 'auth.user',
 						message : status+' validation: '+$valid.text(),
 					});
-					if (status == 'info'){
+					if (status == 'info' || status == 'notice'){
 						var $session = $response.find('session:eq(0)');
 						user.code = client.code;
 						user.name = $session.attr('name');
