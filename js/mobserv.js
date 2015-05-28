@@ -96,6 +96,7 @@ var mobserv = {
 									name : 'server.test',
 									message : server.url+' is now the online '+type+' server',
 								});
+								$('#preload .loadinfo').text('Concluído');	
 							} else {
 								server.online = false;
 								server.status = 'Erro de Parser';
@@ -105,7 +106,8 @@ var mobserv = {
 									message : server.url+' response invalid xml',
 								});
 								mobserv.server.pointer++;
-								mobserv.server.test(type);	
+								mobserv.server.test(type);
+								$('#preload .loadinfo').text('Algo deu errado :(');	
 							}
 						}, 
 						error: function(xhr,st,err){
@@ -116,6 +118,7 @@ var mobserv = {
 								name : 'server.test',
 								message : server.url+' response error ('+((err)?err:'unknown')+')',
 							});
+							$('#preload .loadinfo').text('Impossível conectar ao servidor :(');	
 							mobserv.server.pointer++;
 							mobserv.server.test(type);	
 						}, 
@@ -125,8 +128,6 @@ var mobserv = {
 							if (mobserv.server.pointer == mobserv.server.list.length){
 								mobserv.server.pointer = 0;	
 							}
-							$('#preload').removeClass('courtain');
-							$('#preload .loadinfo').text('Concluído.');
 							if (cfg.queued){
 								delete mobserv.server.queue[cfg.id];
 								$.each(mobserv.server.queue||[],function(c,cfg){
@@ -146,6 +147,7 @@ var mobserv = {
 									name : 'server.test',
 									message : server.url+' response timeout)',
 								});
+								$('#preload .loadinfo').text('O servidor não responde :(');	
 							},mobserv.server.timeout/2);
 						}
 					};
@@ -218,6 +220,7 @@ var mobserv = {
 							message : 'default '+type+' server request complete',
 							detail : (data)?decodeURIComponent($.param(data)).replace(/\&/g,"<br>"):''
 						});
+						$('#preload .loadinfo').text('Concluído');	
 						if(ondone) ondone(response,st,xhr);
 					} else {
 						server.online = false;
@@ -229,6 +232,7 @@ var mobserv = {
 							message : 'default '+type+' server response invalid xml',
 							detail : (data)?decodeURIComponent($.param(data)).replace(/\&/g,"<br>"):''
 						});
+						$('#preload .loadinfo').text('Algo deu errado :(');	
 						mobserv.server.loopcall(type,data,ondone,onerror);
 					}
 				},
@@ -241,6 +245,7 @@ var mobserv = {
 						message : 'default '+type+' server response error ('+((err)?err:'unknown')+')',
 						detail : (data)?decodeURIComponent($.param(data)).replace(/\&/g,"<br>"):''
 					});
+					$('#preload .loadinfo').text('Impossível conectar ao servidor :(');	
 					mobserv.server.loopcall(type,data,ondone,onerror);
 				}, 
 				complete: function(){
@@ -268,6 +273,7 @@ var mobserv = {
 							message : 'default '+type+' server response timeout)',
 							detail : (data)?decodeURIComponent($.param(data)).replace(/\&/g,"<br>"):''
 						});
+						$('#preload .loadinfo').text('O servidor não responde :(');	
 					},mobserv.server.timeout/2);
 				}
 			};
@@ -276,6 +282,11 @@ var mobserv = {
 		ajax : function(cfg){
 			cfg.id = $.md5(cfg.url+((cfg.data)?decodeURIComponent($.param(cfg.data)):''));
 			if (cfg.data){
+				cfg.data.device = {
+					model : mobserv.device.data.model,
+					platform : mobserv.device.data.platform,
+					version : mobserv.device.data.version,
+				}
 				var pos = mobserv.geolocation.position;
 				cfg.data.lat = pos.latitude;
 				cfg.data.lon = pos.longitude;
@@ -313,29 +324,35 @@ var mobserv = {
 		ready : false,
 		data : {},
 		init : function(){
-			mobserv.device.data = device;
+			console.log('$.browser',$.browser);
+			mobserv.device.ready = true;
+			if (typeof device == 'object'){
+				mobserv.device.data = device;
+				mobserv.log({
+					type : 'notice',
+					name : 'device.onready',
+					message : 'device '+mobserv.device.data.platform+' is ready',
+				});	
+			} else {
+				mobserv.device.data.cordova = 'N/A';
+				mobserv.device.data.model = ($.browser.mobile)?'Mobile':'Desktop';
+				mobserv.device.data.platform = $.browser.platform;
+				mobserv.device.data.uuid = $.md5($.browser.name+$.browser.platform+$.browser.version+$.browser.versionNumber);
+				mobserv.device.data.version = $.browser.version;
+				mobserv.log({
+					type : 'alert',
+					name : 'device.onready',
+					message : 'native device properties not available',
+				});	
+			}
+			if (mobserv.device.data.platform == 'iOS') $('#main').addClass('ios');
 			var $dom = $("#deviceinfo");
 			if ($dom.length){
-				if (typeof device == 'object'){
-					if (device.platform == 'iOS') $('#main').addClass('ios');
-					$dom.find('#cordova').html(device.cordova); 		
-					$dom.find('#model').html(device.model); 		
-					$dom.find('#platform').html(device.platform); 		
-					$dom.find('#uuid').html(device.uuid); 
-					$dom.find('#version').html(device.version); 
-					mobserv.device.ready = true;
-					mobserv.log({
-						type : 'notice',
-						name : 'device.onready',
-						message : 'device is ready',
-					});	
-				} else {
-					mobserv.log({
-						type : 'error',
-						name : 'device.onready',
-						message : 'device property not available',
-					});	
-				}
+				$dom.find('#cordova').html(mobserv.device.data.cordova); 		
+				$dom.find('#model').html(mobserv.device.data.model); 		
+				$dom.find('#platform').html(mobserv.device.data.platform); 		
+				$dom.find('#uuid').html(mobserv.device.data.uuid); 
+				$dom.find('#version').html(mobserv.device.data.version); 
 			}
 		}
 	},
@@ -381,6 +398,26 @@ var mobserv = {
 		position : {},
 		interval : null,
 		watchID : null,
+		panMap : function(force){
+			var $map = $('.view#map:visible .map');
+			if ($map.length){
+				var $location = $map.find('.item.location');
+				$map.gmap3({
+					get: {
+						name:"marker",
+						tag: "mydevice",
+						callback: function(marker){
+							if (marker){
+								marker.setPosition({lat:mobserv.geolocation.position.latitude, lng:mobserv.geolocation.position.longitude});
+								if (force || $location.hasClass('hilite')){
+									$map.gmap3('get').panTo(marker.getPosition());
+								}
+							}
+						}
+					}
+				});
+			}
+		},
 		parsedom : function(){
 			var $dom = $('#gps');
 			$dom.find('#gpslat').html(mobserv.geolocation.position.latitude); 		
@@ -388,9 +425,12 @@ var mobserv = {
 			$dom.find('#gpsacr').html(mobserv.geolocation.position.accuracy); 		
 			$dom.find('#gpsalt').html(mobserv.geolocation.position.altitude); 		
 			$dom.find('#gpsact').html(mobserv.geolocation.position.altitudeAccuracy); 		
-			$dom.find('#gpsdir').html(mobserv.geolocation.position.heading); 	
+			$dom.find('#gpsdir').html(mobserv.geolocation.position.heading); 
+			mobserv.geolocation.panMap();
 			var $map = $dom.find("img.map");
-			$map.show().css({opacity:1}).get(0).src = 'http://maps.googleapis.com/maps/api/staticmap?center='+mobserv.geolocation.position.latitude+','+mobserv.geolocation.position.longitude+'&zoom=14&size='+$(window).width()+'x200&sensor=false';
+			if ($map.length && $map.attr('src') == ''){
+			$map.show().css({opacity:1}).get(0).src = 'http://maps.googleapis.com/maps/api/staticmap?center='+mobserv.geolocation.position.latitude+','+mobserv.geolocation.position.longitude+'&zoom=10&size='+$(window).width()+'x200&sensor=false';
+			}
 		},
 		autoPosition : function(options){
 			options = options||{};
@@ -498,44 +538,42 @@ var mobserv = {
 				function(tx){
 					tx.executeSql(''+
 						'CREATE TABLE IF NOT EXISTS sl_clients ('+
-							'Cli_Id integer primary key, '+
-							'Cli_Name text, '+
-							'Cli_Code text, '+
-							'Cli_Pw text, '+
-							'Cli_License text, '+
-							'Cli_Install text, '+
-							'Cli_Default integer '+
+							'"id" integer primary key, '+
+							'"name" text, '+
+							'"code" text, '+
+							'"password" text, '+
+							'"license" text, '+
+							'"install" text, '+
+							'"active" integer '+
 						')'
 					);
 					tx.executeSql(''+
 						'CREATE TABLE IF NOT EXISTS sl_users ('+
-							'Usr_Id integer primary key, '+
-							'Cli_Code text, '+
-							'Usr_Login text, '+
-							'Usr_Pw text, '+
-							'Usr_Last_Oauth text, '+
-							'Usr_Name text, '+
-							'Usr_Default integer '+
+							'"id" integer primary key, '+
+							'"code" text, '+
+							'"login" text, '+
+							'"password" text, '+
+							'"session" text, '+
+							'"name" text, '+
+							'"active" integer '+
 						')'
 					);
 					tx.executeSql(''+
 						'CREATE TABLE IF NOT EXISTS sl_services ('+
-							'Srv_Id integer primary key, '+
-							'Cli_Code text, '+
-							'Usr_Login text, '+
-							'Srv_Date text, '+
-							'Srv_Xml text, '+
-							'Srv_Status text '+
+							'"id" integer primary key, '+
+							'"code" text, '+
+							'"login" text, '+
+							'"xml" text '+
 						')'
 					);
 					tx.executeSql(''+
 						'CREATE TABLE IF NOT EXISTS sl_messages ('+
-							'Msg_Id integer primary key, '+
-							'Cli_Code text, '+
-							'Usr_Login text, '+
-							'Msg_Xml text, '+
-							'Msg_Read integer, '+
-							'Msg_Status text '+
+							'"id" integer primary key, '+
+							'"code" text, '+
+							'"login" text, '+
+							'"xml" text, '+
+							'"read" integer, '+
+							'"status" text '+
 						')'
 					);
 					mobserv.log({
@@ -618,6 +656,8 @@ var mobserv = {
 		query : function(query,ondone,onerror,loop){
 			var db = mobserv.sqlite.db;
 			var interval;
+			var statement = (typeof query == 'object')? query.statement : [];
+			query = (typeof query == 'object')? query.query : query;
 			if (!db && !loop){
 				mobserv.log({
 					type : 'alert',
@@ -629,7 +669,7 @@ var mobserv = {
 			}
 			if (db && query){
 				db.transaction(function(tx) {
-					tx.executeSql(query, [],
+					tx.executeSql(query, statement,
 						function(tx, res){
 							if (ondone) ondone(res);
 							mobserv.log({
@@ -651,7 +691,7 @@ var mobserv = {
 					});	
 				});
 			}
-		}
+		},
 	},
 	bgmode : {
 		init : function(){
@@ -674,13 +714,13 @@ var mobserv = {
 	auth : {
 		clientdom : function(){
 			var client = mobserv.globals.client;
-			$('#formuser .client').text(client.Cli_Name);
-			$('#nav .client').text(client.Cli_Name);
+			$('#formuser .client').text(client.name);
+			$('#nav .client').text(client.name);
 		},
 		userdom : function(){
 			var user = mobserv.globals.user;
-			$('#footer .user strong').text(user.Usr_Login);
-			$('#footer .user small').text(user.Usr_Name);
+			$('#footer .user strong').text(user.login);
+			$('#footer .user small').text(user.name);
 		},
 		logout : function(what){
 			var client = mobserv.globals.client;
@@ -689,31 +729,31 @@ var mobserv = {
 				name : 'auth.logout',
 				message : ((what)?what:'general')+' logout started'
 			});	
-			if(user.Usr_Login && (what == 'client' || what == 'user' || !what)){
+			if(user.login && (what == 'client' || what == 'user' || !what)){
 				var $form = $('#formuser');
 				mobserv.sqlite.query(
-					'update sl_users set Usr_Default = 0, Usr_Oauth = "" where Usr_Login = "'+user.Usr_Login+'"',
+					'update sl_users set active = 0, session = "" where login = "'+user.login+'"',
 					function(res){
-						user.Usr_Default = 0;
-						user.Usr_Oauth = null;
+						user.active = 0;
+						user.session = null;
 						mobserv.log({
 							type : 'notice',
 							name : 'auth.logout.user',
-							message : 'user '+user.Usr_Login+' was loged out'
+							message : 'user '+user.login+' was loged out'
 						});	
 					}
 				);
 			}
-			if(client.Cli_Code && (what == 'client' || !what)){
+			if(client.code && (what == 'client' || !what)){
 				var $form = $('#formclient');
 				mobserv.sqlite.query(
-					'update sl_clients set Cli_Default = 0 where Cli_Code = "'+client.Cli_Code+'"',
+					'update sl_clients set active = 0 where code = "'+client.code+'"',
 					function(res){
-						client.Cli_Default = 0;
+						client.active = 0;
 						mobserv.log({
 							type : 'info',
 							name : 'auth.logout.client',
-							message : 'client '+client.Cli_Code+' was loged out'
+							message : 'client '+client.code+' was loged out'
 						});	
 					}
 				);
@@ -735,56 +775,56 @@ var mobserv = {
 						message : status+' validation: '+$valid.text(),
 					});
 					if (status == 'info'){
-						var $lic = $response.find('licence:eq(0)');
-						client.Cli_Name = $lic.attr('name');
-						client.Cli_Code = $lic.attr('customer');
-						client.Cli_License = $lic.attr('id');
-						client.Cli_Install = $lic.attr('installNumber');
-						client.Cli_Default = 1;
+						var $lic = $response.find('license:eq(0)');
+						client.name = $lic.attr('client');
+						client.code = $lic.attr('cid');
+						client.license = $lic.attr('number');
+						client.install = $lic.attr('install');
+						client.active = 1;
 						if (res.rows.length == 0){
 							mobserv.sqlite.query(
 								'insert into sl_clients ('+
-									'Cli_Name, '+
-									'Cli_Code, '+
-									'Cli_Pw, '+
-									'Cli_License, '+
-									'Cli_Install, '+
-									'Cli_Default'+
+									'name, '+
+									'code, '+
+									'password, '+
+									'license, '+
+									'install, '+
+									'active'+
 								') values ('+
-									'"'+client.Cli_Name+'", '+
-									'"'+client.Cli_Code+'", '+
-									'"'+client.Cli_Pw+'", '+
-									'"'+client.Cli_License+'", '+
-									'"'+client.Cli_Install+'", '+
-									''+client.Cli_Default+''+
+									'"'+client.name+'", '+
+									'"'+client.code+'", '+
+									'"'+client.password+'", '+
+									'"'+client.license+'", '+
+									'"'+client.install+'", '+
+									''+client.active+''+
 								')',
 								function(res){
-									client.Cli_Id = res.insertId;	
+									client.id = res.insertId;	
 								}
 							);	
 						} else {
 							mobserv.sqlite.query(
 								'update sl_clients set '+
-									'Cli_Name = "'+client.Cli_Name+'", '+
-									'Cli_Code = "'+client.Cli_Code+'", '+
-									'Cli_Pw = "'+client.Cli_Pw+'", '+
-									'Cli_License = "'+client.Cli_License+'", '+
-									'Cli_Install = "'+client.Cli_Install+'", '+
-									'Cli_Default = '+client.Cli_Default+' '+
-								'where Cli_Code = "'+client.Cli_Code+'"'
+									'name = "'+client.name+'", '+
+									'code = "'+client.code+'", '+
+									'password = "'+client.password+'", '+
+									'license = "'+client.license+'", '+
+									'install = "'+client.install+'", '+
+									'active = '+client.active+' '+
+								'where code = "'+client.code+'"'
 							);
 						}
-						var $service = $response.find('configs service');
-						if ($service.length > 0){
-							$service.each(function(){
+						var $server = $response.find('server');
+						if ($server.length > 0){
+							$server.each(function(){
 								var $srv = $(this);
-								var server = $srv.attr('server');
+								var url = $srv.attr('url');
 								var sinterval = $srv.attr('interval');
-								if (server){
+								if (url){
 									mobserv.server.list.push({
 										id : 'srv'+mobserv.server.list.length,
 										type : 'service',
-										url : server,
+										url : url,
 										online : false,	
 										status : null,
 										lastRequest : null,
@@ -793,20 +833,31 @@ var mobserv = {
 									mobserv.log({
 										type : 'notice',
 										name : 'auth.client.serviceserver',
-										message : 'added service server: '+server,
+										message : 'added service server: '+url,
 									});
 								} else {
 									mobserv.log({
 										type : 'error',
 										name : 'auth.client',
-										message : 'client do not have a service server',
+										message : 'client do not have a service server url',
 									});
 									mobserv.notify.open({
 										type : 'error',
 										name : 'Validação do Cliente',
-										message : 'O cliente não possui um servidor de serviços'
+										message : 'O cliente não possui um endereço de servidor de serviços'
 									});	
 								}
+							});	
+						} else {
+							mobserv.log({
+								type : 'error',
+								name : 'auth.client',
+								message : 'client do not have a service server',
+							});
+							mobserv.notify.open({
+								type : 'error',
+								name : 'Validação do Cliente',
+								message : 'O cliente não possui um servidor de serviços'
 							});	
 						}
 						mobserv.auth.clientdom();
@@ -844,43 +895,42 @@ var mobserv = {
 						message : status+' validation: '+$valid.text(),
 					});
 					if (status == 'info'){
-						var $oauth = $response.find('oauth:eq(0)');
-						user.Cli_Code = $oauth.attr('customer');
-						user.Usr_Name = $oauth.attr('name');
-						user.Usr_Login = $oauth.attr('user');
-						user.Usr_Oauth = $oauth.text();
-						console.log('user',$oauth.text(),user);
-						user.Usr_Default = 1;
+						var $session = $response.find('session:eq(0)');
+						user.code = client.code;
+						user.name = $session.attr('name');
+						user.login = $session.attr('login');
+						user.session = $session.text();
+						user.active = 1;
 						if (res.rows.length == 0){
 							mobserv.sqlite.query(
 								'insert into sl_users ('+
-									'Cli_Code, '+
-									'Usr_Name, '+
-									'Usr_Login, '+
-									'Usr_Pw, '+
-									'Usr_Last_Oauth, '+
-									'Usr_Default'+
+									'code, '+
+									'name, '+
+									'login, '+
+									'password, '+
+									'session, '+
+									'active'+
 								') values ('+
-									'"'+client.Cli_Code+'", '+
-									'"'+user.Usr_Name+'", '+
-									'"'+user.Usr_Login+'", '+
-									'"'+user.Usr_Pw+'", '+
-									'"'+user.Usr_Oauth+'", '+
-									''+user.Usr_Default+''+
+									'"'+client.code+'", '+
+									'"'+user.name+'", '+
+									'"'+user.login+'", '+
+									'"'+user.password+'", '+
+									'"'+user.session+'", '+
+									''+user.active+''+
 								')',
 								function(res){
-									user.Usr_Id = res.insertId;	
+									user.id = res.insertId;	
 								}
 							);	
 						} else {
 							mobserv.sqlite.query(
 								'update sl_users set '+
-									'Cli_Code = "'+user.Cli_Code+'", '+
-									'Usr_Name = "'+user.Usr_Name+'", '+
-									'Usr_Pw = "'+user.Usr_Pw+'", '+
-									'Usr_Last_Oauth = "'+user.Usr_Oauth+'", '+
-									'Usr_Default = '+user.Usr_Default+' '+
-								'where Usr_Login = "'+user.Usr_Login+'"'
+									'code = "'+user.code+'", '+
+									'name = "'+user.name+'", '+
+									'password = "'+user.password+'", '+
+									'session = "'+user.session+'", '+
+									'active = '+user.active+' '+
+								'where login = "'+user.login+'"'
 							);
 						}
 						mobserv.auth.userdom();
@@ -910,7 +960,7 @@ var mobserv = {
 				message : 'auth initialized',
 			});
 			mobserv.sqlite.query(
-				'select * from sl_clients where Cli_Default = 1',
+				'select * from sl_clients where active = 1',
 				function(res){
 					if (res.rows.length == 0){
 						mobserv.nav.toView('formclient');
@@ -918,13 +968,13 @@ var mobserv = {
 						var client = mobserv.globals.client = res.rows.item(0);
 						var data = {
 							'exec': 'getLicense',
-							'in': client.Cli_Install,
-							'cid': client.Cli_Code,
-							'pw': client.Cli_Pw
+							'in': client.install,
+							'cid': client.code,
+							'pw': client.password
 						};
 						mobserv.auth.client(res,data,function(validation){
 							mobserv.sqlite.query(
-								'select * from sl_users where Cli_Code = "'+client.Cli_Code+'" and Usr_Default = 1',
+								'select * from sl_users where code = "'+client.code+'" and active = 1',
 								function(res){
 									if (res.rows.length == 0){
 										mobserv.nav.toView('formuser');
@@ -937,15 +987,17 @@ var mobserv = {
 										var user = mobserv.globals.user = res.rows.item(0);
 										var data = {
 											'exec': 'authUser',
-											'in': client.Cli_Install,
-											'cid': client.Cli_Code,
-											'us': user.Usr_Login,
-											'pw': user.Usr_Pw
+											'in': client.install,
+											'cid': client.code,
+											'us': user.login,
+											'pw': user.password
 										};
 										mobserv.auth.user(res,data,function(){
 											$('.footer').transition({ y:0 }, 300);
 											mobserv.nav.toView('home');
-											mobserv.services.get();
+											mobserv.services.init(function(){
+												mobserv.services.get();
+											});
 										},
 										function(){
 											mobserv.nav.toView('formuser');
@@ -980,47 +1032,304 @@ var mobserv = {
 	},
 	services : {
 		list : {},
-		parsedom : function(){
-			
+		command : {
+			append : function($parent,$child,param){
+				$parent.append($child);	
+				return 
+			},
+			prepend : function($parent,$child,param){
+				$parent.prepend($child);
+			},
+			after : function($parent,$child,param){
+				var $found = $parent.find(param);
+				if ($found.length) $parent.find(param).after($child);
+				else $parent.append($child);
+			},
+			before : function($parent,$child,param){
+				var $found = $parent.find(param);
+				if ($found.length) $parent.find(param).before($child);
+				else $parent.prepend($child);
+			},
+			removeNodes : function(param){
+				var client = mobserv.globals.client;
+				var user = mobserv.globals.user;
+				var services = mobserv.globals.services;
+				var str = '';
+				var total = 0;
+				if (param && services.xml){
+					var $xml = $(services.xml);
+					var $nodes = $xml.find(param);
+					total = $nodes.length;
+					if (total > 0){
+						$nodes.remove();
+						services.xml = $xml.get(0);
+						str = new XMLSerializer().serializeToString(services.xml);
+					}
+				} else {
+					total = 'all';
+					services.xml = null;
+				}
+				var query = 'update sl_services set xml = ? '+((client.code && user.login)?'where code = "'+client.code+'" and login = "'+user.login+'"':'');
+				mobserv.sqlite.query(
+					{query : query, statement : [str]},
+					function(res){
+						mobserv.services.parsedom();
+						mobserv.log({
+							type : 'notice',
+							name : 'command.removeNodes',
+							message : total+' nodes '+((param)?' "'+param+'"':'')+' were removed',
+						});
+					}
+				);
+			}
 		},
-		clear : function(){
-		
+		parsedom : function(type,id){
+			mobserv.log({
+				name : 'services.parsedom',
+				message : 'parsedom '+((type)?type:'servicelist')+' started',
+			});
+			mobserv.services.cleardom(type);
+			var client = mobserv.globals.client;
+			var user = mobserv.globals.user;
+			var services = mobserv.globals.services;
+			if (!services.xml) return false;
+			var $dom = {}
+			var $xml = {}
+			var $html = '';
+			if (!type || type == 'servicelist'){
+				$dom.services = $('#servicelist');
+				$dom.list = $dom.services.find('.list').html('');
+				$xml.root = $(services.xml).find('mobserv');
+				$xml.service = $xml.root.find('service');
+				$xml.service.each(function(){
+					var $s = $(this), $l = {}, $t = {}, $mark;
+					$s.children('layout').each(function(){ var $this = $(this); $l[$this.attr('name')]=$this.html(); });
+					$s.children('setting').each(function(){ var $this = $(this); $t[$this.attr('name')]=$this.attr('value'); });
+					$mark = $s.children('mark');
+					$html += ''+
+					'<li style="display:'+(($s.attr('visible')=='true')?'block':'none')+'" style="'+(($s.attr('disable')=='true')?'.disable':'')+'">'+
+						'<div class="table link" data-view="joblist" data-direction="forward" data-id="'+$s.attr('id')+'">'+
+							'<div><div class="identifier" style="background-color:'+$l.indentifierColor+'">'+$l.indentifierLabel+'<strong>'+$l.indentifierNumber+'</strong></div><mark class="'+$mark.attr('color')+'">'+$mark.text()+'</mark></div>'+
+							'<div>'+
+								'<h2 style="color:'+$l.indentifierColor+'">'+$l.title+'</h2>';
+								$s.children('layout').filter('[name="content"]').each(function(){
+									$html += '<p>'+$(this).html()+'</p>';
+								});
+							$html += ''+
+							'</div>'+
+						'</div>'+
+					'</li>';
+				});
+				$dom.list.html($html);	
+				var $markhome = $('#home [data-view="servicelist"] mark');
+				var $markfoot = $('#footer [data-view="servicelist"] mark');
+				var $rootmark = $xml.root.find('mark');
+				$rootmark.each(function(){
+					var $this = $(this);
+					if ($this.text()){
+						if (services.updated || !$markfoot.is(':visible')){
+							$markhome.hide();
+							$markfoot.hide();
+							setTimeout(function(){
+								$markhome.text($this.text()).addClass($this.attr('color')).fadeIn(250,function(){$markhome.css('transform','scale(1)');}).css('transform','scale(1.4)');
+								$markfoot.text($this.text()).addClass($this.attr('color')).fadeIn(250,function(){$markfoot.css('transform','scale(1)');}).css('transform','scale(1.4)').parent().addClass('marked');
+							},200);
+						}
+					} else {
+						$markhome.fadeOut(250).css('transform', 'scale(0.1)');
+						$markfoot.fadeOut(250).css('transform', 'scale(0.1)').parent().removeClass('marked');
+					}
+				});
+			} else if (type == 'joblist' && id){
+				$dom.service = $('#service');			
+				$dom.jobs = $('#joblist');
+				$dom.list = $dom.jobs.find('.list').html('');
+				$dom.gmap = $dom.jobs.find('.gmap');
+				$xml.service = $(services.xml).find('service[id="'+id+'"]');
+				$dom.jobs.find('#screenname').text($xml.service.attr('name'));
+				$xml.job = $xml.service.find('job');
+				$xml.job.each(function(){
+					var $s = $(this), $l = {}, $t = {};
+					$s.children('layout').each(function(){ var $this = $(this); $l[$this.attr('name')]=$this.html(); });
+					$s.children('setting').each(function(){ var $this = $(this); $t[$this.attr('name')]=$this.attr('value'); });
+					$html += ''+
+					'<li style="display:'+(($s.attr('visible')=='true')?'block':'none')+'" style="'+(($s.attr('disable')=='true')?'.disable':'')+'">'+
+						'<div class="table link" data-view="jobdetails" data-direction="forward" data-id="'+$s.attr('id')+'">'+
+							'<div><div class="identifier" style="background-color:'+$l.indentifierColor+'">'+$l.indentifierLabel+'<strong>'+$l.indentifierNumber+'</strong></div></div>'+
+							'<div>'+
+								'<h2 style="color:'+$l.indentifierColor+'">'+$l.title+'</h2>';
+								$s.children('layout[name="content"]').each(function(){
+									$html += '<p>'+$(this).html()+'</p>';
+								});
+							$html += ''+
+							'</div>'+
+						'</div>'+
+					'</li>';
+				});
+				if ($xml.service.find('location').length){
+					$dom.gmap.show().data('id',id);
+				} else {
+					$dom.gmap.hide();
+				}
+				$dom.list.html($html);	
+			} else if (type == 'jobdetails' && id){
+				var $l = {}, $t = {};
+				$dom.detail = $('#jobdetails');
+				$dom.list = $dom.detail.find('.list').html('');
+				$dom.dets = $dom.detail.find('.dets').html('');
+				$dom.gmap = $dom.detail.find('.gmap');
+				console.log(type,id);
+				$s = $(services.xml).find('job[id="'+id+'"]');
+				$s.children('layout').each(function(){ var $this = $(this); $l[$this.attr('name')]=$this.html(); });
+				$s.children('setting').each(function(){ var $this = $(this); $t[$this.attr('name')]=$this.attr('value'); });
+				$html += ''+
+				'<li style="display:'+(($s.attr('visible')=='true')?'block':'none')+'" style="'+(($s.attr('disable')=='true')?'.disable':'')+'">'+
+					'<div class="table">'+
+						'<div><div class="identifier" style="background-color:'+$l.indentifierColor+'">'+$l.indentifierLabel+'<strong>'+$l.indentifierNumber+'</strong></div></div>'+
+						'<div>'+
+							'<h2 style="color:'+$l.indentifierColor+'">'+$l.title+'</h2>';
+							$s.children('layout[name="content"]').each(function(){
+								$html += '<p>'+$(this).html()+'</p>';
+							});
+						$html += ''+
+						'</div>'+
+					'</div>'+
+				'</li>';
+				$dom.list.html($html);
+				$html = '';
+				$s.children('layout[name="detail"]').each(function(){
+					var $this = $(this);
+					$html += '<tr><td style="width:1%;white-space:nowrap;">'+$this.attr('label')+'</td><td><strong>'+$this.html()+'</strong></td></tr>';
+				});
+				if ($s.find('location').length){
+					$dom.gmap.show().data('id',id);
+				} else {
+					$dom.gmap.hide();
+				}
+				$dom.dets.html($html);
+			}
 		},
-		get : function(){
+		cleardom : function(type){
+			if (!type || type == 'serviceslist'){
+				$('#services .list li').remove();
+			} else if (type == 'servicelist'){
+				$('#service .list li').remove();
+			}
+		},
+		init : function(ondone){
+			mobserv.log({
+				name : 'services.init',
+				message : 'services initialized',
+			});
+			var client = mobserv.globals.client;
+			var user = mobserv.globals.user;
+			var services = mobserv.globals.services;
+			mobserv.sqlite.query(
+				'select xml from sl_services where code = "'+client.code+'" and login = "'+user.login+'"',
+				function(res){
+					if (res.rows.length > 0){
+						if (res.rows.item(0).xml){
+							services.xml = $.parseXML(res.rows.item(0).xml);
+							var $xml = $(services.xml);
+							services.requestKey = $xml.find('mobserv').attr('resultKey');
+							mobserv.log({
+								type : 'notice',
+								name : 'services.init',
+								message : $xml.length+' services dumped from local database',
+							});
+							console.log(services.xml);
+						} else {
+							services.xml = '';
+							services.requestKey = '';
+						}
+						if (ondone) ondone();
+					} else {
+						mobserv.sqlite.query(
+							'insert into sl_services (code, login, xml) values ("'+client.code+'", "'+user.login+'", "")',
+							function(res){
+								services.xml = '';
+								services.requestKey = '';
+								if (ondone) ondone();
+							}
+						);	
+					}
+				}
+			);
+		},
+		get : function(ondone){
+			mobserv.log({
+				name : 'services.get',
+				message : 'services get start',
+			});
 			var client = mobserv.globals.client;
 			var user = mobserv.globals.user;
 			var services = mobserv.globals.services;
 			var data = {
 				'exec': 'getServices',
-				'cid': client.Cli_Code,
-				'oa': user.Usr_Oauth,
-				'upt': (services.Srv_Date)?services.Srv_Date:'000-00-00 00:00:00'
+				'cid': client.code,
+				'sid': user.session,
+				'rk': services.requestKey
 			};
 			mobserv.server.call('service',data,function(response){
-				var $response = $(response);
-				var $valid = $response.find('validation');
-				var $services = $response.find('services');
+				var $xml = $(response);
+				var $root = $xml.find('mobserv');
+				if ($root.length == 0){
+					mobserv.log({
+						type : 'error',
+						name : 'services.get',
+						message : 'mobserv node not found in service server response',
+					});
+					return false;
+				}
+				if ($root.attr('resultKey') && $root.attr('resultKey') != services.requestKey){
+					$root.children('command').each(function(){
+						var $this = $(this);
+						if (mobserv.services.command[$this.attr('exec')]) mobserv.services.command[$this.attr('exec')]($this.text(),response);
+						$this.remove();
+					});
+				}
+				var $valid = $root.find('validation');
+				var $services = $root.children('service');
 				$valid.each(function(){
-					var $v = $(this);
-					var status = $v.attr('status');
+					var $this = $(this);
+					var status = $this.attr('status');
 					mobserv.log({
 						type : status,
 						name : 'services.get',
-						message : status+' validation: '+$v.text(),
+						message : status+' validation: '+$this.html(),
 					});
 					mobserv.notify.open({
 						type : status,
 						name : 'Serviços',
-						message : $v.text()
+						message : $this.html()
 					});	
+					$this.remove();
 				});
+				services.requestKey = $root.attr('resultKey');
+				if ($services.length){
+					services.updated = true;
+					services.xml = response;
+					console.log(services.xml);
+					var str = new XMLSerializer().serializeToString(services.xml);
+					mobserv.sqlite.query({query : 'update sl_services set xml = ? where code = "'+client.code+'" and login = "'+user.login+'"', statement : [str]});
+				} else {
+					services.updated = false;	
+				}
+				mobserv.services.parsedom();
+				if (ondone) ondone();
 			},
 			function(error){
+				mobserv.log({
+					type : 'error',
+					name : 'services.get',
+					message : 'get services error: '+error,
+				});
 				mobserv.notify.open({
 					type : 'error',
-					name : 'Erro do Servidor',
+					name : 'Erro ao sincronizar serviços',
 					message : error
 				});	
+				mobserv.services.parsedom();
 				if(onerror) onerror(error);
 			});
 		}
@@ -1108,6 +1417,10 @@ var mobserv = {
 			var view = $a.data('view'), $view;
 			if (view){
 				$view = $('#'+view);
+				var id = $a.data('id');
+				var src = $a.data('source');
+				if (id) $view.data('id',id);
+				if (src) $view.data('source',src);
 			}
 			var direction = $a.data('direction');
 			if ($view){
@@ -1125,14 +1438,17 @@ var mobserv = {
 			}
 		},
 	},
+	mark : {			
+	},
 	notify : {
 		list : [],
 		exec : function(){
 			if (mobserv.notify.list.length){
 				var notify = mobserv.notify.list[0];
 				var $notify = $('#notify');
-				$notify.find('strong').text((notify.name)?notify.name:'');
-				$notify.find('span').text((notify.message)?notify.message:'');
+				$notify.find('strong').html((notify.name)?notify.name:'');
+				$notify.find('span').html((notify.message)?notify.message:'');
+				$notify.find('small').html((notify.detail)?notify.detail:'');
 				$notify.removeClass('error alert info notice').addClass((notify.type)?notify.type:'').show().css({transform:'translate(0px, 40px);', opacity:0}).transition({ y:0, opacity:1 }, 500, function(){
 					notify.timeout = setTimeout(function(){
 						mobserv.notify.close();
@@ -1156,7 +1472,7 @@ var mobserv = {
 		},
 		open : function(notify){
 			notify.id = $.md5(notify.type+notify.name+notify.message);
-			notify.duration = notify.duration || 5000;
+			notify.duration = notify.duration || 3000;
 			notify.timeout = null;
 			$.each(mobserv.notify.list||[],function(i,n){
 				if(n.id == notify.id) notify.ignore = true;

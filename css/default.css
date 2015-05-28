@@ -6,7 +6,7 @@ main, main, aside, canvas, figure, figure img, figcaption, hgroup, footer, heade
 * { outline: none;  -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box; -webkit-text-size-adjust:100%; -webkit-tap-highlight-color: rgba(0,0,0,0); font-family:"Helvetica Neue", Helvetica, Arial, sans-serif; }
 body, html { width:100%; height:100%; margin:0; padding:0; position:relative; background-color:#FFF; font-size:11px; -webkit-font-smoothing: antialiased; color:#555; }
 
-.input, .submit, .statustripe, .notify  { transition: all 250ms; }
+.input, .submit, .statustripe, .notify, mark, .footer .item  { transition: all 250ms; }
 
 input { -webkit-appearance: none; border-radius: 0; }
 input:required { box-shadow:none; }
@@ -26,7 +26,7 @@ input:invalid { box-shadow:none; }
 
 .loadinfo { position:absolute; width:100%; top:40%; color:#999; font-size:16px; font-weight:bold; letter-spacing:-1px; text-align:center; }
 
-.auth { position:absolute; width:100%; top:10%; min-height:100px; padding:0 12%; }
+.auth { position:absolute; width:100%; top:14%; min-height:100px; padding:0 12%; }
 .auth .logo { width:100%; height:150px; background-image:url(../pic/auth-logo.png); background-repeat: no-repeat; background-position: center top; }
 .auth .description { font-size:12px; text-align:center; }
 .auth .description strong.client { font-size:16px; color:#F50; letter-spacing:-1px; }
@@ -42,15 +42,17 @@ input:invalid { box-shadow:none; }
 .auth .link { display:block; width:20px; height:20px; position:absolute; bottom:-16%; left:50%; margin-left:-8px; }
 .auth .link:before { font-size:20px; }
 
-.header { position:absolute; top:0; left:0; width:100%; height:42px; background:#EEE; border-bottom:#CCC solid 1px; z-index:1; }
+.header { position:absolute; top:0; left:0; width:100%; height:42px; background:#EEE; border-bottom:#CFCFCF solid 1px; z-index:2; box-shadow: 0 0 10px 0 rgba(51,51,51,.2); -webkit-box-shadow: 0 0 10px 0 rgba(51,51,51,.2); }
 .header .item { font-size:14px; color:#555; line-height:38px; position:absolute; min-height:41px; min-width:42px; }
 .header .item:before { font-size:24px; position:absolute; width:42px; text-align:center; top:8px;  }
+.header .item.iconsmall:before { font-size:16px; top:13px; }
 .header .item.hover { background:#CCC; }
 .ios .header { padding-top:20px; height:62px; }
 .header .item.l1 { left:0; }
 .header .item.l2 { left:42px; }
 .header .item.r1 { right:0; }
 .header .item.r2 { right:42px; }
+.header .item.hilite { color:#F40; }
 .header h1 { font-size:14px; color:#555; padding:0 6px; line-height:42px; text-align:center; position:absolute; left:25%; width:50%; white-space:nowrap; letter-spacing:-1px; }
 .header h1:before { margin:-4px 6px 0 0; }
 
@@ -102,28 +104,34 @@ input:invalid { box-shadow:none; }
 .section .grid li a [class*="icon-"]:before { display:block; font-size:48px;  }
 .section .grid li a strong { display:block; width:100%; height:52px; font-weight:bold; font-size:13px; }
 .section .grid li a span { display:block; width:100%; font-weight:bold; font-size:11px; color:#666; }
-.section .grid li a mark { display:block; width:24px; height:24px; position:absolute; right:40px; top:8px; background:#F30; color:#FFF; font-size:12px; font-weight:bold; text-align:center; line-height:24px; border-radius:12px; }
+.section .grid li a mark { display:none; width:24px; height:24px; position:absolute; right:40px; top:8px; background:#AAA; color:#FFF; font-size:12px; font-weight:bold; text-align:center; line-height:24px; border-radius:12px; }
 .section .list li { width:100%; min-height:32px; border-bottom:#DDD solid 1px; }
-.section .list li .link { display:block; height:100%; text-align:left; }
+.section .list li .link { display:table; height:100%; text-align:left; }
 .section .list li .link.hover { background:#DDD; color:#444; }
 .section .list li .link [class*="icon-"]:before { display:block; }
-.section .list li .link > div {  padding:12px 0 12px 12px; }
-.section .list li .link .identifier {  padding:8px; width:56px; height:48px; text-align:center; background:#444; color:#FFF; }
-.section .list li .link .identifier strong { font-size:32px; display:block; }
-.section .list li .link mark { display:block; width:24px; height:24px; position:absolute; right:32px; top:8px; background:#F30; color:#FFF; font-size:12px; font-weight:bold; text-align:center; line-height:24px; border-radius:12px; }
-.section .mapwrap { background:#E9E5DC; }
+.section .list li .table > div {  padding:12px 0 12px 12px; vertical-align:top; position:relative; }
+.section .list li .table > div:first-child { width:1%; }
+.section .list li .table > div:last-child { width:99%; }
+.section .list li .identifier { padding:8px; min-width:42px; text-align:center; background:#444; color:#FFF; border-radius:8px 0 8px 0; }
+.section .list li .identifier strong { font-size:16px; display:block; }
+.section .list li mark { display:block; width:24px; height:24px; position:absolute; right:-10px; top:5px; background:#AAA; color:#FFF; font-size:12px; font-weight:bold; text-align:center; line-height:24px; border-radius:12px; }
+.section .list li h1 { margin-top:0; }
+.section .list li h2 { margin-top:0; }
+.section .list li p { margin:8px 0 0 0; }
+.section .mapwrap { background:#E9E5DC; position:relative; }
 .section .mapwrap .map { opacity:0; }
+.section .mapwrap .mydevice { position:absolute; left:50%; top:50%; margin:-10px 0 0 -10px; }
 .section p, .section table, .section h1, .section h2, .section h3 { margin:8px; }
 .section h1, .section h2, .section h3 { margin:8px 0; }
 .section h2 { font-size:14px; letter-spacing:-1px; }
 
-.footer { position:absolute; bottom:0; left:0; width:100%; height:42px; background:#EEE; border-top:#CCC solid 1px; z-index:999999; -webkit-transform: translateY(50px); }
+.footer { position:absolute; bottom:0; left:0; width:100%; height:42px; background:#EEE; border-top:#CFCFCF solid 1px; z-index:999999; -webkit-transform: translateY(50px); box-shadow: 0 0 10px 0 rgba(51,51,51,.2); -webkit-box-shadow: 0 0 10px 0 rgba(51,51,51,.2); }
 .footer .item { font-size:14px; color:#CCC; line-height:38px; position:absolute; min-height:41px; min-width:50px; }
 .footer .item:before { font-size:24px; position:absolute; width:50px; text-align:center; top:8px;  }
 .footer .item.hover { background:#CCC; color:#AAA; }
 .footer .item.marked { color:#555; }
 .footer .item.marked:hover { color:#444; }
-.footer .item.marked mark { display:block; width:18px; height:18px; position:absolute; right:4px; top:4px; background:#F30; color:#FFF; font-size:9px; font-weight:bold; text-align:center; line-height:18px; border-radius:12px; }
+.footer .item mark { display:none; width:18px; height:18px; position:absolute; right:4px; top:4px; background:#F40; color:#FFF; font-size:9px; font-weight:bold; text-align:center; line-height:18px; border-radius:12px; }
 .footer .item.r1 { right:0; }
 .footer .item.r2 { right:50px; }
 .footer .item.r3 { right:100px; }
@@ -132,19 +140,27 @@ input:invalid { box-shadow:none; }
 .footer .user:before { margin:7px 3px 0 0; font-size:24px; }
 
 .notify { display:none; position:absolute; bottom:0; left:0; width:100%; background:rgba(51,51,51,.95); z-index:100000000; padding:16px; color:#FFF; }
-.notify strong { display:block; padding:0 4px; font-size:12px; }
+.notify strong { display:block; padding:0 4px; font-size:13px; }
 .notify span { display:block; padding:4px; }
+.notify small { display:block; padding:0 4px; }
 .notify.error { background:rgba(255,0,0,.95);  }
-.notify.notice { background:rgba(0,122,0,.95);  }
+.notify.notice { background:rgba(16,153,72,.95)  }
 .notify.alert { background:rgba(255,102,0,.95);  }
 .notify.info { background:rgba(0,102,204,.95);  }
 
-.logline { margin:8px 8px 0 8px; font-size:8px; color:#888; font-family:"Courier New", Courier, monospace !important; }
+.logline { padding:10px 6px; font-size:9px; color:#888; font-family:"Courier New", Courier, monospace !important; }
+.logline .detail { font-size:8px; opacity:.7; }
 .logline * { }
 .logline.error { color:#F00; }
 .logline.alert { color:#F50; }
 .logline.info { color:#09F; }
 .logline.notice { color:#090; }
+
+mark.orange { background:#F40 !important; }
+mark.red { background:#F10 !important; }
+mark.blue { background:#09F !important; }
+mark.green { background:#080 !important; }
+mark.yellow { background:#F80 !important; }
 
 .fordebug { display:none !important; }
 .debug .fordebug { display:block !important; }

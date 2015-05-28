@@ -12,11 +12,13 @@
 <script src="phonegap.js"></script>
 <script src="js/jquery-2.1.0.min.js"></script>
 <script src="js/jquery.tap.js"></script>
+<script src="js/jquery.browser.min.js"></script>
 <script src="js/jquery.transit.js"></script>
 <script src="js/jquery.hash.js"></script>
 <script src="js/mobserv.js"></script>
 <script src="js/default.js"></script>
 <script src="js/gmap3.min.js"></script>
+<script src="http://maps.google.com/maps/api/js?sensor=true"></script>
 <link href="fonts/icomoon/style.css" rel="stylesheet" type="text/css">
 <link href="css/default.css" rel="stylesheet" type="text/css">
 </head>
@@ -29,7 +31,7 @@
         </header>
     	<ul>
         	<li><a data-view="home" data-direction="forward"><span class="icon-home">Home</span></a></li>
-        	<li><a data-view="services" data-direction="forward"><span class="icon-package5">Serviços</span></a></li>
+        	<li><a data-view="servicelist" data-direction="forward"><span class="icon-package5">Serviços</span></a></li>
         	<li><a data-view="messages" data-direction="forward"><span class="icon-paperplane">Mensagens</span></a></li>
         	<li><a data-view="user" data-direction="forward"><span class="icon-user2">Usuário</span></a></li>
         	<li><a data-view="configs" data-direction="forward"><span class="icon-cogs">Configurações</span></a></li>
@@ -87,15 +89,16 @@
             <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
         </header>
         <section class="section">
+        	<div class="puller"><strong>Solte para atualizar</strong></div>
             <ul class="grid">
-                <li><a data-view="services" data-direction="forward"><strong class="icon-package5"></strong><span>Serviços</span><mark>1</mark></a></li>
-                <li><a data-view="messages" data-direction="forward"><strong class="icon-paperplane"></strong><span>Mensagens</span><mark>12</mark></a></li>
+                <li><a data-view="servicelist" data-direction="forward"><strong class="icon-package5"></strong><span>Serviços</span><mark></mark></a></li>
+                <li><a data-view="messages" data-direction="forward"><strong class="icon-paperplane"></strong><span>Mensagens</span><mark></mark></a></li>
                 <li><a data-view="user" data-direction="forward"><strong class="icon-user2"></strong><span>Usuário</span></a></li>
                 <li><a data-view="configs" data-direction="forward"><strong class="icon-cogs"></strong><span>Configurações</span></a></li>
             </ul>
         </section>
     </div>
-    <div class="view" id="services" data-source="services">
+    <div class="view" id="servicelist">
         <header class="header" id="header">
             <h1 class="icon-package5">Serviços</h1>
             <a class="item l1 menu icon-menu"></a>
@@ -104,158 +107,32 @@
         <section class="section">
         	<div class="puller"><strong>Solte para atualizar</strong></div>
             <form class="onlist search icon-search2" action=""><input class="input text command" type="text" id="search" placeholder="Pesquisar" /></form>
-            <ul class="list">
-                <li>
-                	<div class="table link" data-view="servicelist" data-direction="forward">
-                        <div><div class="identifier">ROTA<strong>12</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-            </ul>
+            <ul class="list"></ul>
         </section>
     </div>
-    <div class="view" id="servicelist" data-source="services/service">
+    <div class="view" id="joblist">
         <header class="header" id="header">
-            <h1 class="icon-package5">Rota 12</h1>
+            <h1 class="icon-package5" id="screenname">{screenname}</h1>
             <a class="item l1 menu icon-menu"></a>
+            <a class="item r2 link gmap iconsmall icon-map3" data-view="map" data-direction="forward" data-source="joblist"></a>
             <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
         </header>
         <section class="section">
         	<div class="puller"><strong>Solte para atualizar</strong></div>
-            <ul class="list">
-                <li>
-                	<div class="table link" data-view="services" >
-                        <div><div class="identifier">REM<strong>1</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-                <li>
-                	<div class="table link" data-view="services" >
-                        <div><div class="identifier">REM<strong>2</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-                <li>
-                	<div class="table link" data-view="services" >
-                        <div><div class="identifier">REM<strong>3</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-                <li>
-                	<div class="table link" data-view="services" >
-                        <div><div class="identifier">REM<strong>3</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-                <li>
-                	<div class="table link" data-view="services" >
-                        <div><div class="identifier">REM<strong>3</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-                <li>
-                	<div class="table link" data-view="services" >
-                        <div><div class="identifier">REM<strong>3</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-                <li>
-                	<div class="table link" data-view="services" >
-                        <div><div class="identifier">REM<strong>3</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-                <li>
-                	<div class="table link" data-view="services" >
-                        <div><div class="identifier">REM<strong>3</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-                <li>
-                	<div class="table link" data-view="services" >
-                        <div><div class="identifier">REM<strong>3</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-                <li>
-                	<div class="table link" data-view="services" >
-                        <div><div class="identifier">REM<strong>3</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-                <li>
-                	<div class="table link" data-view="services" >
-                        <div><div class="identifier">REM<strong>3</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-                <li>
-                	<div class="table link" data-view="services" >
-                        <div><div class="identifier">REM<strong>3</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-                <li>
-                	<div class="table link" data-view="services" >
-                        <div><div class="identifier">REM<strong>3</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-                <li>
-                	<div class="table link" data-view="services" >
-                        <div><div class="identifier">REM<strong>3</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-                <li>
-                	<div class="table link" data-view="services" >
-                        <div><div class="identifier">REM<strong>3</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-                <li>
-                	<div class="table link" data-view="services" >
-                        <div><div class="identifier">REM<strong>3</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-                <li>
-                	<div class="table link" data-view="services" >
-                        <div><div class="identifier">REM<strong>3</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-                <li>
-                	<div class="table link" data-view="services" >
-                        <div><div class="identifier">REM<strong>3</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-                <li>
-                	<div class="table link" data-view="services" >
-                        <div><div class="identifier">REM<strong>3</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-                <li>
-                	<div class="table link" data-view="services" >
-                        <div><div class="identifier">REM<strong>3</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-                <li>
-                	<div class="table link" data-view="services" >
-                        <div><div class="identifier">REM<strong>3</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-                <li>
-                	<div class="table link" data-view="services" >
-                        <div><div class="identifier">REM<strong>3</strong></div></div>
-                        <div><h2>Serviços</h2>asdasdasdasda dasd asd asasdasd asdasd dsasd</div>
-                    </div>
-                </li>
-            </ul>
+            <form class="onlist search icon-search2" action=""><input class="input text command" type="text" id="search" placeholder="Pesquisar" /></form>
+            <ul class="list"></ul>
+        </section>
+    </div>
+    <div class="view" id="jobdetails">
+        <header class="header" id="header">
+            <h1 class="icon-package5" id="screenname">{screenname}</h1>
+            <a class="item l1 menu icon-menu"></a>
+            <a class="item r2 link gmap iconsmall icon-map3" data-view="map" data-direction="forward" data-source="jobdetails"></a>
+            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
+        </header>
+        <section class="section">
+            <ul class="list"></ul>
+        	<table width="96%" border="0" cellspacing="6" cellpadding="6" class="dets"></table>
         </section>
     </div>
     <div class="view" id="configs">
@@ -366,7 +243,7 @@
                 <td><strong id="gpsvel">&nbsp;</strong></td>
               </tr>
             </table>
-            <div class="mapwrap"><img border="0" class="map" style="width:100%; height:200px;" src=""></div>
+            <div class="mapwrap"><img class="mydevice" src="pic/marker-mobserv.png"><img border="0" class="map" style="width:100%; height:200px;" src=""></div>
         </section>
     </div>
     <div class="view" id="servers">
@@ -405,6 +282,16 @@
             </table>
         </section>
     </div>
+    <div class="view" id="map">
+        <header class="header" id="header">
+            <h1 class="icon-map3">Mapa</h1>
+            <a class="item l1 menu icon-menu"></a>
+            <a class="item r2 location iconsmall icon-location"></a>
+            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
+        </header>
+        <section class="section map">
+        </section>
+    </div>
     <div class="view" id="log">
         <header class="header" id="header">
             <h1 class="icon-history2">Log</h1>
@@ -416,12 +303,13 @@
     <footer class="footer" id="footer">
         <div class="user icon-user2"><strong>M01</strong><small>Nome do usuário</small></div>
         <a class="item r3 link icon-history2 fordebug" data-view="log" data-direction="foreground"></a>
-        <a class="item r2 link marked icon-package5" data-view="services" data-direction="forward"><mark>1</mark></a>
+        <a class="item r2 link icon-package5" data-view="servicelist" data-direction="forward"><mark>1</mark></a>
         <a class="item r1 link icon-paperplane" data-view="messages" data-direction="forward"></a>
     </footer>
     <div id="notify" class="notify">
     	<strong></strong>
         <span></span>
+        <small></small>
     </div>
 </main>
 <div class="spin"></div>

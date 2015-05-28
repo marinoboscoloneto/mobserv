@@ -34,19 +34,19 @@ $(function(){
 			var client = mobserv.globals.client;
 			var $form = $(this);
 			var $submit = $form.find('.submit');
-			client.Cli_Install = $.md5(mobserv.device.data.uuid);
-			client.Cli_Code = $form.find('#cid').val().toLowerCase();
-			client.Cli_Pw = ($form.find('#cpw').val()) ? $.md5($form.find('#cpw').val()) : '';
-			if (client.Cli_Code && client.Cli_Pw){
+			client.install = $.md5(mobserv.device.data.uuid);
+			client.code = $form.find('#cid').val().toLowerCase();
+			client.password = ($form.find('#cpw').val()) ? $.md5($form.find('#cpw').val()) : '';
+			if (client.code && client.password){
 				var data = {
 					'exec': 'getLicense',
-					'in': client.Cli_Install,
-					'cid': client.Cli_Code,
-					'pw': client.Cli_Pw
+					'in': client.install,
+					'cid': client.code,
+					'pw': client.password
 				};
 				$form.find('.input, .submit').addClass('courtain disable').prop('disabled',true);
 				mobserv.sqlite.query(
-					'select * from sl_clients where Cli_Code = "'+client.Cli_Code+'"',
+					'select * from sl_clients where code = "'+client.code+'"',
 					function(res){
 						mobserv.auth.client(res,data,function(validation){
 							mobserv.nav.toView('formuser');
@@ -76,19 +76,19 @@ $(function(){
 			var user = mobserv.globals.user;
 			var $form = $(this);
 			var $submit = $form.find('.submit');
-			user.Usr_Login = $form.find('#us').val().toLowerCase();
-			user.Usr_Pw = ($form.find('#upw').val()) ? $.md5($form.find('#upw').val()) : '';
-			if (client.Cli_Code && client.Cli_Pw){
+			user.login = $form.find('#us').val().toLowerCase();
+			user.password = ($form.find('#upw').val()) ? $.md5($form.find('#upw').val()) : '';
+			if (client.code && client.password){
 				var data = {
 					'exec': 'authUser',
-					'in': client.Cli_Install,
-					'cid': client.Cli_Code,
-					'us': user.Usr_Login,
-					'pw': user.Usr_Pw
+					'in': client.install,
+					'cid': client.code,
+					'us': user.login,
+					'pw': user.password
 				};
 				$form.find('.input, .submit').addClass('courtain disable').prop('disabled',true);
 				mobserv.sqlite.query(
-					'select * from sl_users where Usr_Login = "'+user.Usr_Login+'"',
+					'select * from sl_users where login = "'+user.login+'"',
 					function(res){
 						mobserv.auth.user(res,data,function(validation){
 							$('.footer').transition({ y:0 }, 300);
@@ -100,7 +100,9 @@ $(function(){
 								name : 'Autenticação de Usuário',
 								message : validation
 							});	
-							mobserv.services.get();
+							mobserv.services.init(function(){
+								mobserv.services.get();
+							});
 						},
 						function(){
 							$form.find('.input, .submit').removeClass('courtain disable').prop('disabled',false);
@@ -217,14 +219,17 @@ $(function(){
 						endX = null;
 						endY = null;
 					});
-					setTimeout(function(){
-						p.removeClass('courtain');
-						p.transition({ height:0 }, 200);
-						pull = null;
-					},2000);
 				}
 			}
 			event.preventDefault();
+		})
+		.on('pull','.view .section',function(event){
+			var p = pull;
+			mobserv.services.get(function(){
+				p.removeClass('courtain');
+				p.transition({ height:0 }, 200);
+				pull = null;
+			});
 		})
 		.on('show','.view',function(){
 			var $this = $(this);
@@ -235,18 +240,26 @@ $(function(){
 			}
 		})
 		.on('show','#formuser',function(){
-			$this = $(this);
+			var $this = $(this);
 			$('.footer').transition({ y:'50px' }, 300);
 			mobserv.auth.logout('user');
 			$this.find('button, .button, .submit, .input').removeClass('courtain disable').prop('disabled',false);
 			$this.find('.input').val('');
 		})
 		.on('show','#formclient',function(){
-			$this = $(this);
+			var $this = $(this);
 			$('.footer').transition({ y:'50px' }, 300);
 			mobserv.auth.logout();
 			$this.find('button, .button, .submit, .input').removeClass('courtain disable').prop('disabled',false);
 			$this.find('.input').val('');
+		})
+		.on('show','#joblist',function(){
+			var $this = $(this);
+			mobserv.services.parsedom('joblist',$this.data('id'));
+		})
+		.on('show','#jobdetails',function(){
+			var $this = $(this);
+			mobserv.services.parsedom('jobdetails',$this.data('id'));
 		})
 		.on('show','#gps',function(){
 			mobserv.geolocation.watchPosition({
@@ -255,8 +268,113 @@ $(function(){
 				maximumAge : 60000
 			});
 		})
-		.on('hide','#gps',function(){
+		.on('show','#map',function(){
+			mobserv.geolocation.watchPosition({
+				enableHighAccuracy : true,
+				timeout : 10000,
+				maximumAge : 60000
+			});
+			var $this = $(this);
+			var $locbtn = $this.find('.item.location');
+			var id = $this.data('id');
+			var src = $this.data('source');
+			var markersvalue = [];
+			var center = [mobserv.geolocation.position.latitude,mobserv.geolocation.position.longitude];
+			var geopos = {sum:[0,0],len:0};
+			var services = mobserv.globals.services;
+			var autofit = '';
+			var $jobs = [];
+			if (id && src == 'joblist'){
+				$jobs = $(services.xml).find('service[id="'+id+'"] > job');
+			} else if (id && src == 'jobdetails'){
+				services = mobserv.globals.services;
+				$jobs = $(services.xml).find('job[id="'+id+'"]');
+			} else if (src == 'gps') {
+				$locbtn.addClass('hilite');	
+			}
+			if (src != 'jobdetails'){
+				geopos.sum[0] += center[0];
+				geopos.sum[1] += center[1];
+				geopos.len += 1;
+			}
+			markersvalue.push({latLng:center, tag:"mydevice", options:{icon: "pic/marker-mobserv.png"}});
+			if ($jobs.length){
+				$jobs.each(function(){
+					var $this = $(this);
+					var $location = $this.children('location:eq(0)');
+					if ($location.length){
+						if ($location.attr('type') == 'geoposition'){
+							var lat = parseFloat($location.attr('lat'));
+							var lng = parseFloat($location.attr('lng'));
+							if (lat && lng){
+								if (src == 'joblist'){
+									geopos.sum[0] += lat;
+									geopos.sum[1] += lng;
+									geopos.len += 1;
+									autofit = 'autofit';
+								} else if (src == 'jobdetails'){
+									center = [lat,lng];
+								}
+								markersvalue.push({latLng:[lat,lng], data:"ID "+id, options:{icon: "pic/marker-333333.png"}});
+							}
+						} else if ($location.attr('type') == 'address'){
+							markersvalue.push({address:$location.text(), data:"ID "+id});
+						}
+					}
+				});
+			}
+			if (geopos.len > 0){
+				center = [geopos.sum[0]/geopos.len,geopos.sum[1]/geopos.len];	
+			}			
+			var map = {
+				options:{
+					center : center,
+					zoom : 12,
+					mapTypeControl: false,	
+					navigationControl: false,
+					streetViewControl: false,
+					scrollwheel: false,
+					/*
+					styles : [{
+						stylers: [
+						  { hue: "#00ffe6" },
+						  { saturation: -20 }
+						]
+					},{
+						featureType: "road",
+						elementType: "geometry",
+						stylers: [
+						  { lightness: 100 },
+						  { visibility: "simplified" }
+						]
+					},{
+						featureType: "road",
+						elementType: "labels",
+						stylers: [
+						  { visibility: "off" }
+						]
+					}]
+					*/
+				},
+				events:{
+					center_changed : function(){
+						$locbtn.removeClass('hilite');
+					}	
+				}
+			}
+			var marker = {
+				values : markersvalue	
+			}
+			$(".map").gmap3({map:map,marker:marker},autofit);
+		})
+		.on('hide','#gps, #map',function(){
 			mobserv.geolocation.clearWatch();
+			$('.map').gmap3('destroy');
+		})
+		.on('tap','#map .location',function(){
+			var $this = $(this);
+			mobserv.geolocation.panMap(true);
+			$this.addClass('hilite');
 		})
 	;
 	
@@ -303,6 +421,7 @@ $(function(){
 	setTimeout(function(){
 		if (!mobserv.device.ready){
 			mobserv.debug.on();
+			mobserv.device.init();
 			mobserv.geolocation.autoPosition();
 			mobserv.sqlite.init();
 			mobserv.auth.init();
