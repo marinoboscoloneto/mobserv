@@ -253,6 +253,13 @@ $(function(){
 			$this.find('button, .button, .submit, .input').removeClass('courtain disable').prop('disabled',false);
 			$this.find('.input').val('');
 		})
+		.on('show','#data',function(){
+			var $this = $(this);
+			if (mobserv.globals.services.xml){
+				var str = new XMLSerializer().serializeToString(mobserv.globals.services.xml);
+				$this.find('.section').val(str);
+			}
+		})
 		.on('show','#joblist',function(){
 			var $this = $(this);
 			mobserv.services.parsedom('joblist',$this.data('id'));
@@ -272,28 +279,46 @@ $(function(){
 			});
 			var $this = $(this);
 			var $locbtn = $this.find('.item.location');
+			var $mapdata = $this.find('.mapdata');
 			var id = $this.data('id');
 			var src = $this.data('source');
 			var markersvalue = [];
 			var center = [mobserv.geolocation.position.latitude,mobserv.geolocation.position.longitude];
-			var geopos = {sum:[0,0],len:0};
 			var services = mobserv.globals.services;
 			var autofit = '';
+			var zoom = 10;
 			var $jobs = [];
 			if (id && src == 'joblist'){
 				$jobs = $(services.xml).find('service[id="'+id+'"] > job');
+				$mapdata.hide();
 			} else if (id && src == 'jobdetails'){
 				services = mobserv.globals.services;
 				$jobs = $(services.xml).find('job[id="'+id+'"]');
+				$mapdata.hide();	
 			} else if (src == 'gps') {
 				$locbtn.addClass('hilite');	
+				$mapdata.show();
+				zoom = 16;	
 			}
-			if (src != 'jobdetails'){
-				geopos.sum[0] += center[0];
-				geopos.sum[1] += center[1];
-				geopos.len += 1;
+			function icon(image,sx,sy,cx,cy,ax,ay){
+				return new google.maps.MarkerImage(
+					image, 
+					new google.maps.Size(sx,sy), 
+					new google.maps.Point(cx,cy), 
+					new google.maps.Point(ax,ay)
+				);
 			}
-			markersvalue.push({latLng:center, tag:"mydevice", options:{icon: "pic/marker-mobserv.png"}});
+			markersvalue.push({latLng:center, tag:"mydevice", options:{icon: icon("pic/marker-mobserv.png",30,30,0,0,15,15),zIndex:9,iconSize: [60,60]}});
+			var circle = {
+				options:{
+					center: center,
+					radius : 1000,
+					fillColor : "#F30",
+					fillOpacity : 0.2,
+					strokeColor : "#F30",
+					strokeOpacity : 0
+				}
+			}
 			if ($jobs.length){
 				$jobs.each(function(){
 					var $this = $(this);
@@ -304,14 +329,11 @@ $(function(){
 							var lng = parseFloat($location.attr('lng'));
 							if (lat && lng){
 								if (src == 'joblist'){
-									geopos.sum[0] += lat;
-									geopos.sum[1] += lng;
-									geopos.len += 1;
 									autofit = 'autofit';
 								} else if (src == 'jobdetails'){
 									center = [lat,lng];
 								}
-								markersvalue.push({latLng:[lat,lng], data:"ID "+id, options:{icon: "pic/marker-333333.png"}});
+								markersvalue.push({latLng:[lat,lng], data:"ID "+id, options:{icon:icon("pic/marker-333333.png",30,30,0,0,15,15)}});
 							}
 						} else if ($location.attr('type') == 'address'){
 							markersvalue.push({address:$location.text(), data:"ID "+id});
@@ -319,13 +341,10 @@ $(function(){
 					}
 				});
 			}
-			if (geopos.len > 0){
-				center = [geopos.sum[0]/geopos.len,geopos.sum[1]/geopos.len];	
-			}			
 			var map = {
 				options:{
 					center : center,
-					zoom : 12,
+					zoom : zoom,
 					mapTypeControl: false,	
 					navigationControl: false,
 					streetViewControl: false,
@@ -356,7 +375,7 @@ $(function(){
 					*/
 				},
 				events:{
-					center_changed : function(){
+					dragstart : function(){
 						$locbtn.removeClass('hilite');
 					}	
 				}
@@ -364,7 +383,19 @@ $(function(){
 			var marker = {
 				values : markersvalue	
 			}
-			$(".map").gmap3({map:map,marker:marker},autofit);
+			var styledmaptype = {  
+				id:"noplaces",
+				styles:[{  
+					featureType:"poi",
+					stylers:[{  
+						  visibility:"off"
+					   }]
+				 }],
+				callback:function() {  
+					$(".map").gmap3("get").setMapTypeId("noplaces");
+				}
+			}
+			$(".map").gmap3({map:map,marker:marker,circle:circle,styledmaptype:styledmaptype},autofit);			
 		})
 		.on('hide','#map',function(){
 			mobserv.geolocation.clearWatch();
@@ -374,6 +405,10 @@ $(function(){
 			var $this = $(this);
 			mobserv.geolocation.panMap(true);
 			$this.addClass('hilite');
+		})
+		.on('tap','.mapdata',function(){
+			$this = $(this);
+			$this.toggleClass('colapsed');
 		})
 	;
 	
@@ -415,6 +450,54 @@ $(function(){
 			if (mobserv.history.length > 0)	$(".view.current .back, .view.current .close").trigger("tap");
 			else mobserv.nav.foreground('confirmexit');
 		}, false);
+		window.plugins.insomnia.keepAwake(
+			function(){
+				mobserv.log({
+					type : 'notice',
+					name : 'insomnia.keepAwake',
+					message : 'the device will be awake for a life'
+				});
+			},
+			function(){
+				mobserv.log({
+					type : 'error',
+					name : 'insomnia.keepAwake',
+					message : 'the device will sleep in a while'
+				});
+			}
+		);
+		var bgmodeInt;
+		cordova.plugins.backgroundMode.enable();
+		cordova.plugins.backgroundMode.onactivate = function(){
+			mobserv.log({
+				type : 'notice',
+				name : 'backgroundMode.onactivate',
+				message : 'the background mode is active'
+			});
+			bgmodeInt = setInterval(function(){
+				mobserv.log({
+					type : 'info',
+					name : 'backgroundMode.onactivate',
+					message : 'the background mode is rolling'
+				});
+			},10000);
+		}
+		cordova.plugins.backgroundMode.ondeactivate = function(){
+			mobserv.log({
+				type : 'notice',
+				name : 'backgroundMode.ondeactivate',
+				message : 'the background mode is inactive'
+			});
+			clearInterval(bgmodeInt);
+		}
+		cordova.plugins.backgroundMode.onfailure  = function(){
+			mobserv.log({
+				type : 'error',
+				name : 'backgroundMode.onfailure',
+				message : 'the background mode trigger error'
+			});
+			clearInterval(bgmodeInt);
+		}
 	}, false);
 	
 	setTimeout(function(){

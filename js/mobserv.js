@@ -96,7 +96,6 @@ var mobserv = {
 									name : 'server.test',
 									message : server.url+' is now the online '+type+' server',
 								});
-								$('#preload .loadinfo').text('Concluído');	
 							} else {
 								server.online = false;
 								server.status = 'Erro de Parser';
@@ -220,7 +219,7 @@ var mobserv = {
 							message : 'default '+type+' server request complete',
 							detail : (data)?decodeURIComponent($.param(data)).replace(/\&/g,"<br>"):''
 						});
-						$('#preload .loadinfo').text('Concluído');	
+						//$('#preload .loadinfo').text('Concluído');	
 						if(ondone) ondone(response,st,xhr);
 					} else {
 						server.online = false;
@@ -251,8 +250,8 @@ var mobserv = {
 				complete: function(){
 					server.lastRequest = mobserv.now();
 					mobserv.server.data(server);
-					$('#preload').removeClass('courtain');
-					$('#preload .loadinfo').text('Concluído.');
+					//$('#preload').removeClass('courtain');
+					//$('#preload .loadinfo').text('Concluído.');
 					if (cfg.queued){
 						delete mobserv.server.queue[cfg.id];
 						$.each(mobserv.server.queue||[],function(c,cfg){
@@ -296,7 +295,7 @@ var mobserv = {
 				cfg.data.gpstimestamp = pos.timestamp;
 			}
 			if (!mobserv.connection.test()){
-				$('#preload').removeClass('courtain');
+				//$('#preload').removeClass('courtain');
 				$('#preload .loadinfo').text('Sem internet :(');
 				cfg.queued = true;
 				mobserv.server.queue[cfg.id] = cfg;
@@ -324,8 +323,12 @@ var mobserv = {
 		ready : false,
 		data : {},
 		init : function(){
-			console.log('$.browser',$.browser);
 			mobserv.device.ready = true;
+			if (typeof getAppVersion == 'function'){
+				getAppVersion(function(version){
+					mobserv.device.data.appver = version;
+				});
+			}
 			if (typeof device == 'object'){
 				mobserv.device.data = device;
 				mobserv.log({
@@ -348,6 +351,7 @@ var mobserv = {
 			if (mobserv.device.data.platform == 'iOS') $('#main').addClass('ios');
 			var $dom = $("#deviceinfo");
 			if ($dom.length){
+				$dom.find('#appver').html(mobserv.device.data.appver); 		
 				$dom.find('#cordova').html(mobserv.device.data.cordova); 		
 				$dom.find('#model').html(mobserv.device.data.model); 		
 				$dom.find('#platform').html(mobserv.device.data.platform); 		
@@ -398,39 +402,102 @@ var mobserv = {
 		position : {},
 		interval : null,
 		watchID : null,
+		animID : null,
+		animate : function(marker,circle){
+			var numDeltas = 25;
+			var delay = 10; //milliseconds
+			var i = 0;
+			var deltaLat;
+			var deltaLng;
+			var deltaAcr;
+			var lat = marker.getPosition().lat();
+			var lng = marker.getPosition().lng();
+			var acr = circle.getRadius();
+			function transition(){
+				i = 0;
+				deltaLat = (mobserv.geolocation.position.latitude - lat)/numDeltas;
+				deltaLng = (mobserv.geolocation.position.longitude - lng)/numDeltas;
+				deltaAcr = (mobserv.geolocation.position.accuracy - acr)/numDeltas;
+				move();
+			}
+			function move(){
+				lat += deltaLat;
+				lng += deltaLng;
+				acr += deltaAcr;
+				var latlng = new google.maps.LatLng(lat,lng);
+				marker.setPosition(latlng);
+				circle.setCenter(latlng);
+				circle.setRadius(acr)
+				if(i!=numDeltas){
+					i++;
+					setTimeout(move, delay);
+				}
+			}
+			transition();
+		},
 		panMap : function(force){
 			var $map = $('.view#map:visible .map');
 			if ($map.length){
-				var $location = $map.find('.item.location');
+				var $location = $('.view#map:visible .item.location');
 				$map.gmap3({
 					get: {
 						name:"marker",
 						tag: "mydevice",
 						callback: function(marker){
 							if (marker){
-								marker.setPosition({lat:mobserv.geolocation.position.latitude, lng:mobserv.geolocation.position.longitude});
-								if (force || $location.hasClass('hilite')){
-									$map.gmap3('get').panTo(marker.getPosition());
-								}
+								var newpos = new google.maps.LatLng(mobserv.geolocation.position.latitude,mobserv.geolocation.position.longitude);
+								$map.gmap3({
+									get: {
+										name:"circle",
+										callback: function(circle){
+											if (circle){
+												if (force || $location.hasClass('hilite')){
+													$map.gmap3('get').panTo(newpos);
+												}
+												mobserv.geolocation.animate(marker,circle);
+												//marker.animateTo(newpos,{easing:'easeInOutCubic',duration: 250});
+											}
+										}
+									}
+								})
 							}
 						}
 					}
 				});
 			}
 		},
-		parsedom : function(){
-			var $dom = $('#gps');
+		parsedom : function(pos){
+			var direction, h = pos.coords.heading;
+			if (h >= 0 && h < 22.5) direction = 'N';
+			else if (h < 67.5) 	  	direction = 'NE';
+			else if (h < 112.5) 	direction = 'E';
+			else if (h < 157.5) 	direction = 'SE';
+			else if (h < 202.5) 	direction = 'S';
+			else if (h < 247.5) 	direction = 'SW';
+			else if (h < 292.5) 	direction = 'W';
+			else if (h < 337.5) 	direction = 'NW';
+			else if (h < 382.5) 	direction = 'N';
+			else direction = '-'
+			var speed = (pos.coords.speed) ?  parseInt(pos.coords.speed * 3.6) : 0
+			mobserv.geolocation.position.latitude = pos.coords.latitude||0;
+			mobserv.geolocation.position.longitude = pos.coords.longitude||0;
+			mobserv.geolocation.position.accuracy = pos.coords.accuracy||0;
+			mobserv.geolocation.position.altitude = pos.coords.altitude||0;
+			mobserv.geolocation.position.altaccuracy = pos.coords.altitudeAccuracy||0;
+			mobserv.geolocation.position.heading = parseInt(pos.coords.heading)||0;
+			mobserv.geolocation.position.direction = direction;
+			mobserv.geolocation.position.speed = speed;
+			mobserv.geolocation.position.timestamp = pos.timestamp||0;
+			mobserv.geolocation.panMap();
+			var $dom = $('#map');
 			$dom.find('#gpslat').html(mobserv.geolocation.position.latitude); 		
 			$dom.find('#gpslng').html(mobserv.geolocation.position.longitude); 		
 			$dom.find('#gpsacr').html(mobserv.geolocation.position.accuracy); 		
 			$dom.find('#gpsalt').html(mobserv.geolocation.position.altitude); 		
-			$dom.find('#gpsact').html(mobserv.geolocation.position.altitudeAccuracy); 		
-			$dom.find('#gpsdir').html(mobserv.geolocation.position.heading); 
-			mobserv.geolocation.panMap();
-			var $smap = $dom.find("img.smap");
-			if ($smap.length && $smap.attr('src') == ''){
-				$smap.show().css({opacity:1}).get(0).src = 'http://maps.googleapis.com/maps/api/staticmap?center='+mobserv.geolocation.position.latitude+','+mobserv.geolocation.position.longitude+'&zoom=10&size='+$(window).width()+'x200&sensor=false';
-			}
+			$dom.find('#gpsact').html(mobserv.geolocation.position.altaccuracy); 		
+			$dom.find('#gpsdir').html(mobserv.geolocation.position.heading+'&deg; '+mobserv.geolocation.position.direction); 
+			$dom.find('#gpsvel').html(mobserv.geolocation.position.speed+' km/h'); 
+			$dom.find('#gpsstp').html(mobserv.geolocation.position.timestamp); 
 		},
 		autoPosition : function(options){
 			options = options||{};
@@ -441,19 +508,13 @@ var mobserv = {
 			},60000);
 			mobserv.log({
 				name : 'geolocation.autoPosition',
-				message : 'auto position started',
+				message : 'auto scheduled position started',
 			});	
 		},
 		getPosition : function(options){
 			options = options||{};
 			navigator.geolocation.getCurrentPosition(function(pos){
-				mobserv.geolocation.position.latitude = pos.coords.latitude;
-				mobserv.geolocation.position.longitude = pos.coords.longitude;
-				mobserv.geolocation.position.accuracy = pos.coords.accuracy;
-				mobserv.geolocation.position.altitudeAccuracy = pos.coords.altitudeAccuracy;
-				mobserv.geolocation.position.heading = pos.coords.heading;
-				mobserv.geolocation.position.timestamp = pos.timestamp;
-				mobserv.geolocation.parsedom();
+				mobserv.geolocation.parsedom(pos);
 				mobserv.log({
 					type : 'notice',
 					name : 'geolocation.getPosition',
@@ -478,23 +539,19 @@ var mobserv = {
 		},
 		watchPosition : function(options){
 			mobserv.log({
+				type : 'notice',
 				name : 'geolocation.watchPosition',
 				message : 'watch position started',
 			});	
 			if(mobserv.geolocation.watchID) return;
 			options = options||{};
 			mobserv.geolocation.watchID = navigator.geolocation.watchPosition(function(pos){
-				mobserv.geolocation.position.latitude = pos.coords.latitude;
-				mobserv.geolocation.position.longitude = pos.coords.longitude;
-				mobserv.geolocation.position.accuracy = pos.coords.accuracy;
-				mobserv.geolocation.position.altitudeAccuracy = pos.coords.altitudeAccuracy;
-				mobserv.geolocation.position.heading = pos.coords.heading;
-				mobserv.geolocation.position.timestamp = pos.timestamp;
-				mobserv.geolocation.parsedom();
+				clearInterval(mobserv.geolocation.interval);
+				mobserv.geolocation.parsedom(pos);
 			}, function(error){
 				mobserv.log({
 					type : 'error',
-					name : 'geolocation.getPosition',
+					name : 'geolocation.watchPosition',
 					code : error.code,
 					message : error.message,
 				});	
@@ -513,6 +570,7 @@ var mobserv = {
 				message : 'watch position cleared',
 			});	
 			if (mobserv.geolocation.watchID) navigator.geolocation.clearWatch(mobserv.geolocation.watchID);
+			mobserv.geolocation.autoPosition();
 		}
 	},
 	sqlite : {
@@ -693,19 +751,6 @@ var mobserv = {
 			}
 		},
 	},
-	bgmode : {
-		init : function(){
-			cordova.plugins.backgroundMode.enable();
-			cordova.plugins.backgroundMode.onactivate = function () {
-				setTimeout(function () {
-					// Modify the currently displayed notification
-					cordova.plugins.backgroundMode.configure({
-						text:'Running in background for more than 5s now.'
-					});
-				}, 5000);
-			}				
-		}
-	},
 	keyboard : {
 		close  : function(){
 			if (cordova && cordova.plugins && cordova.plugins.Keyboard) cordova.plugins.Keyboard.close();	
@@ -725,21 +770,16 @@ var mobserv = {
 		logout : function(what){
 			var client = mobserv.globals.client;
 			var user = mobserv.globals.user;
-			mobserv.log({
-				name : 'auth.logout',
-				message : ((what)?what:'general')+' logout started'
-			});	
 			if(user.login && (what == 'client' || what == 'user' || !what)){
 				var $form = $('#formuser');
 				mobserv.sqlite.query(
 					'update sl_users set active = 0, session = "" where login = "'+user.login+'"',
 					function(res){
-						user.active = 0;
-						user.session = null;
+						mobserv.globals.user = {};
 						mobserv.log({
 							type : 'notice',
 							name : 'auth.logout.user',
-							message : 'user '+user.login+' was loged out'
+							message : 'user was loged out'
 						});	
 					}
 				);
@@ -749,11 +789,11 @@ var mobserv = {
 				mobserv.sqlite.query(
 					'update sl_clients set active = 0 where code = "'+client.code+'"',
 					function(res){
-						client.active = 0;
+						mobserv.globals.client = {};
 						mobserv.log({
 							type : 'info',
 							name : 'auth.logout.client',
-							message : 'client '+client.code+' was loged out'
+							message : 'client was loged out'
 						});	
 					}
 				);
@@ -1033,6 +1073,15 @@ var mobserv = {
 	services : {
 		list : {},
 		command : {
+			userLogout : function(){
+				mobserv.nav.toView('formuser');
+				return 
+			},
+			clientLogout : function(){
+				mobserv.auth.logout('client');
+				mobserv.nav.toView('formclient');
+				return 
+			},
 			append : function($parent,$child,param){
 				$parent.append($child);	
 				return 
@@ -1056,19 +1105,19 @@ var mobserv = {
 				var services = mobserv.globals.services;
 				var str = '';
 				var total = 0;
+				var $nodes;
+				var $xml;
 				if (param && services.xml){
-					var $xml = $(services.xml);
-					var $nodes = $xml.find(param);
-					total = $nodes.length;
-					if (total > 0){
-						$nodes.remove();
-						services.xml = $xml.get(0);
-						str = new XMLSerializer().serializeToString(services.xml);
-					}
+					$xml = $(services.xml);
+					$nodes = $xml.find(param);
 				} else {
-					total = 'all';
-					services.xml = null;
+					$xml = $(services.xml);
+					$nodes = $xml.find('mobserv').children();
 				}
+				total = $nodes.length;
+				if (total > 0) $nodes.remove();
+				services.xml = $xml.get(0);
+				if(services.xml) str = new XMLSerializer().serializeToString(services.xml);
 				var query = 'update sl_services set xml = ? '+((client.code && user.login)?'where code = "'+client.code+'" and login = "'+user.login+'"':'');
 				mobserv.sqlite.query(
 					{query : query, statement : [str]},
@@ -1103,7 +1152,7 @@ var mobserv = {
 				$xml.service = $xml.root.find('service');
 				$xml.service.each(function(){
 					var $s = $(this), $l = {}, $t = {}, $mark;
-					$s.children('layout').each(function(){ var $this = $(this); $l[$this.attr('name')]=$this.html(); });
+					$s.children('layout:not([name="content"])').each(function(){ var $this = $(this); $l[$this.attr('name')]=$this.text(); });
 					$s.children('setting').each(function(){ var $this = $(this); $t[$this.attr('name')]=$this.attr('value'); });
 					$mark = $s.children('mark');
 					$html += ''+
@@ -1113,7 +1162,7 @@ var mobserv = {
 							'<div>'+
 								'<h2 style="color:'+$l.indentifierColor+'">'+$l.title+'</h2>';
 								$s.children('layout').filter('[name="content"]').each(function(){
-									$html += '<p>'+$(this).html()+'</p>';
+									$html += '<p>'+$(this).text()+'</p>';
 								});
 							$html += ''+
 							'</div>'+
@@ -1150,7 +1199,7 @@ var mobserv = {
 				$xml.job = $xml.service.find('job');
 				$xml.job.each(function(){
 					var $s = $(this), $l = {}, $t = {};
-					$s.children('layout').each(function(){ var $this = $(this); $l[$this.attr('name')]=$this.html(); });
+					$s.children('layout').each(function(){ var $this = $(this); $l[$this.attr('name')]=$this.text(); });
 					$s.children('setting').each(function(){ var $this = $(this); $t[$this.attr('name')]=$this.attr('value'); });
 					$html += ''+
 					'<li style="display:'+(($s.attr('visible')=='true')?'block':'none')+'" style="'+(($s.attr('disable')=='true')?'.disable':'')+'">'+
@@ -1159,7 +1208,7 @@ var mobserv = {
 							'<div>'+
 								'<h2 style="color:'+$l.indentifierColor+'">'+$l.title+'</h2>';
 								$s.children('layout[name="content"]').each(function(){
-									$html += '<p>'+$(this).html()+'</p>';
+									$html += '<p>'+$(this).text()+'</p>';
 								});
 							$html += ''+
 							'</div>'+
@@ -1178,7 +1227,6 @@ var mobserv = {
 				$dom.list = $dom.detail.find('.list').html('');
 				$dom.dets = $dom.detail.find('.dets').html('');
 				$dom.gmap = $dom.detail.find('.gmap');
-				console.log(type,id);
 				$s = $(services.xml).find('job[id="'+id+'"]');
 				$s.children('layout').each(function(){ var $this = $(this); $l[$this.attr('name')]=$this.html(); });
 				$s.children('setting').each(function(){ var $this = $(this); $t[$this.attr('name')]=$this.attr('value'); });
@@ -1189,7 +1237,7 @@ var mobserv = {
 						'<div>'+
 							'<h2 style="color:'+$l.indentifierColor+'">'+$l.title+'</h2>';
 							$s.children('layout[name="content"]').each(function(){
-								$html += '<p>'+$(this).html()+'</p>';
+								$html += '<p>'+$(this).text()+'</p>';
 							});
 						$html += ''+
 						'</div>'+
@@ -1199,7 +1247,7 @@ var mobserv = {
 				$html = '';
 				$s.children('layout[name="detail"]').each(function(){
 					var $this = $(this);
-					$html += '<tr><td style="width:1%;white-space:nowrap;">'+$this.attr('label')+'</td><td><strong>'+$this.html()+'</strong></td></tr>';
+					$html += '<tr><td style="width:1%;white-space:nowrap;">'+$this.attr('label')+'</td><td><strong>'+$this.text()+'</strong></td></tr>';
 				});
 				if ($s.find('location').length){
 					$dom.gmap.show().data('id',id);
@@ -1237,7 +1285,6 @@ var mobserv = {
 								name : 'services.init',
 								message : $xml.length+' services dumped from local database',
 							});
-							console.log(services.xml);
 						} else {
 							services.xml = '';
 							services.requestKey = '';
@@ -1281,13 +1328,11 @@ var mobserv = {
 					});
 					return false;
 				}
-				if ($root.attr('resultKey') && $root.attr('resultKey') != services.requestKey){
-					$root.children('command').each(function(){
-						var $this = $(this);
-						if (mobserv.services.command[$this.attr('exec')]) mobserv.services.command[$this.attr('exec')]($this.text(),response);
-						$this.remove();
-					});
-				}
+				$root.children('command').each(function(){
+					var $this = $(this);
+					if (mobserv.services.command[$this.attr('exec')]) mobserv.services.command[$this.attr('exec')]($this.text(),response);
+					$this.remove();
+				});
 				var $valid = $root.find('validation');
 				var $services = $root.children('service');
 				$valid.each(function(){
@@ -1296,20 +1341,19 @@ var mobserv = {
 					mobserv.log({
 						type : status,
 						name : 'services.get',
-						message : status+' validation: '+$this.html(),
+						message : status+' validation: '+$this.text(),
 					});
 					mobserv.notify.open({
 						type : status,
 						name : 'Serviços',
-						message : $this.html()
+						message : $this.text()
 					});	
 					$this.remove();
 				});
 				services.requestKey = $root.attr('resultKey');
 				if ($services.length){
-					services.updated = true;
 					services.xml = response;
-					console.log(services.xml);
+					services.updated = true;
 					var str = new XMLSerializer().serializeToString(services.xml);
 					mobserv.sqlite.query({query : 'update sl_services set xml = ? where code = "'+client.code+'" and login = "'+user.login+'"', statement : [str]});
 				} else {

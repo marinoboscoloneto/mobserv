@@ -6,9 +6,9 @@ main, main, aside, canvas, figure, figure img, figcaption, hgroup, footer, heade
 * { outline: none;  -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box; -webkit-text-size-adjust:100%; -webkit-tap-highlight-color: rgba(0,0,0,0); font-family:"Helvetica Neue", Helvetica, Arial, sans-serif; }
 body, html { width:100%; height:100%; margin:0; padding:0; position:relative; background-color:#FFF; font-size:11px; -webkit-font-smoothing: antialiased; color:#555; }
 
-.input, .submit, .statustripe, .notify, mark, .footer .item  { transition: all 250ms; }
+.input, .submit, .statustripe, .notify, mark, .footer .item, .mapdata  { transition: all 250ms; }
 
-input { -webkit-appearance: none; border-radius: 0; }
+input,textarea,select { -webkit-appearance: none; border-radius: 0; }
 input:required { box-shadow:none; }
 input:invalid { box-shadow:none; }
 
@@ -91,11 +91,14 @@ input:invalid { box-shadow:none; }
 */
 
 .section { position:absolute; top:42px; bottom:42px; left:0px; width:100%; background:#FFF; overflow-y:scroll; -webkit-overflow-scrolling: touch; z-index:1; }
+textarea.section { border:none; font-size:8px; overflow:scroll !important; }
 .section.noscroll { overflow-y:hidden !important; }
+.section.mapdata { width:auto; top:50px; background:rgba(255,255,255,.7); right:8px; bottom:auto; left:8px; z-index:2 !important; border-radius:6px; }
+.section.mapdata.colapsed { width:24px; height:24px; top:50px; background:rgba(102,102,102,.7); right:auto; bottom:auto; left:8px; border-radius:24px; overflow:hidden !important; }
+.section.mapdata.colapsed * { display:none; }
 .section .puller { width:100%; height:0; background-color:#BBB; position:relative; overflow:hidden; -webkit-transform: translateX(0); }
 .section .puller strong { display:block; position:absolute; top:50%; margin-top:-5px; width:100%; height:100%; color:#FFF; text-align:center; overflow:hidden;  }
 .ios .section { top:62px; }
-
 .section.short { bottom:42px; }
 .section ul { list-style:none; }
 .section .grid li { width:146px; height:70px; position:relative; float:left; margin:16px 6px; }
@@ -168,6 +171,7 @@ mark.yellow { background:#F80 !important; }
 form.onlist { border-bottom:#DDD solid 1px; background:#FFF; margin:0; padding:0; position:relative; }
 form.onlist:before { color:#999; position:absolute; top:12px; left:11px; }
 form.onlist .input { border:#FFF solid 1px; padding:10px; background:#FFF; width:100%; }
+form.onlist .submit { display:none; }
 form.onlist[class*="icon-"] .input { padding-left:32px; }
 
 .courtain { background-image: url('../pic/courtain.svg');
