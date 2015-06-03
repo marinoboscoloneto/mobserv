@@ -3,8 +3,7 @@
 
 $(function(){
 	
-	var startX, startY, endX, endY, pull;
-	
+	var startX, startY, endX, endY, pull, $pullarea, $pullinfo;
 	$(document)
 		.on('submit','form',function(event){
 			var $form = $(this);
@@ -21,10 +20,25 @@ $(function(){
 						type : 'alert',
 						name : 'Comando',
 						message : 'Comando '+cmd+' executado'
-					});	
-				} else {
-					$form.trigger('send');
+					});
+					return false;
 				}
+			}
+			var valid = true;
+			$form.find('.input').each(function(){
+				var $this = $(this);
+				console.log($this.prop('required'));
+				if (!$this.val() && $this.prop('required') == true) valid = false;
+				return false;
+			});
+			if (!valid){
+				mobserv.notify.open({
+					type : 'error',
+					name : 'Formulário',
+					message : 'Os campos são requiridos'
+				});	
+			} else {
+				$form.trigger('send');	
 			}
 			mobserv.keyboard.close();
 			event.preventDefault();
@@ -63,12 +77,6 @@ $(function(){
 						});
 					}
 				);
-			} else {
-				mobserv.notify.open({
-					type : 'error',
-					name : 'Formulário',
-					message : 'Os campos são requiridos'
-				});	
 			}
 		})
 		.on('send','#formuser',function(){
@@ -117,11 +125,65 @@ $(function(){
 				});	
 			}
 		})
+		.on('input','.view:visible .search #search',function(){
+			var $field = $(this);
+			var $form = $field.parent();
+			var $ul = $form.next('.list');
+			var $li = $ul.children('li');
+			var s = $field.val().toLowerCase();
+			if ($li.length) {
+				if (s == ''){
+					$li.removeClass('found').show();
+				} else {
+					$li.removeClass('found');
+					var xml = mobserv.globals.services.xml;
+					if (xml){
+						var $xml = $(xml);
+						if ($form.data('target') == 'service'){
+							$search = $xml.find('service');
+						} else if ($form.data('target') == 'job'){
+							$search = $xml.find('job');
+						} else {
+							$search = $xml.find('job');
+						}
+						if ($search.length){
+							$search.each(function(){
+								var $s = $(this);
+								$s.children('layout').each(function(){
+									var $l = $(this);
+									if ($l.text().toLowerCase().indexOf(s) > -1){
+										$li.children('.link[data-id="'+$s.attr('id')+'"]').parent().addClass('found').show();
+										return false;
+									}
+								});
+							});
+							$li.filter(':not(.found)').hide();
+						}
+					}
+				}
+			}
+		})
+		.on('send','#jobinteraction:visible .jobform',function(){
+			var $form = $(this);
+			var $fields = $('.input:not(:disabled)');
+			var data = { isPost:true };
+			$fields.each(function(){
+				var $fd = $(this);
+				if ($fd.attr('name')) data[$fd.attr('name')] = $fd.val();
+			});
+			mobserv.services.post(data);
+		})
 		.on('tap','#formuser .logoutclient',function(){
 			mobserv.nav.toView('formclient');
 		})
-		.on('tap','.input',function(){
+		.on('tap','.input:not(:disabled)',function(){
 			$(this).focus();
+		})
+		.on('tap','form.search',function(){
+			$(this).find('.input').prop('disabled',false).focus();
+		})
+		.on('blur focusout','.search .input',function(){
+			$(this).prop('disabled',true);
 		})
 		/*
 		.on('swiperight','.view:not(.disable)',function(){
@@ -174,61 +236,55 @@ $(function(){
 				}).find(".header, .section").transition({ opacity:1 }, 300);
 			}
 		})
-		.on('touchstart','.view.current .section',function(event){
+		.on('touchstart','.view.current .pullarea',function(event){
 			startX = event.originalEvent.touches[0].pageX;
 			startY = event.originalEvent.touches[0].pageY;
-			var $section = $(this);
-			var $puller = $section.children('.puller:not(.courtain)');
-			var height;
-			if ($puller.length){
-				height = $puller.height()
-				$puller.data('height',height);
-				if (height == 0){
-					$puller.find('strong').text('Solte para atualizar');	
-				}
-			}
+			$pullarea = $(this);
+			$pullinfo = $pullarea.prev().removeClass('courtain').find('strong').text('Solte para atualizar');
 		})
-		.on('touchmove','.view.current .section',function(event){
+		.on('touchmove','.view.current .pullarea',function(event){
 			endX = event.originalEvent.touches[0].pageX;
 			endY = event.originalEvent.touches[0].pageY;
-			var $section = $(this);
-			var $puller = $section.children('.puller:not(.courtain)');
-			if ($puller.length > 0 && $section.scrollTop() < 5 && endY > startY){
-				$section.scrollTop(0).addClass('noscroll');
-				var val = (endY-startY+$puller.data('height'))/2.3;
-				$puller.show().height(val).find('strong').css('opacity',val/($(window).height()/4));
-				pull = $puller;
-			} else {
-				pull = null;	
+			var $section = $pullarea.parent();
+			if ($section.scrollTop() < 5 && endY > startY + 15){
+				var val = parseInt((endY-startY)/2.3);
+				var h = $(window).height()/4;
+				$pullarea.css({'transform': 'translate(0px, '+val+'px)'}).data('moved','y');
+				$pullinfo.css({
+					transform: 'translate(0px, '+(val/2)+'px)', 
+					opacity:val/h
+				});
+				event.preventDefault();
 			}
-		})
-		.on('touchend','.view.current .section',function(event){
-			var $section = $(this);
-			if (pull){
-				var p = pull;
-				$section.removeClass('noscroll').scrollTop(0);
-				if (startY+($(window).height()/3) > endY){
-					p.transition({ height:0 }, 200);
-				} else {
-					p.transition({ height:40 }, 200,function(){
-						p.addClass('courtain');
-						p.find('strong').text('Atualizando...');
-						p.parent().trigger('pull');
-						startX = null;
-						startY = null;
-						endX = null;
-						endY = null;
-					});
+		})		
+		.on('touchend','.view.current .pullarea',function(event){
+				var $section = $pullarea.parent();
+				if ($pullarea.data('moved') == 'y'){
+					if (startY+($(window).height()/3) > endY){
+						$pullarea.transition({ y:0 }, 300);
+						$pullinfo.transition({ y:0, opacity:0 }, 300);
+					} else {
+						$pullarea.transition({ y:40 }, 300,function(){
+							$pullinfo.parent().addClass('courtain');
+							$pullinfo.text('Atualizando...');
+							$pullarea.trigger('pull');
+						});
+						$pullinfo.transition({ y:20, opacity:1 }, 300);
+					}
 				}
-			}
-			event.preventDefault();
-		})
-		.on('pull','.view .section',function(event){
-			var p = pull;
+				startX = null;
+				startY = null;
+				endX = null;
+				endY = null;
+		})		
+		.on('pull','.view .pullarea',function(event){
 			mobserv.services.get(function(){
-				p.removeClass('courtain');
-				p.transition({ height:0 }, 200);
-				pull = null;
+				$pullarea.transition({ y:0 }, 300);
+				$pullinfo.transition({ y:0, opacity:0 }, 300);
+				$pullinfo.parent().removeClass('courtain');
+				$pullinfo.text('Concluído');
+				$pullarea = null;
+				$pullinfo = null;
 			});
 		})
 		.on('show','.view',function(){
@@ -268,6 +324,10 @@ $(function(){
 			var $this = $(this);
 			mobserv.services.parsedom('jobdetails',$this.data('id'));
 		})
+		.on('show','#jobinteraction',function(){
+			var $this = $(this);
+			mobserv.services.parsedom('jobinteraction',$this.data('id'));
+		})
 		.on('show','#gps',function(){
 			mobserv.geolocation.getPosition();
 		})
@@ -283,6 +343,7 @@ $(function(){
 			var id = $this.data('id');
 			var src = $this.data('source');
 			var markersvalue = [];
+			var markersevents = {};
 			var center = [mobserv.geolocation.position.latitude,mobserv.geolocation.position.longitude];
 			var services = mobserv.globals.services;
 			var autofit = '';
@@ -308,7 +369,7 @@ $(function(){
 					new google.maps.Point(ax,ay)
 				);
 			}
-			markersvalue.push({latLng:center, tag:"mydevice", options:{icon: icon("pic/marker-mobserv.png",30,30,0,0,15,15),zIndex:9,iconSize: [60,60]}});
+			markersvalue.push({latLng:center, tag:"mydevice", events:{ click:function(){$('.mapdata').trigger('tap');}}, options:{icon: icon("pic/marker-mobserv.png",30,30,0,0,15,15),zIndex:9,iconSize: [60,60]}});
 			var circle = {
 				options:{
 					center: center,
@@ -323,6 +384,7 @@ $(function(){
 				$jobs.each(function(){
 					var $this = $(this);
 					var $location = $this.children('location:eq(0)');
+					var job = $this.attr('id');
 					if ($location.length){
 						if ($location.attr('type') == 'geoposition'){
 							var lat = parseFloat($location.attr('lat'));
@@ -333,10 +395,10 @@ $(function(){
 								} else if (src == 'jobdetails'){
 									center = [lat,lng];
 								}
-								markersvalue.push({latLng:[lat,lng], data:"ID "+id, options:{icon:icon("pic/marker-333333.png",30,30,0,0,15,15)}});
+								markersvalue.push({latLng:[lat,lng], data:job, options:{icon:icon("pic/marker-333333.png",30,30,0,0,15,15)}});
 							}
 						} else if ($location.attr('type') == 'address'){
-							markersvalue.push({address:$location.text(), data:"ID "+id});
+							markersvalue.push({address:$location.text(), data:job, options:{icon:icon("pic/marker-333333.png",30,30,0,0,15,15)}});
 						}
 					}
 				});
@@ -400,6 +462,7 @@ $(function(){
 		.on('hide','#map',function(){
 			mobserv.geolocation.clearWatch();
 			$('.map').gmap3('destroy');
+			$(this).find('.item.location').removeClass('hilite');
 		})
 		.on('tap','#map .location',function(){
 			var $this = $(this);
@@ -408,7 +471,8 @@ $(function(){
 		})
 		.on('tap','.mapdata',function(){
 			$this = $(this);
-			$this.toggleClass('colapsed');
+			if ($this.is(':visible')) $this.hide();
+			else $this.show();
 		})
 	;
 	

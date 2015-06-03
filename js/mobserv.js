@@ -203,7 +203,7 @@ var mobserv = {
 				xhrobj : null,
 				aborttime : null,
 				message : 'Conectando ao '+mobserv.globals.translate[type]+'...',
-				type: 'GET', 
+				type: (data.isPost)?'POST':'GET',
 				url: server.url, 
 				dataType: 'xml',
 				data: data,
@@ -403,7 +403,8 @@ var mobserv = {
 		interval : null,
 		watchID : null,
 		animID : null,
-		animate : function(marker,circle){
+		animate : function(map,marker,circle,force){
+			var $map = $('.view#map:visible .map');
 			var numDeltas = 25;
 			var delay = 10; //milliseconds
 			var i = 0;
@@ -413,21 +414,34 @@ var mobserv = {
 			var lat = marker.getPosition().lat();
 			var lng = marker.getPosition().lng();
 			var acr = circle.getRadius();
+			//var hed = (map.getHeading()||0);
 			function transition(){
 				i = 0;
 				deltaLat = (mobserv.geolocation.position.latitude - lat)/numDeltas;
 				deltaLng = (mobserv.geolocation.position.longitude - lng)/numDeltas;
 				deltaAcr = (mobserv.geolocation.position.accuracy - acr)/numDeltas;
+				//deltaHed = (mobserv.geolocation.position.heading - hed)/numDeltas;
+				if (force){
+					map.panTo({lat:mobserv.geolocation.position.latitude,lng:mobserv.geolocation.position.longitude});
+				}
 				move();
 			}
 			function move(){
 				lat += deltaLat;
 				lng += deltaLng;
 				acr += deltaAcr;
+				//hed += deltaHed;
 				var latlng = new google.maps.LatLng(lat,lng);
 				marker.setPosition(latlng);
 				circle.setCenter(latlng);
-				circle.setRadius(acr)
+				circle.setRadius(acr);
+				/*
+				if (force){
+					map.setHeading(hed); $map.find('.gm-style').css('transform','rotate('+hed+'deg)');
+				} else {
+					map.setHeading(0); $map.find('.gm-style').css('transform','rotate(0deg)');	
+				}
+				*/
 				if(i!=numDeltas){
 					i++;
 					setTimeout(move, delay);
@@ -437,29 +451,27 @@ var mobserv = {
 		},
 		panMap : function(force){
 			var $map = $('.view#map:visible .map');
+			if (!$map.length) return;
+			var map = $map.gmap3('get');
 			if ($map.length){
 				var $location = $('.view#map:visible .item.location');
+				force = $location.hasClass('hilite')?true:force;
 				$map.gmap3({
 					get: {
 						name:"marker",
 						tag: "mydevice",
 						callback: function(marker){
 							if (marker){
-								var newpos = new google.maps.LatLng(mobserv.geolocation.position.latitude,mobserv.geolocation.position.longitude);
 								$map.gmap3({
 									get: {
 										name:"circle",
 										callback: function(circle){
 											if (circle){
-												if (force || $location.hasClass('hilite')){
-													$map.gmap3('get').panTo(newpos);
-												}
-												mobserv.geolocation.animate(marker,circle);
-												//marker.animateTo(newpos,{easing:'easeInOutCubic',duration: 250});
+												mobserv.geolocation.animate(map,marker,circle,force);
 											}
 										}
 									}
-								})
+								});
 							}
 						}
 					}
@@ -1135,7 +1147,7 @@ var mobserv = {
 		parsedom : function(type,id){
 			mobserv.log({
 				name : 'services.parsedom',
-				message : 'parsedom '+((type)?type:'servicelist')+' started',
+				message : 'parsedom '+((type)?type:'servicelist')+((id)?' #'+id:'')+' started',
 			});
 			mobserv.services.cleardom(type);
 			var client = mobserv.globals.client;
@@ -1228,7 +1240,7 @@ var mobserv = {
 				$dom.dets = $dom.detail.find('.dets').html('');
 				$dom.gmap = $dom.detail.find('.gmap');
 				$s = $(services.xml).find('job[id="'+id+'"]');
-				$s.children('layout').each(function(){ var $this = $(this); $l[$this.attr('name')]=$this.html(); });
+				$s.children('layout').each(function(){ var $this = $(this); $l[$this.attr('name')]=$this.text(); });
 				$s.children('setting').each(function(){ var $this = $(this); $t[$this.attr('name')]=$this.attr('value'); });
 				$html += ''+
 				'<li style="display:'+(($s.attr('visible')=='true')?'block':'none')+'" style="'+(($s.attr('disable')=='true')?'.disable':'')+'">'+
@@ -1249,12 +1261,75 @@ var mobserv = {
 					var $this = $(this);
 					$html += '<tr><td style="width:1%;white-space:nowrap;">'+$this.attr('label')+'</td><td><strong>'+$this.text()+'</strong></td></tr>';
 				});
+				$dom.detail.find('#interact').data('id',id);
 				if ($s.find('location').length){
 					$dom.gmap.show().data('id',id);
 				} else {
 					$dom.gmap.hide();
 				}
 				$dom.dets.html($html);
+			} else if (type == 'jobinteraction' && id){
+				var $l = {}, $t = {};
+				$dom.interaction = $('#jobinteraction');
+				$dom.list = $dom.interaction.find('.list').html('');
+				$dom.form = $dom.interaction.find('.jobform .parsed').html('');
+				$s = $(services.xml).find('job[id="'+id+'"]');
+				$s.children('layout').each(function(){ var $this = $(this); $l[$this.attr('name')]=$this.text(); });
+				$s.children('setting').each(function(){ var $this = $(this); $t[$this.attr('name')]=$this.attr('value'); });
+				$html += ''+
+				'<li style="display:'+(($s.attr('visible')=='true')?'block':'none')+'" style="'+(($s.attr('disable')=='true')?'.disable':'')+'">'+
+					'<div class="table">'+
+						'<div><div class="identifier" style="background-color:'+$l.indentifierColor+'">'+$l.indentifierLabel+'<strong>'+$l.indentifierNumber+'</strong></div></div>'+
+						'<div>'+
+							'<h2 style="color:'+$l.indentifierColor+'">'+$l.title+'</h2>';
+							$s.children('layout[name="content"]').each(function(){
+								$html += '<p>'+$(this).text()+'</p>';
+							});
+						$html += ''+
+						'</div>'+
+					'</div>'+
+				'</li>';
+				$dom.list.html($html);
+				$html = '';
+				var $form = $s.find('form');
+				$form = ($form.length) ? $form : $s.closest('service').children('form[type="'+$s.attr('type')+'"]');
+				$form = ($form.length) ? $form : $s.closest('mobserv').children('form[type="'+$s.attr('type')+'"]');
+				if ($form.length){
+					var $desc = $form.children('description');
+					$dom.form.append(($desc.length)?'<p>'+$desc.text()+'</p>':'<p>Formulário de interação de '+$s.attr('type')+'</p>');
+					$form.find('formset').each(function(){
+						var $formset = $(this);
+						$dom.formset = $('<div class="formset"></div>');
+						if ($formset.attr('visible') == 'false') $dom.formset.hide();
+						if ($formset.attr('chain-field')) $dom.formset.attr('chain-field',$formset.attr('chain-field'));
+						if ($formset.attr('chain-value')) $dom.formset.attr('chain-value',$formset.attr('chain-value'));
+						$dom.form.append($dom.formset);
+						$formset.find('field').each(function(){
+							var $field = $(this);
+							if ($field.attr('type') == 'select'){
+								$dom.field = $('<select name="'+$field.attr('name')+'" class="input select" '+(($field.attr('required') == 'true')?' required':'')+'>');
+								$dom.field.append('<option value="" disabled selected>'+$field.attr('label')+'</option>');
+								$field.find('option').each(function(){
+									var $option = $(this);
+									$dom.field.append('<option value="'+$option.attr('value')+'">'+$option.text()+'</option>');
+								});
+							} else if ($field.attr('type') == 'text' || $field.attr('type') == 'number' || $field.attr('type') == 'email'){
+								$dom.field = $('<input type="'+$field.attr('type')+'" class="input '+$field.attr('type')+'" placeholder="'+$field.attr('label')+'"  '+(($field.attr('required') == 'true')?' required':'')+' />');	
+							}
+							if ($formset.attr('disable') == 'true') $dom.field.prop('disabled',true);
+							$dom.field.on('change',function(){
+								var $this = $(this);
+								var $parent = $this.parent();
+								var val = $this.val();
+								var name = $this.attr('name');
+								$parent.nextAll('.formset').hide().find('.input').val('');
+								$parent.nextAll('.formset[chain-field="'+name+'"][chain-value="'+val+'"]').fadeIn();
+							})
+							$dom.formset.append($dom.field);
+						});	
+						$dom.form.append($dom.formset);					
+					});
+				}				
 			}
 		},
 		cleardom : function(type){
@@ -1376,6 +1451,79 @@ var mobserv = {
 				mobserv.services.parsedom();
 				if(onerror) onerror(error);
 			});
+		},
+		post : function(data,ondone){
+			mobserv.log({
+				name : 'services.post',
+				message : 'services post start',
+			});
+			var client = mobserv.globals.client;
+			var user = mobserv.globals.user;
+			var services = mobserv.globals.services;
+			if (typeof data == 'object'){
+				data.cid = client.code;
+				data.sid = user.session;
+				data.rk = services.requestKey;
+				mobserv.server.call('service',data,function(response){
+					var $xml = $(response);
+					var $root = $xml.find('mobserv');
+					if ($root.length == 0){
+						mobserv.log({
+							type : 'error',
+							name : 'services.post',
+							message : 'mobserv node not found in service server response',
+						});
+						return false;
+					}
+					$root.children('command').each(function(){
+						var $this = $(this);
+						if (mobserv.services.command[$this.attr('exec')]) mobserv.services.command[$this.attr('exec')]($this.text(),response);
+						$this.remove();
+					});
+					var $valid = $root.find('validation');
+					var $services = $root.children('service');
+					$valid.each(function(){
+						var $this = $(this);
+						var status = $this.attr('status');
+						mobserv.log({
+							type : status,
+							name : 'services.post',
+							message : status+' validation: '+$this.text(),
+						});
+						mobserv.notify.open({
+							type : status,
+							name : 'Serviços',
+							message : $this.text()
+						});	
+						$this.remove();
+					});
+					services.requestKey = $root.attr('resultKey');
+					if ($services.length){
+						services.xml = response;
+						services.updated = true;
+						var str = new XMLSerializer().serializeToString(services.xml);
+						mobserv.sqlite.query({query : 'update sl_services set xml = ? where code = "'+client.code+'" and login = "'+user.login+'"', statement : [str]});
+					} else {
+						services.updated = false;	
+					}
+					mobserv.services.parsedom();
+					if (ondone) ondone();
+				},
+				function(error){
+					mobserv.log({
+						type : 'error',
+						name : 'services.post',
+						message : 'get services error: '+error,
+					});
+					mobserv.notify.open({
+						type : 'error',
+						name : 'Erro ao postar serviços',
+						message : error
+					});	
+					mobserv.services.parsedom();
+					if(onerror) onerror(error);
+				});
+			}
 		}
 	},
 	zindex : 3,

@@ -66,8 +66,8 @@
         <form class="auth" action="">
         	<div class="logo"></div>
             <p class="description">Validação do Cliente MobServ</p>
-            <div><input class="input text command" type="text" id="cid" placeholder="Código do Cliente"  autocorrect="off" autocapitalize="none" /></div>
-            <div><input class="input text" type="password" id="cpw" placeholder="Senha de Validação" autocorrect="off" autocapitalize="none" /></div>
+            <div><input class="input text command" type="text" id="cid" placeholder="Código do Cliente"  autocorrect="off" autocapitalize="none" required /></div>
+            <div><input class="input text" type="password" id="cpw" placeholder="Senha de Validação" autocorrect="off" autocapitalize="none" required /></div>
             <div><input type="submit" class="submit" value="Validar Cliente" /></div>
             <a class="link icon-history2 fordebug" data-view="log" data-direction="foreground"></a>
         </form>
@@ -77,8 +77,8 @@
         	<div class="logo"></div>
             <p class="description"><strong class="client">{client}</strong></p>
             <p class="description">Autenticação de Usuário</p>
-            <div><input class="input text command" type="text" id="us" placeholder="Login do Usuário" autocorrect="off" autocapitalize="none" /></div>
-            <div><input class="input text" type="password" id="upw" placeholder="Senha de Acesso" autocorrect="off" autocapitalize="none" /></div>
+            <div><input class="input text command" type="text" id="us" placeholder="Login do Usuário" autocorrect="off" autocapitalize="none" required /></div>
+            <div><input class="input text" type="password" id="upw" placeholder="Senha de Acesso" autocorrect="off" autocapitalize="none" required /></div>
             <div><input type="submit" class="submit yellow" value="Entrar" /></div>
             <p class="description bottom">Não está em <b class="client">{client}</b>? <a class="logoutclient">Troque o cliente.</a></p>
             <a class="link icon-history2 fordebug" data-view="log" data-direction="foreground"></a>
@@ -91,13 +91,15 @@
             <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
         </header>
         <section class="section">
-        	<div class="puller"><strong>Solte para atualizar</strong></div>
-            <ul class="grid">
-                <li><a data-view="servicelist" data-direction="forward"><strong class="icon-package5"></strong><span>Serviços</span><mark></mark></a></li>
-                <li><a data-view="messages" data-direction="forward"><strong class="icon-paperplane"></strong><span>Mensagens</span><mark></mark></a></li>
-                <li><a data-view="user" data-direction="forward"><strong class="icon-user2"></strong><span>Usuário</span></a></li>
-                <li><a data-view="configs" data-direction="forward"><strong class="icon-cogs"></strong><span>Configurações</span></a></li>
-            </ul>
+        	<div class="pullinfo"><strong>Solte para atualizar</strong></div>
+            <div class="pullarea">
+                <ul class="grid">
+                    <li><a data-view="servicelist" data-direction="forward"><strong class="icon-package5"></strong><span>Serviços</span><mark></mark></a></li>
+                    <li><a data-view="messages" data-direction="forward"><strong class="icon-paperplane"></strong><span>Mensagens</span><mark></mark></a></li>
+                    <li><a data-view="user" data-direction="forward"><strong class="icon-user2"></strong><span>Usuário</span></a></li>
+                    <li><a data-view="configs" data-direction="forward"><strong class="icon-cogs"></strong><span>Configurações</span></a></li>
+                </ul>
+             </div>
         </section>
     </div>
     <div class="view" id="servicelist">
@@ -107,9 +109,11 @@
             <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
         </header>
         <section class="section">
-        	<div class="puller"><strong>Solte para atualizar</strong></div>
-            <form class="onlist search icon-search2" action=""><input class="input text command" type="text" id="search" placeholder="Pesquisar" /><input type="submit" class="submit" value="" /></form>
-            <ul class="list"></ul>
+        	<div class="pullinfo"><strong>Solte para atualizar</strong></div>
+            <div class="pullarea">
+                <form class="onlist search icon-search2" data-target="service" action=""><input class="input text command" type="search" id="search" placeholder="Pesquisar" disabled /><input type="submit" class="submit" value="" /></form>
+                <ul class="list"></ul>
+            </div>
         </section>
     </div>
     <div class="view" id="joblist">
@@ -120,14 +124,16 @@
             <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
         </header>
         <section class="section">
-        	<div class="puller"><strong>Solte para atualizar</strong></div>
-            <form class="onlist search icon-search2" action=""><input class="input text command" type="text" id="search" placeholder="Pesquisar" /><input type="submit" class="submit" value="" /></form>
-            <ul class="list"></ul>
+        	<div class="pullinfo"><strong>Solte para atualizar</strong></div>
+            <div class="pullarea">
+                <form class="onlist search icon-search2" data-target="job" action=""><input class="input text command" type="search" id="search" placeholder="Pesquisar" disabled /><input type="submit" class="submit" value="" /></form>
+                <ul class="list"></ul>
+            </div>
         </section>
     </div>
     <div class="view" id="jobdetails">
         <header class="header" id="header">
-            <h1 class="icon-package5" id="screenname">{screenname}</h1>
+            <h1 class="icon-package5" id="screenname">Detalhes</h1>
             <a class="item l1 menu icon-menu"></a>
             <a class="item r2 link gmap iconsmall icon-map3" data-view="map" data-direction="forward" data-source="jobdetails"></a>
             <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
@@ -135,6 +141,25 @@
         <section class="section">
             <ul class="list"></ul>
         	<table width="96%" border="0" cellspacing="6" cellpadding="6" class="dets"></table>
+            <p style="text-align:center;"><button class="button orange link" id="interact" data-view="jobinteraction" data-direction="forward" data-source="jobdetails">Interagir</button></p>
+        </section>
+    </div>
+    <div class="view" id="jobinteraction">
+        <header class="header" id="header">
+            <h1 class="icon-package5" id="screenname">Interação</h1>
+            <a class="item l1 menu icon-menu"></a>
+            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
+        </header>
+        <section class="section">
+            <ul class="list"></ul>
+            <form class="jobform" action="">
+            	<input type="hidden" class="input" name="action" value="update" />
+            	<input type="hidden" class="input" name="exec" value="updateJob" />
+            	<input type="hidden" class="input" name="service" value="" />
+            	<input type="hidden" class="input" name="job" value="" />
+            	<div class="parsed"></div>
+            	<p style="text-align:center;"><input type="submit" class="submit orange" value="Atualizar" /></p>
+            </form>
         </section>
     </div>
     <div class="view" id="configs">
