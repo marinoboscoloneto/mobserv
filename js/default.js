@@ -25,11 +25,17 @@ $(function(){
 				}
 			}
 			var valid = true;
-			$form.find('.input').each(function(){
+			var formdata = {}
+			$form.find('.input:visible:not(:disabled,.disable), input[type="hidden"]:not(:disabled,.disable)').each(function(){
 				var $this = $(this);
-				console.log($this.prop('required'));
-				if (!$this.val() && $this.prop('required') == true) valid = false;
-				return false;
+				formdata[$this.attr('name')] = $this.val();
+				console.log($this.attr('name'),$this.prop('required'),$this.val());
+				if (!$this.val() && $this.prop('required') === true){
+					console.error($this.attr('name'),$this.prop('required'),$this.val());
+					$this.addClass('invalid');
+					valid = false;
+					return false;
+				}
 			});
 			if (!valid){
 				mobserv.notify.open({
@@ -38,7 +44,8 @@ $(function(){
 					message : 'Os campos são requiridos'
 				});	
 			} else {
-				$form.trigger('send');	
+				console.log('formdata',event,formdata);
+				$form.trigger('send',[formdata]);	
 			}
 			mobserv.keyboard.close();
 			event.preventDefault();
@@ -163,21 +170,27 @@ $(function(){
 				}
 			}
 		})
-		.on('send','#jobinteraction:visible .jobform',function(){
+		.on('send','#jobdetails:visible .jobform',function(event,data){
+			console.log('formdata',event,data);
 			var $form = $(this);
-			var $fields = $('.input:not(:disabled)');
-			var data = { isPost:true };
-			$fields.each(function(){
-				var $fd = $(this);
-				if ($fd.attr('name')) data[$fd.attr('name')] = $fd.val();
+			var $view = $form.closest('.view').addClass('courtain');
+			var $section = $view.find('.section').hide();
+			data.isPost = true;
+			mobserv.services.post(data,function(){
+				$view.removeClass('courtain');
+				$section.show();
 			});
-			mobserv.services.post(data);
 		})
 		.on('tap','#formuser .logoutclient',function(){
 			mobserv.nav.toView('formclient');
 		})
 		.on('tap','.input:not(:disabled)',function(){
-			$(this).focus();
+			$(this).focus().removeClass('invalid');
+			event.preventDefault();
+			event.stopPropagation();
+		})
+		.on('change input','.input:not(:disabled)',function(){
+			$(this).removeClass('invalid');
 		})
 		.on('tap','form.search',function(){
 			$(this).find('.input').prop('disabled',false).focus();
@@ -247,6 +260,9 @@ $(function(){
 			endY = event.originalEvent.touches[0].pageY;
 			var $section = $pullarea.parent();
 			if ($section.scrollTop() < 5 && endY > startY + 15){
+				event.preventDefault();
+				event.stopPropagation();
+				$section.scrollTop(0).addClass('noscroll');
 				var val = parseInt((endY-startY)/2.3);
 				var h = $(window).height()/4;
 				$pullarea.css({'transform': 'translate(0px, '+val+'px)'}).data('moved','y');
@@ -254,12 +270,15 @@ $(function(){
 					transform: 'translate(0px, '+(val/2)+'px)', 
 					opacity:val/h
 				});
-				event.preventDefault();
 			}
 		})		
 		.on('touchend','.view.current .pullarea',function(event){
 				var $section = $pullarea.parent();
+				$section.removeClass('noscroll');
 				if ($pullarea.data('moved') == 'y'){
+					$pullarea.data('moved','');
+					event.preventDefault();
+					event.stopPropagation();
 					if (startY+($(window).height()/3) > endY){
 						$pullarea.transition({ y:0 }, 300);
 						$pullinfo.transition({ y:0, opacity:0 }, 300);
@@ -317,21 +336,29 @@ $(function(){
 			}
 		})
 		.on('show','#joblist',function(){
-			var $this = $(this);
+			var $this = $(this).addClass('courtain');
+			$this.find('.section').hide();
+			mobserv.services.cleardom('joblist');
+		})
+		.on('current','#joblist',function(){
+			var $this = $(this).removeClass('courtain');
 			mobserv.services.parsedom('joblist',$this.data('id'));
+			$this.find('.section').fadeIn(200);
 		})
 		.on('show','#jobdetails',function(){
-			var $this = $(this);
+			var $this = $(this).addClass('courtain');
+			$this.find('.section').hide();
+			mobserv.services.cleardom('jobdetails');
+		})
+		.on('current','#jobdetails',function(){
+			var $this = $(this).removeClass('courtain');
 			mobserv.services.parsedom('jobdetails',$this.data('id'));
+			$this.find('.section').fadeIn(200);
 		})
-		.on('show','#jobinteraction',function(){
-			var $this = $(this);
-			mobserv.services.parsedom('jobinteraction',$this.data('id'));
-		})
-		.on('show','#gps',function(){
+		.on('current','#gps',function(){
 			mobserv.geolocation.getPosition();
 		})
-		.on('show','#map',function(){
+		.on('current','#map',function(){
 			mobserv.geolocation.watchPosition({
 				enableHighAccuracy : true,
 				timeout : 10000,

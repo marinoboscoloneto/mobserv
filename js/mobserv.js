@@ -244,7 +244,7 @@ var mobserv = {
 						message : 'default '+type+' server response error ('+((err)?err:'unknown')+')',
 						detail : (data)?decodeURIComponent($.param(data)).replace(/\&/g,"<br>"):''
 					});
-					$('#preload .loadinfo').text('Impossível conectar ao servidor :(');	
+					$('#preload .loadinfo').text('Impossível conectar ao servidor :(');
 					mobserv.server.loopcall(type,data,ondone,onerror);
 				}, 
 				complete: function(){
@@ -287,12 +287,14 @@ var mobserv = {
 					version : mobserv.device.data.version,
 				}
 				var pos = mobserv.geolocation.position;
-				cfg.data.lat = pos.latitude;
-				cfg.data.lon = pos.longitude;
-				cfg.data.acr = pos.accuracy;
-				cfg.data.alt = pos.altitudeAccuracy;
-				cfg.data.head = pos.heading;
-				cfg.data.gpstimestamp = pos.timestamp;
+				cfg.data.gps = {}
+				cfg.data.gps.lat = pos.latitude;
+				cfg.data.gps.lon = pos.longitude;
+				cfg.data.gps.accuracy = pos.accuracy;
+				cfg.data.gps.altitude = pos.altitudeAccuracy;
+				cfg.data.gps.head = pos.heading;
+				cfg.data.gps.speed = pos.speed;
+				cfg.data.gps.timestamp = pos.timestamp;
 			}
 			if (!mobserv.connection.test()){
 				//$('#preload').removeClass('courtain');
@@ -1085,6 +1087,10 @@ var mobserv = {
 	services : {
 		list : {},
 		command : {
+			viewBack : function(){
+				mobserv.nav.back();
+				return 
+			},
 			userLogout : function(){
 				mobserv.nav.toView('formuser');
 				return 
@@ -1142,201 +1148,6 @@ var mobserv = {
 						});
 					}
 				);
-			}
-		},
-		parsedom : function(type,id){
-			mobserv.log({
-				name : 'services.parsedom',
-				message : 'parsedom '+((type)?type:'servicelist')+((id)?' #'+id:'')+' started',
-			});
-			mobserv.services.cleardom(type);
-			var client = mobserv.globals.client;
-			var user = mobserv.globals.user;
-			var services = mobserv.globals.services;
-			if (!services.xml) return false;
-			var $dom = {}
-			var $xml = {}
-			var $html = '';
-			if (!type || type == 'servicelist'){
-				$dom.services = $('#servicelist');
-				$dom.list = $dom.services.find('.list').html('');
-				$xml.root = $(services.xml).find('mobserv');
-				$xml.service = $xml.root.find('service');
-				$xml.service.each(function(){
-					var $s = $(this), $l = {}, $t = {}, $mark;
-					$s.children('layout:not([name="content"])').each(function(){ var $this = $(this); $l[$this.attr('name')]=$this.text(); });
-					$s.children('setting').each(function(){ var $this = $(this); $t[$this.attr('name')]=$this.attr('value'); });
-					$mark = $s.children('mark');
-					$html += ''+
-					'<li style="display:'+(($s.attr('visible')=='true')?'block':'none')+'" style="'+(($s.attr('disable')=='true')?'.disable':'')+'">'+
-						'<div class="table link" data-view="joblist" data-direction="forward" data-id="'+$s.attr('id')+'">'+
-							'<div><div class="identifier" style="background-color:'+$l.indentifierColor+'">'+$l.indentifierLabel+'<strong>'+$l.indentifierNumber+'</strong></div><mark class="'+$mark.attr('color')+'">'+$mark.text()+'</mark></div>'+
-							'<div>'+
-								'<h2 style="color:'+$l.indentifierColor+'">'+$l.title+'</h2>';
-								$s.children('layout').filter('[name="content"]').each(function(){
-									$html += '<p>'+$(this).text()+'</p>';
-								});
-							$html += ''+
-							'</div>'+
-						'</div>'+
-					'</li>';
-				});
-				$dom.list.html($html);	
-				var $markhome = $('#home [data-view="servicelist"] mark');
-				var $markfoot = $('#footer [data-view="servicelist"] mark');
-				var $rootmark = $xml.root.find('mark');
-				$rootmark.each(function(){
-					var $this = $(this);
-					if ($this.text()){
-						if (services.updated || !$markfoot.is(':visible')){
-							$markhome.hide();
-							$markfoot.hide();
-							setTimeout(function(){
-								$markhome.text($this.text()).addClass($this.attr('color')).fadeIn(250,function(){$markhome.css('transform','scale(1)');}).css('transform','scale(1.4)');
-								$markfoot.text($this.text()).addClass($this.attr('color')).fadeIn(250,function(){$markfoot.css('transform','scale(1)');}).css('transform','scale(1.4)').parent().addClass('marked');
-							},200);
-						}
-					} else {
-						$markhome.fadeOut(250).css('transform', 'scale(0.1)');
-						$markfoot.fadeOut(250).css('transform', 'scale(0.1)').parent().removeClass('marked');
-					}
-				});
-			} else if (type == 'joblist' && id){
-				$dom.service = $('#service');			
-				$dom.jobs = $('#joblist');
-				$dom.list = $dom.jobs.find('.list').html('');
-				$dom.gmap = $dom.jobs.find('.gmap');
-				$xml.service = $(services.xml).find('service[id="'+id+'"]');
-				$dom.jobs.find('#screenname').text($xml.service.attr('name'));
-				$xml.job = $xml.service.find('job');
-				$xml.job.each(function(){
-					var $s = $(this), $l = {}, $t = {};
-					$s.children('layout').each(function(){ var $this = $(this); $l[$this.attr('name')]=$this.text(); });
-					$s.children('setting').each(function(){ var $this = $(this); $t[$this.attr('name')]=$this.attr('value'); });
-					$html += ''+
-					'<li style="display:'+(($s.attr('visible')=='true')?'block':'none')+'" style="'+(($s.attr('disable')=='true')?'.disable':'')+'">'+
-						'<div class="table link" data-view="jobdetails" data-direction="forward" data-id="'+$s.attr('id')+'">'+
-							'<div><div class="identifier" style="background-color:'+$l.indentifierColor+'">'+$l.indentifierLabel+'<strong>'+$l.indentifierNumber+'</strong></div></div>'+
-							'<div>'+
-								'<h2 style="color:'+$l.indentifierColor+'">'+$l.title+'</h2>';
-								$s.children('layout[name="content"]').each(function(){
-									$html += '<p>'+$(this).text()+'</p>';
-								});
-							$html += ''+
-							'</div>'+
-						'</div>'+
-					'</li>';
-				});
-				if ($xml.service.find('location').length){
-					$dom.gmap.show().data('id',id);
-				} else {
-					$dom.gmap.hide();
-				}
-				$dom.list.html($html);	
-			} else if (type == 'jobdetails' && id){
-				var $l = {}, $t = {};
-				$dom.detail = $('#jobdetails');
-				$dom.list = $dom.detail.find('.list').html('');
-				$dom.dets = $dom.detail.find('.dets').html('');
-				$dom.gmap = $dom.detail.find('.gmap');
-				$s = $(services.xml).find('job[id="'+id+'"]');
-				$s.children('layout').each(function(){ var $this = $(this); $l[$this.attr('name')]=$this.text(); });
-				$s.children('setting').each(function(){ var $this = $(this); $t[$this.attr('name')]=$this.attr('value'); });
-				$html += ''+
-				'<li style="display:'+(($s.attr('visible')=='true')?'block':'none')+'" style="'+(($s.attr('disable')=='true')?'.disable':'')+'">'+
-					'<div class="table">'+
-						'<div><div class="identifier" style="background-color:'+$l.indentifierColor+'">'+$l.indentifierLabel+'<strong>'+$l.indentifierNumber+'</strong></div></div>'+
-						'<div>'+
-							'<h2 style="color:'+$l.indentifierColor+'">'+$l.title+'</h2>';
-							$s.children('layout[name="content"]').each(function(){
-								$html += '<p>'+$(this).text()+'</p>';
-							});
-						$html += ''+
-						'</div>'+
-					'</div>'+
-				'</li>';
-				$dom.list.html($html);
-				$html = '';
-				$s.children('layout[name="detail"]').each(function(){
-					var $this = $(this);
-					$html += '<tr><td style="width:1%;white-space:nowrap;">'+$this.attr('label')+'</td><td><strong>'+$this.text()+'</strong></td></tr>';
-				});
-				$dom.detail.find('#interact').data('id',id);
-				if ($s.find('location').length){
-					$dom.gmap.show().data('id',id);
-				} else {
-					$dom.gmap.hide();
-				}
-				$dom.dets.html($html);
-			} else if (type == 'jobinteraction' && id){
-				var $l = {}, $t = {};
-				$dom.interaction = $('#jobinteraction');
-				$dom.list = $dom.interaction.find('.list').html('');
-				$dom.form = $dom.interaction.find('.jobform .parsed').html('');
-				$s = $(services.xml).find('job[id="'+id+'"]');
-				$s.children('layout').each(function(){ var $this = $(this); $l[$this.attr('name')]=$this.text(); });
-				$s.children('setting').each(function(){ var $this = $(this); $t[$this.attr('name')]=$this.attr('value'); });
-				$html += ''+
-				'<li style="display:'+(($s.attr('visible')=='true')?'block':'none')+'" style="'+(($s.attr('disable')=='true')?'.disable':'')+'">'+
-					'<div class="table">'+
-						'<div><div class="identifier" style="background-color:'+$l.indentifierColor+'">'+$l.indentifierLabel+'<strong>'+$l.indentifierNumber+'</strong></div></div>'+
-						'<div>'+
-							'<h2 style="color:'+$l.indentifierColor+'">'+$l.title+'</h2>';
-							$s.children('layout[name="content"]').each(function(){
-								$html += '<p>'+$(this).text()+'</p>';
-							});
-						$html += ''+
-						'</div>'+
-					'</div>'+
-				'</li>';
-				$dom.list.html($html);
-				$html = '';
-				var $form = $s.find('form');
-				$form = ($form.length) ? $form : $s.closest('service').children('form[type="'+$s.attr('type')+'"]');
-				$form = ($form.length) ? $form : $s.closest('mobserv').children('form[type="'+$s.attr('type')+'"]');
-				if ($form.length){
-					var $desc = $form.children('description');
-					$dom.form.append(($desc.length)?'<p>'+$desc.text()+'</p>':'<p>Formulário de interação de '+$s.attr('type')+'</p>');
-					$form.find('formset').each(function(){
-						var $formset = $(this);
-						$dom.formset = $('<div class="formset"></div>');
-						if ($formset.attr('visible') == 'false') $dom.formset.hide();
-						if ($formset.attr('chain-field')) $dom.formset.attr('chain-field',$formset.attr('chain-field'));
-						if ($formset.attr('chain-value')) $dom.formset.attr('chain-value',$formset.attr('chain-value'));
-						$dom.form.append($dom.formset);
-						$formset.find('field').each(function(){
-							var $field = $(this);
-							if ($field.attr('type') == 'select'){
-								$dom.field = $('<select name="'+$field.attr('name')+'" class="input select" '+(($field.attr('required') == 'true')?' required':'')+'>');
-								$dom.field.append('<option value="" disabled selected>'+$field.attr('label')+'</option>');
-								$field.find('option').each(function(){
-									var $option = $(this);
-									$dom.field.append('<option value="'+$option.attr('value')+'">'+$option.text()+'</option>');
-								});
-							} else if ($field.attr('type') == 'text' || $field.attr('type') == 'number' || $field.attr('type') == 'email'){
-								$dom.field = $('<input type="'+$field.attr('type')+'" class="input '+$field.attr('type')+'" placeholder="'+$field.attr('label')+'"  '+(($field.attr('required') == 'true')?' required':'')+' />');	
-							}
-							if ($formset.attr('disable') == 'true') $dom.field.prop('disabled',true);
-							$dom.field.on('change',function(){
-								var $this = $(this);
-								var $parent = $this.parent();
-								var val = $this.val();
-								var name = $this.attr('name');
-								$parent.nextAll('.formset').hide().find('.input').val('');
-								$parent.nextAll('.formset[chain-field="'+name+'"][chain-value="'+val+'"]').fadeIn();
-							})
-							$dom.formset.append($dom.field);
-						});	
-						$dom.form.append($dom.formset);					
-					});
-				}				
-			}
-		},
-		cleardom : function(type){
-			if (!type || type == 'serviceslist'){
-				$('#services .list li').remove();
-			} else if (type == 'servicelist'){
-				$('#service .list li').remove();
 			}
 		},
 		init : function(ondone){
@@ -1524,6 +1335,282 @@ var mobserv = {
 					if(onerror) onerror(error);
 				});
 			}
+		},
+		parsedom : function(type,id){
+			if (!type){
+				var $current = $('.view.current:last');
+				if ($current.length){
+					if ($current.attr('id') == 'servicelist') {
+						type = 'servicelist'; 	
+					} else if ($current.attr('id') == 'joblist') {
+						type = 'joblist'; 	
+						id = $current.data('id'); 	
+					} else if ($current.attr('id') == 'jobdetails') {
+						type = 'jobdetails'; 	
+						id = $current.data('id'); 	
+					} else {
+						type = 'servicelist'; 		
+					}
+				} else {
+					type = 'servicelist'; 		
+				}
+			}
+			mobserv.log({
+				name : 'services.parsedom',
+				message : 'parsedom '+type+((id)?' #'+id:'')+' started',
+			});
+			mobserv.services.cleardom(type);
+			var client = mobserv.globals.client;
+			var user = mobserv.globals.user;
+			var services = mobserv.globals.services;
+			if (!services.xml) return false;
+			var $dom = {}
+			var $xml = {}
+			var $html = '';
+			if (type == 'servicelist'){
+				$dom.services = $('#servicelist');
+				$dom.list = $dom.services.find('.list').html('');
+				$xml.root = $(services.xml).find('mobserv');
+				$xml.service = $xml.root.find('service');
+				$xml.service.each(function(){
+					var $s = $(this), $l = {}, $t = {}, $mark;
+					$s.children('layout:not([name="content"])').each(function(){ var $this = $(this); $l[$this.attr('name')]=$this.text(); });
+					$s.children('setting').each(function(){ var $this = $(this); $t[$this.attr('name')]=$this.attr('value'); });
+					$mark = $s.children('mark');
+					$html += ''+
+					'<li style="display:'+(($s.attr('visible')=='true')?'block':'none')+'" style="'+(($s.attr('disable')=='true')?'.disable':'')+'">'+
+						'<div class="table link" data-view="joblist" data-direction="forward" data-id="'+$s.attr('id')+'">'+
+							'<div><div class="identifier" style="background-color:'+$l.indentifierColor+'">'+$l.indentifierLabel+'<strong>'+$l.indentifierNumber+'</strong></div><mark class="'+$mark.attr('color')+'">'+$mark.text()+'</mark></div>'+
+							'<div>'+
+								'<h2 style="color:'+$l.indentifierColor+'">'+$l.title+'</h2>';
+								$s.children('layout').filter('[name="content"]').each(function(){
+									$html += '<p>'+$(this).text()+'</p>';
+								});
+							$html += ''+
+							'</div>'+
+						'</div>'+
+					'</li>';
+				});
+				$dom.list.html($html);	
+				var $markhome = $('#home [data-view="servicelist"] mark');
+				var $markfoot = $('#footer [data-view="servicelist"] mark');
+				var $rootmark = $xml.root.find('mark');
+				$rootmark.each(function(){
+					var $this = $(this);
+					if ($this.text()){
+						if (services.updated || !$markfoot.is(':visible')){
+							$markhome.hide();
+							$markfoot.hide();
+							setTimeout(function(){
+								$markhome.text($this.text()).addClass($this.attr('color')).fadeIn(250,function(){$markhome.css('transform','scale(1)');}).css('transform','scale(1.4)');
+								$markfoot.text($this.text()).addClass($this.attr('color')).fadeIn(250,function(){$markfoot.css('transform','scale(1)');}).css('transform','scale(1.4)').parent().addClass('marked');
+							},200);
+						}
+					} else {
+						$markhome.fadeOut(250).css('transform', 'scale(0.1)');
+						$markfoot.fadeOut(250).css('transform', 'scale(0.1)').parent().removeClass('marked');
+					}
+				});
+			} else if (type == 'joblist' && id){
+				$dom.service = $('#service');			
+				$dom.jobs = $('#joblist');
+				$dom.list = $dom.jobs.find('.list').html('');
+				$dom.gmap = $dom.jobs.find('.gmap');
+				$xml.service = $(services.xml).find('service[id="'+id+'"]');
+				$dom.jobs.find('#screenname').text($xml.service.attr('name'));
+				$xml.job = $xml.service.find('job');
+				$xml.job.each(function(){
+					var $s = $(this), $l = {}, $t = {};
+					$s.children('layout').each(function(){ var $this = $(this); $l[$this.attr('name')]=$this.text(); });
+					$s.children('setting').each(function(){ var $this = $(this); $t[$this.attr('name')]=$this.attr('value'); });
+					$html += ''+
+					'<li style="display:'+(($s.attr('visible')=='true')?'block':'none')+'" style="'+(($s.attr('disable')=='true')?'.disable':'')+'">'+
+						'<div class="table link" data-view="jobdetails" data-direction="forward" data-id="'+$s.attr('id')+'">'+
+							'<div><div class="identifier" style="background-color:'+$l.indentifierColor+'">'+$l.indentifierLabel+'<strong>'+$l.indentifierNumber+'</strong></div></div>'+
+							'<div>'+
+								'<h2 style="color:'+$l.indentifierColor+'">'+$l.title+'</h2>';
+								$s.children('layout[name="content"]').each(function(){
+									$html += '<p>'+$(this).text()+'</p>';
+								});
+							$html += ''+
+							'</div>'+
+						'</div>'+
+					'</li>';
+				});
+				if ($xml.service.find('location').length){
+					$dom.gmap.show().data('id',id);
+				} else {
+					$dom.gmap.hide();
+				}
+				$dom.list.html($html);	
+			} else if (type == 'jobdetails' && id){
+				var $l = {}, $t = {};
+				$dom.detail = $('#jobdetails');
+				$dom.list = $dom.detail.find('.list').html('');
+				$dom.dets = $dom.detail.find('.dets').html('');
+				$dom.items = $dom.detail.find('.items').html('');
+				$dom.form = $dom.detail.find('.jobform .parsed').html('');
+				$dom.gmap = $dom.detail.find('.gmap');
+				$s = $(services.xml).find('job[id="'+id+'"]');
+				$s.children('layout').each(function(){ var $this = $(this); $l[$this.attr('name')]=$this.text(); });
+				$s.children('setting').each(function(){ var $this = $(this); $t[$this.attr('name')]=$this.attr('value'); });
+				$html += ''+
+				'<li style="display:'+(($s.attr('visible')=='true')?'block':'none')+'" style="'+(($s.attr('disable')=='true')?'.disable':'')+'">'+
+					'<div class="table">'+
+						'<div><div class="identifier" style="background-color:'+$l.indentifierColor+'">'+$l.indentifierLabel+'<strong>'+$l.indentifierNumber+'</strong></div></div>'+
+						'<div>'+
+							'<h2 style="color:'+$l.indentifierColor+'">'+$l.title+'</h2>';
+							$s.children('layout[name="content"]').each(function(){
+								$html += '<p>'+$(this).text()+'</p>';
+							});
+						$html += ''+
+						'</div>'+
+					'</div>'+
+				'</li>';
+				$dom.list.html($html);
+				$html = '';
+				$s.children('layout[name="detail"]').each(function(){
+					var $this = $(this);
+					$html += '<tr><td style="width:1%;white-space:nowrap;">'+$this.attr('label')+'</td><td><strong>'+$this.text()+'</strong></td></tr>';
+				});
+				$dom.dets.html($html);
+				$html = '';
+				var $items = $s.children('item');
+				if ($items.length){
+					$items.each(function(){
+						var $this = $(this);
+						$html = $(''+
+						'<div class="item">'+
+							'<div class="check"></div>'+
+							'<div class="image">'+(($this.attr('thumb'))?'<div class="thumb" style="background-image:url('+$this.attr('thumb')+');"></div>':'<div class="icon">'+(($this.attr('abbr'))?$this.attr('abbr'):'ITM')+'</div>')+'</div>'+
+							'<div class="data">'+
+								'<h2 style="color:'+$this.attr('color')+'">'+$this.attr('name')+'</h2>'+
+								'<p><b>'+$this.attr('type')+'</b></p>'+
+								(($this.attr('barcode'))?'<p class="icon-barcode">'+$this.attr('barcode')+'</p>':'')+''+
+								'<input type="hidden" class="input hidden" name="'+(($this.attr('field'))?$this.attr('field'):'Job_Item')+'['+$this.attr('id')+']" />'+
+							'</div>'+
+						'</div>');
+						if ($this.attr('barcode') && typeof cordova != 'undefined' && typeof cordova.plugins != 'undefined' && typeof cordova.plugins.barcodeScanner != 'undefined'){
+							$html.on('tap',function(){
+								cordova.plugins.barcodeScanner.scan(
+									function(result){
+										if(!result.cancelled){
+											if(result.text){
+												if ($this.attr('barcode') == result.text){
+													$html.removeClass('unmatch').addClass('match');
+													$html.find('.input').val(result.text);
+													mobserv.log({
+														type : 'notice',
+														name : 'item.barcode',
+														message : 'item '+result.text+' has match',
+													});
+													mobserv.notify.open({
+														type : 'notice',
+														name : 'Scanner',
+														message : 'Item '+result.text+' selecionado'
+													});	
+												} else {
+													$html.addClass('unmatch').removeClass('match');
+													$html.find('.field').val('');
+													mobserv.log({
+														type : 'alert',
+														name : 'item.barcode',
+														message : 'item '+result.text+' has not match',
+													});
+													mobserv.notify.open({
+														type : 'notice',
+														name : 'Scanner',
+														message : 'Item '+result.text+' não confere'
+													});
+												}
+											}
+										}
+									}
+								);
+							});	
+						} else {
+							$html.on('tap',function(){
+								var $this = $(this);
+								if ($this.hasClass('match')){
+									$this.removeClass('match');
+									$this.find('.input').val('');
+								} else {
+									$this.addClass('match');
+									$this.find('.input').val($this.attr('id'));
+								}
+							});
+						}
+						$dom.items.append($html);
+						$html = '';
+					});
+					$dom.items.closest('.block').show();	
+				}
+				var $form = $s.find('form');
+				$form = ($form.length) ? $form : $s.closest('service').children('form[type="'+$s.attr('type')+'"]');
+				$form = ($form.length) ? $form : $s.closest('mobserv').children('form[type="'+$s.attr('type')+'"]');
+				if ($form.length){
+					var $desc = $form.children('description:eq(0)');
+					$dom.form.siblings('.formdesc').html(($desc.length)?'<p class="description">'+$desc.text()+'</p>':'<p class="description">Formulário de interação de '+$s.attr('type')+'</p>');
+					var $submit = $form.children('submit:eq(0)');
+					$dom.form.closest('.jobform').find('.submit').val(($submit.length)?$submit.text():'Enviar Dados');
+					if($form.attr('action')) $dom.form.siblings('.input[name="action"]').val($form.attr('action'));
+					if($form.attr('exec')) $dom.form.siblings('.input[name="exec"]').val($form.attr('exec'));
+					$dom.form.siblings('.input[name="service"]').val($s.closest('service').attr('id'));
+					$dom.form.siblings('.input[name="job"]').val($s.attr('id'));
+					$form.find('formset').each(function(){
+						var $formset = $(this);
+						$dom.formset = $('<div class="formset"></div>');
+						var $desc = $formset.children('description:eq(0)');
+						$dom.formset.append(($desc.length)?'<p>'+$desc.text()+'</p>':'');
+						if ($formset.attr('visible') == 'false') $dom.formset.hide();
+						if ($formset.attr('chain-field')) $dom.formset.attr('chain-field',$formset.attr('chain-field'));
+						if ($formset.attr('chain-value')) $dom.formset.attr('chain-value',$formset.attr('chain-value'));
+						$dom.form.append($dom.formset);
+						$formset.find('field').each(function(){
+							var $field = $(this);
+							if ($field.attr('type') == 'select'){
+								$dom.field = $('<select name="'+$field.attr('name')+'" class="input select" '+(($field.attr('required') == 'true')?' required':'')+'>');
+								$dom.field.append('<option value="" disabled selected>'+$field.attr('label')+'</option>');
+								$field.find('option').each(function(){
+									var $option = $(this);
+									$dom.field.append('<option value="'+$option.attr('value')+'">'+$option.text()+'</option>');
+								});
+							} else if ($field.attr('type') == 'text' || $field.attr('type') == 'number' || $field.attr('type') == 'email'){
+								$dom.field = $('<input type="'+$field.attr('type')+'" class="input '+$field.attr('type')+'" placeholder="'+$field.attr('label')+'"  '+(($field.attr('required') == 'true')?' required':'')+' />');	
+							}
+							if ($formset.attr('disable') == 'true') $dom.field.prop('disabled',true);
+							$dom.field.on('change',function(){
+								var $this = $(this);
+								var $parent = $this.parent();
+								var val = $this.val();
+								var name = $this.attr('name');
+								$parent.nextAll('.formset').hide().find('.input').val('');
+								$parent.nextAll('.formset[chain-field="'+name+'"][chain-value="'+val+'"]').fadeIn();
+							})
+							$dom.formset.append($dom.field);
+						});	
+						$dom.form.append($dom.formset);
+					});
+				}				
+				$dom.detail.find('#interact').data('id',id);
+				if ($s.find('location').length){
+					$dom.gmap.show().data('id',id);
+				} else {
+					$dom.gmap.hide();
+				}
+			}
+		},
+		cleardom : function(type){
+			if (!type || type == 'serviceslist'){
+				$('#servicelist .list').html('');
+			} else if (type == 'joblist'){
+				$('#joblist .list').html('');
+			} else if (type == 'jobdetails'){
+				$('#jobdetails .list').html('');
+				$('#jobdetails .dets').html('');
+				$('#jobdetails .items').html('');
+				$('#jobdetails .parsed').html('');
+			}
 		}
 	},
 	zindex : 3,
@@ -1546,9 +1633,10 @@ var mobserv = {
 			} else if ($view.length == 1){
 				$view.css({x:0, opacity:0, 'z-index':mobserv.zindex}).show().transition({ opacity:1 }, 300, function(){
 					$view.addClass('current');
+					$view.trigger('current');
 				});
-				$view.trigger('show');
 			}
+			$view.trigger('show');
 			mobserv.zindex++;
 		},
 		foreground : function($view){
@@ -1578,6 +1666,7 @@ var mobserv = {
 				});
 				$view.css({x:'30%', opacity:0, 'z-index':mobserv.zindex}).show().transition({ x:0, opacity:1 }, 300, function(){
 					$view.addClass('current');
+					$view.trigger('current');
 				});
 				$view.trigger('show');
 				$current.trigger('hide');
@@ -1594,6 +1683,7 @@ var mobserv = {
 					});
 					$view.css({x:0, opacity:0, 'z-index':mobserv.zindex}).show().transition({ opacity:1 }, 500, function(){
 						$view.addClass('current');
+						$view.trigger('current');
 					});
 					$view.trigger('show');
 					$current.trigger('hide');

@@ -140,23 +140,19 @@
         </header>
         <section class="section">
             <ul class="list"></ul>
-        	<table width="96%" border="0" cellspacing="6" cellpadding="6" class="dets"></table>
-            <p style="text-align:center;"><button class="button orange link" id="interact" data-view="jobinteraction" data-direction="forward" data-source="jobdetails">Interagir</button></p>
-        </section>
-    </div>
-    <div class="view" id="jobinteraction">
-        <header class="header" id="header">
-            <h1 class="icon-package5" id="screenname">Interação</h1>
-            <a class="item l1 menu icon-menu"></a>
-            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
-        </header>
-        <section class="section">
-            <ul class="list"></ul>
-            <form class="jobform" action="">
-            	<input type="hidden" class="input" name="action" value="update" />
-            	<input type="hidden" class="input" name="exec" value="updateJob" />
-            	<input type="hidden" class="input" name="service" value="" />
-            	<input type="hidden" class="input" name="job" value="" />
+            <div class="block gray">
+                <h3>Detalhes</h3>
+                <table width="100%" border="0" cellspacing="0" cellpadding="0" class="dets"></table>
+            </div>
+            <form class="jobform" action="" novalidate>
+            	<h3>Interação</h3>
+                <div class="formdesc"></div>
+            	<input type="hidden" class="input" name="action" value="update" required />
+            	<input type="hidden" class="input" name="exec" value="updateJob" required />
+            	<input type="hidden" class="input" name="service" value="" required />
+            	<input type="hidden" class="input" name="job" value="" required />
+                <div class="items">
+                </div>
             	<div class="parsed"></div>
             	<p style="text-align:center;"><input type="submit" class="submit orange" value="Atualizar" /></p>
             </form>
