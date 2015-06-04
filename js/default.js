@@ -259,7 +259,7 @@ $(function(){
 			endX = event.originalEvent.touches[0].pageX;
 			endY = event.originalEvent.touches[0].pageY;
 			var $section = $pullarea.parent();
-			if ($section.scrollTop() < 5 && endY > startY + 15){
+			if ($pullarea.data('moved') != 'u' && $section.scrollTop() < 5 && endY > startY + 15){
 				event.preventDefault();
 				event.stopPropagation();
 				$section.scrollTop(0).addClass('noscroll');
@@ -276,11 +276,11 @@ $(function(){
 				var $section = $pullarea.parent();
 				$section.removeClass('noscroll');
 				if ($pullarea.data('moved') == 'y'){
-					$pullarea.data('moved','');
+					$pullarea.data('moved','u');
 					event.preventDefault();
 					event.stopPropagation();
 					if (startY+($(window).height()/3) > endY){
-						$pullarea.transition({ y:0 }, 300);
+						$pullarea.transition({ y:0 }, 300, function(){ $pullarea.data('moved',''); });
 						$pullinfo.transition({ y:0, opacity:0 }, 300);
 					} else {
 						$pullarea.transition({ y:40 }, 300,function(){
@@ -298,6 +298,7 @@ $(function(){
 		})		
 		.on('pull','.view .pullarea',function(event){
 			mobserv.services.get(function(){
+				$pullarea.data('moved','');
 				$pullarea.transition({ y:0 }, 300);
 				$pullinfo.transition({ y:0, opacity:0 }, 300);
 				$pullinfo.parent().removeClass('courtain');
@@ -328,12 +329,30 @@ $(function(){
 			$this.find('button, .button, .submit, .input').removeClass('courtain disable').prop('disabled',false);
 			$this.find('.input').val('');
 		})
-		.on('show','#data',function(){
+		.on('show','#datasource',function(){
 			var $this = $(this);
-			if (mobserv.globals.services.xml){
-				var str = new XMLSerializer().serializeToString(mobserv.globals.services.xml);
-				$this.find('.section').val(str);
+			var cache = '', response = '', xml = '';
+			if ($this.data('source') == 'service'){
+				if (mobserv.globals.services.cache) cache = new XMLSerializer().serializeToString(mobserv.globals.services.cache);
+				if (mobserv.globals.services.response) response = new XMLSerializer().serializeToString(mobserv.globals.services.response);
+				if (mobserv.globals.services.xml) xml = new XMLSerializer().serializeToString(mobserv.globals.services.xml);
+			} else if ($this.data('source') == 'user'){
+				if (mobserv.globals.user.cache) cache = new XMLSerializer().serializeToString(mobserv.globals.user.cache);
+				if (mobserv.globals.user.response) response = new XMLSerializer().serializeToString(mobserv.globals.user.response);
+				if (mobserv.globals.user.xml) xml = new XMLSerializer().serializeToString(mobserv.globals.user.xml);
+			} else if ($this.data('source') == 'client'){
+				if (mobserv.globals.client.cache) cache = new XMLSerializer().serializeToString(mobserv.globals.client.cache);
+				if (mobserv.globals.client.response) response = new XMLSerializer().serializeToString(mobserv.globals.client.response);
+				if (mobserv.globals.client.xml) xml = new XMLSerializer().serializeToString(mobserv.globals.client.xml);
 			}
+			$this.find('#header .icon-code').html($this.data('source'));
+			$this.find('code.xml').each(function(i, block) {
+				var $sc = $(block);
+				if ($sc.hasClass('cache')) $sc.text(cache); 
+				else if ($sc.hasClass('response')) $sc.text(response);
+				else $sc.text(xml);
+				hljs.highlightBlock(block);
+			});
 		})
 		.on('show','#joblist',function(){
 			var $this = $(this).addClass('courtain');

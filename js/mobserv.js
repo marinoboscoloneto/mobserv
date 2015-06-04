@@ -819,6 +819,7 @@ var mobserv = {
 		client : function(res,data,ondone,onerror) {
 			var client = mobserv.globals.client;
 			mobserv.server.call('license',data,function(response){
+				client.response = response;
 				var $response = $(response);
 				var $valid = $response.find('validation:eq(0)');
 				if ($valid.length){
@@ -939,6 +940,7 @@ var mobserv = {
 			var client = mobserv.globals.client;
 			var user = mobserv.globals.user;
 			mobserv.server.call('service',data,function(response){
+				user.response = response;
 				var $response = $(response);
 				var $valid = $response.find('validation:eq(0)');
 				if ($valid.length){
@@ -1085,6 +1087,7 @@ var mobserv = {
 		}
 	},
 	services : {
+		autogettimeout : null,
 		list : {},
 		command : {
 			viewBack : function(){
@@ -1163,6 +1166,7 @@ var mobserv = {
 				function(res){
 					if (res.rows.length > 0){
 						if (res.rows.item(0).xml){
+							services.cache = $.parseXML(res.rows.item(0).xml);
 							services.xml = $.parseXML(res.rows.item(0).xml);
 							var $xml = $(services.xml);
 							services.requestKey = $xml.find('mobserv').attr('resultKey');
@@ -1189,6 +1193,16 @@ var mobserv = {
 				}
 			);
 		},
+		autoget : function(){
+			var server = mobserv.server.online['service'];
+			mobserv.log({
+				name : 'services.autoget',
+				message : 'service autoget scheduled in '+server.interval+' seconds',
+			});
+			mobserv.services.autogettimeout = setTimeout(function(){
+				mobserv.services.get();
+			},(server.interval)?server.interval*1000:300000);
+		},
 		get : function(ondone){
 			mobserv.log({
 				name : 'services.get',
@@ -1203,7 +1217,10 @@ var mobserv = {
 				'sid': user.session,
 				'rk': services.requestKey
 			};
+			if(mobserv.services.autogettimeout) clearTimeout(mobserv.services.autogettimeout);
 			mobserv.server.call('service',data,function(response){
+				services.response = response;
+				mobserv.services.autoget();
 				var $xml = $(response);
 				var $root = $xml.find('mobserv');
 				if ($root.length == 0){
@@ -1249,6 +1266,7 @@ var mobserv = {
 				if (ondone) ondone();
 			},
 			function(error){
+				mobserv.services.autoget();
 				mobserv.log({
 					type : 'error',
 					name : 'services.get',
@@ -1276,6 +1294,7 @@ var mobserv = {
 				data.sid = user.session;
 				data.rk = services.requestKey;
 				mobserv.server.call('service',data,function(response){
+					services.response = response;
 					var $xml = $(response);
 					var $root = $xml.find('mobserv');
 					if ($root.length == 0){
@@ -1367,10 +1386,10 @@ var mobserv = {
 			var $dom = {}
 			var $xml = {}
 			var $html = '';
+			$xml.root = $(services.xml).find('mobserv');
 			if (type == 'servicelist'){
 				$dom.services = $('#servicelist');
 				$dom.list = $dom.services.find('.list').html('');
-				$xml.root = $(services.xml).find('mobserv');
 				$xml.service = $xml.root.find('service');
 				$xml.service.each(function(){
 					var $s = $(this), $l = {}, $t = {}, $mark;
@@ -1392,25 +1411,6 @@ var mobserv = {
 					'</li>';
 				});
 				$dom.list.html($html);	
-				var $markhome = $('#home [data-view="servicelist"] mark');
-				var $markfoot = $('#footer [data-view="servicelist"] mark');
-				var $rootmark = $xml.root.find('mark');
-				$rootmark.each(function(){
-					var $this = $(this);
-					if ($this.text()){
-						if (services.updated || !$markfoot.is(':visible')){
-							$markhome.hide();
-							$markfoot.hide();
-							setTimeout(function(){
-								$markhome.text($this.text()).addClass($this.attr('color')).fadeIn(250,function(){$markhome.css('transform','scale(1)');}).css('transform','scale(1.4)');
-								$markfoot.text($this.text()).addClass($this.attr('color')).fadeIn(250,function(){$markfoot.css('transform','scale(1)');}).css('transform','scale(1.4)').parent().addClass('marked');
-							},200);
-						}
-					} else {
-						$markhome.fadeOut(250).css('transform', 'scale(0.1)');
-						$markfoot.fadeOut(250).css('transform', 'scale(0.1)').parent().removeClass('marked');
-					}
-				});
 			} else if (type == 'joblist' && id){
 				$dom.service = $('#service');			
 				$dom.jobs = $('#joblist');
@@ -1452,6 +1452,7 @@ var mobserv = {
 				$dom.form = $dom.detail.find('.jobform .parsed').html('');
 				$dom.gmap = $dom.detail.find('.gmap');
 				$s = $(services.xml).find('job[id="'+id+'"]');
+				$xml.service = $s.closest('service');
 				$s.children('layout').each(function(){ var $this = $(this); $l[$this.attr('name')]=$this.text(); });
 				$s.children('setting').each(function(){ var $this = $(this); $t[$this.attr('name')]=$this.attr('value'); });
 				$html += ''+
@@ -1492,39 +1493,55 @@ var mobserv = {
 						'</div>');
 						if ($this.attr('barcode') && typeof cordova != 'undefined' && typeof cordova.plugins != 'undefined' && typeof cordova.plugins.barcodeScanner != 'undefined'){
 							$html.on('tap',function(){
+								var $this = $(this);
+								$this.addClass('courtain');
 								cordova.plugins.barcodeScanner.scan(
 									function(result){
 										if(!result.cancelled){
 											if(result.text){
 												if ($this.attr('barcode') == result.text){
-													$html.removeClass('unmatch').addClass('match');
-													$html.find('.input').val(result.text);
+													$this.removeClass('unmatch').addClass('match');
+													$this.find('.input').val(result.text);
 													mobserv.log({
-														type : 'notice',
+														type : 'info',
 														name : 'item.barcode',
-														message : 'item '+result.text+' has match',
+														message : 'item '+result.text+' ('+result.format+','+result.cancelled+') match',
 													});
 													mobserv.notify.open({
-														type : 'notice',
+														type : 'info',
 														name : 'Scanner',
 														message : 'Item '+result.text+' selecionado'
 													});	
 												} else {
-													$html.addClass('unmatch').removeClass('match');
-													$html.find('.field').val('');
+													$this.addClass('unmatch').removeClass('match');
+													$this.find('.field').val('');
 													mobserv.log({
 														type : 'alert',
 														name : 'item.barcode',
-														message : 'item '+result.text+' has not match',
+														message : 'item '+result.text+' ('+result.format+','+result.cancelled+') unmatch',
 													});
 													mobserv.notify.open({
-														type : 'notice',
+														type : 'alert',
 														name : 'Scanner',
 														message : 'Item '+result.text+' não confere'
 													});
 												}
 											}
 										}
+										$this.removeClass('courtain');
+									},
+									function(error){
+										mobserv.log({
+											type : 'error',
+											name : 'item.barcode',
+											message : 'item '+result.text+' ('+result.type+','+result.cancelled+') has not match',
+										});
+										mobserv.notify.open({
+											type : 'error',
+											name : 'Scanner',
+											message : 'Item '+result.text+' não confere'
+										});
+										$this.removeClass('courtain');
 									}
 								);
 							});	
@@ -1598,6 +1615,75 @@ var mobserv = {
 				} else {
 					$dom.gmap.hide();
 				}
+			}
+			var $markhome = $('#home [data-view="servicelist"] mark');
+			var $markfoot = $('#footer [data-view="servicelist"] mark');
+			var $rootmark = $xml.root.children('mark');
+			var $servmark = ($xml.service.length) ? $xml.service.children('mark') : null;
+			if ($rootmark && $rootmark.length){
+				$rootmark.each(function(){
+					var $this = $(this);
+					if ($this.text()){
+						if (services.updated || !$markfoot.is(':visible')){
+							$markhome.transition({opacity:0,scale:0.01},100,function(){ $markhome.text($this.text()).addClass($this.attr('color')).transition({opacity:1,scale:1.5},500,function(){ $markhome.transition({scale:1},200) }).closest('a').removeClass('unmarked'); });
+							$markfoot.transition({opacity:0,scale:0.01},100,function(){ $markfoot.text($this.text()).addClass($this.attr('color')).transition({opacity:1,scale:1.5},500,function(){ $markfoot.transition({scale:1},200) }).parent().addClass('marked'); });
+						} else {
+							$markhome.transition({opacity:1,scale:1.5},200,function(){ $markhome.text($this.text()).addClass($this.attr('color')).transition({scale:1},200).closest('a').removeClass('unmarked'); });
+							$markfoot.transition({opacity:1,scale:1.5},200,function(){ $markfoot.text($this.text()).addClass($this.attr('color')).transition({scale:1},200).parent().addClass('marked'); });
+						}
+					} else {
+						$markhome.transition({scale:1.5},200,function(){ $markhome.transition({opacity:0,scale:0.01},500,function(){ $markhome.parent().closest('a').removeClass('unmarked'); }); });
+						$markfoot.transition({scale:1.5},200,function(){ $markfoot.transition({opacity:0,scale:0.01},500,function(){ $markfoot.parent().parent().removeClass('marked'); }); });
+					}
+				});
+			}
+			if ($servmark && $servmark.length){
+				$servmark.each(function(){
+					var $this = $(this);
+					var $s = $this.parent();
+					var $markserv = $('#servicelist .link[data-id="'+$s.attr('id')+'"] mark');
+					if ($this.text()){
+						if (services.updated || !$markserv.is(':visible')){
+							$markserv.transition({opacity:0,scale:0.01},100,function(){ $markserv.text($this.text()).addClass($this.attr('color')).transition({opacity:1,scale:1.5},500,function(){ $markserv.transition({scale:1},200) }); });
+						} else {
+							$markserv.transition({opacity:1,scale:1.5},200,function(){ $markserv.text($this.text()).addClass($this.attr('color')).transition({scale:1},200); });
+						}
+					} else {
+						$markserv.transition({scale:1.5},200,function(){ $markserv.transition({opacity:0,scale:0.01},500); });
+					}
+				});
+			}
+			
+			
+			if ($rootmark.length){
+				$rootmark.each(function(){
+					var $this = $(this);
+					if ($this.text()){
+						if (services.updated || !$markfoot.is(':visible')){
+							$markhome.transition({opacity:0,scale:0.01},100,function(){ $markhome.text($this.text()).addClass($this.attr('color')).transition({opacity:1,scale:1.5},300,function(){ $markhome.transition({scale:1},200) }) });
+							$markfoot.transition({opacity:0,scale:0.01},100,function(){ $markfoot.transition({opacity:1,scale:1.5},300,function(){ $markfoot.transition({scale:1},200) }) });
+							$markfoot.hide();
+							setTimeout(function(){
+								$markhome.text($this.text()).addClass($this.attr('color')).fadeIn(250,function(){$markhome.css('transform','scale(1)');}).css('transform','scale(1.4)');
+								$markfoot.text($this.text()).addClass($this.attr('color')).fadeIn(250,function(){$markfoot.css('transform','scale(1)');}).css('transform','scale(1.4)').parent().addClass('marked');
+							},200);
+						} else {
+							$markhome.text($this.text());
+							$markfoot.text($this.text());	
+						}
+					} else {
+						$markhome.fadeOut(250).css('transform', 'scale(0.1)');
+						$markfoot.fadeOut(250).css('transform', 'scale(0.1)').parent().removeClass('marked');
+					}
+				});
+			}
+			if ($servmark.length){
+				$servmark.each(function(){
+					var $this = $(this);
+					var $s = $this.parent();
+					var $markservice = $('#servicelist .link[data-id="'+$s.attr('id')+'"] mark');
+					$markhome.show().text($this.text()).attr('class','').addClass($this.attr('color'));
+				});
 			}
 		},
 		cleardom : function(type){
@@ -1778,7 +1864,7 @@ var mobserv = {
 			((obj.message)?'<br><span class="message">'+obj.message+'</span> ':'')+
 			((obj.detail)?'<br><span class="detail">'+obj.detail+'</span> ':'')+
 			'</div>';
-			$("#log .section").append(html);
+			$("#log .section").prepend(html);
 		}
 		console.log('log',obj);
 	},
