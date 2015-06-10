@@ -327,11 +327,26 @@ var mobserv = {
 		init : function(){
 			mobserv.device.ready = true;
 			if (typeof getAppVersion != 'undefined'){
-				getAppVersion(function(version){
-					mobserv.device.data.appver = version;
+				cordova.getAppVersion(function (version) {
+					mobserv.device.data.appver = version ? version : '0.0';
+					$('.appver').html(mobserv.device.data.appver); 
+					$dom.find('#appver').html(mobserv.device.data.appver); 		
 				});
 			} else {
-				mobserv.device.data.appver = '0.0';
+				var version = '0.0';
+				$.ajax({
+					type: 'GET', 
+					url: 'config.xml', 
+					dataType: 'xml',
+					success: function(response,st,xhr){
+						version = $(response).find('widget').attr('version');
+						mobserv.device.data.appver = version;
+						console.log(version);
+						$('.appver').html(mobserv.device.data.appver); 
+						$dom.find('#appver').html(mobserv.device.data.appver); 		
+					}
+				});
+				mobserv.device.data.appver = version;
 			}
 			if (typeof device == 'object'){
 				mobserv.device.data = device;
@@ -355,7 +370,6 @@ var mobserv = {
 			if (mobserv.device.data.platform == 'iOS') $('#main').addClass('ios');
 			var $dom = $("#deviceinfo");
 			if ($dom.length){
-				$dom.find('#appver').html(mobserv.device.data.appver); 		
 				$dom.find('#cordova').html(mobserv.device.data.cordova); 		
 				$dom.find('#model').html(mobserv.device.data.model); 		
 				$dom.find('#platform').html(mobserv.device.data.platform); 		
@@ -1732,6 +1746,7 @@ var mobserv = {
 			mobserv.zindex++;
 		},
 		foreground : function($view){
+			mobserv.zindex = mobserv.zindex + 3;
 			$view = (typeof $view == 'string') ? $('#'+$view) : $view;
 			if ($view.length == 1){
 				$view.css({x:0, opacity:0, 'z-index':mobserv.zindex}).show().transition({ opacity:1 }, 300);
@@ -1829,7 +1844,7 @@ var mobserv = {
 				var events = mobserv.notification.events[n.id];
 				if(events && events.trigger) events.trigger(n);
 			});
-			cordova.plugins.notification.local.on("click", function (notification){
+			cordova.plugins.notification.local.on("click", function (n){
 				var events = mobserv.notification.events[n.id];
 				if(events && events.click) events.click(n);
 			});
@@ -1840,8 +1855,8 @@ var mobserv = {
 				id: id,
 				title: options.title,
 				text: options.text,
-				sound: (options.sound)? options.sound : 'sounds/beep.mp3',
-				icon: (options.icon)? options.icon : 'pic/logo-device.png',
+				sound: (options.sound)? options.sound : 'file://sounds/beep.mp3',
+				icon: (options.icon)? options.icon : 'file://pic/ico-notification.png',
 				data: options.data,
 			});
 			if(ontrigger) events[id] = {trigger:ontrigger};
@@ -1872,7 +1887,7 @@ var mobserv = {
 		close : function(){
 			var notify = mobserv.notify.list[0];
 			var $notify = $('#notify');
-			clearTimeout(notify.timeout);
+			if(notify.timeout) clearTimeout(notify.timeout);
 			$notify.transition({ y:'40px', opacity:0 }, 500, function(){
 				$notify.hide();
 				mobserv.notify.list.shift();

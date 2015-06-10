@@ -19,6 +19,8 @@ input:invalid { box-shadow:none; }
 
 .main { width:100%; height:100%; background-color:#FFF; overflow:hidden; position:relative;  }
 
+.appver { color:#AAA; font-size:10px; width:100%; position:absolute; left:0; bottom:6px; text-align:center; }
+
 .statustripe { display:none; width:100%; height:3px; position:absolute; top:0; z-index:999999; background-color:#4284C6; }
 .statustripe.orange { background-color:#F50; }
 .ios .statustripe { height:21px; }
@@ -31,11 +33,11 @@ input:invalid { box-shadow:none; }
 .auth .desc strong.client { font-size:16px; color:#F50; letter-spacing:-1px; }
 .auth .desc.bottom { margin-top:12px; }
 .auth .desc a { color:#F30; }
-.auth .text { width:100%; padding:8px; margin:6px 0 0 0; font-size:14px; background-color:#FFF; border:#DDD solid 2px; font-weight:bold; border-radius:6px; }
+.auth .text { width:100%; padding:8px; margin:8px 0 0 0; font-size:14px; background-color:#FFF; border:#DDD solid 2px; font-weight:bold; border-radius:6px; }
 .auth .text:focus { border-color:#AAA !important; }
 .auth .text.required { border-color:#F30; }
 .auth .text.disable { background-color:#f2f2f2; color:#CCC; }
-.auth .submit { width:100%; padding:8px; margin:8px 0 0 0; font-size:14px; background-color:#F30; color:#FFF; font-weight:bold; border:none; border-radius:6px; text-align:center; }
+.auth .submit { width:100%; padding:10px; margin:8px 0 0 0; font-size:14px; background-color:#F30; color:#FFF; font-weight:bold; border:none; border-radius:6px; text-align:center; }
 .auth .submit.yellow { background-color:#F60; }
 .auth .submit.disable { background-color:#CCC; }
 .auth .link { display:block; width:20px; height:20px; position:absolute; bottom:-16%; left:50%; margin-left:-8px; }
