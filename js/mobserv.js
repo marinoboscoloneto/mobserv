@@ -326,11 +326,16 @@ var mobserv = {
 		data : {},
 		init : function(){
 			mobserv.device.ready = true;
-			if (typeof getAppVersion != 'undefined'){
-				cordova.getAppVersion(function (version) {
+			if (typeof cordova.getAppVersion != 'undefined'){
+				cordova.getAppVersion().then(function (version) {
 					mobserv.device.data.appver = version ? version : '0.0';
 					$('.appver').html(mobserv.device.data.appver); 
-					$dom.find('#appver').html(mobserv.device.data.appver); 		
+					$dom.find('#appver').html(mobserv.device.data.appver); 
+					mobserv.log({
+						type : 'notice',
+						name : 'device.appver',
+						message : 'device application native version: '+mobserv.device.data.appver
+					});	
 				});
 			} else {
 				var version = '0.0';
@@ -343,10 +348,14 @@ var mobserv = {
 						mobserv.device.data.appver = version;
 						console.log(version);
 						$('.appver').html(mobserv.device.data.appver); 
-						$dom.find('#appver').html(mobserv.device.data.appver); 		
+						$dom.find('#appver').html(mobserv.device.data.appver); 
+						mobserv.log({
+							type : 'notice',
+							name : 'device.appver',
+							message : 'device application local xml version: '+mobserv.device.data.appver
+						});	
 					}
 				});
-				mobserv.device.data.appver = version;
 			}
 			if (typeof device == 'object'){
 				mobserv.device.data = device;
@@ -1953,10 +1962,27 @@ var mobserv = {
 		}
 	},
 	exit : function(){
-		if (navigator && navigator.app) navigator.app.exitApp();
-		else if (navigator && navigator.device) navigator.device.exitApp();
-		else return false;
-		return true;	
+		if (navigator && navigator.app) {
+			mobserv.log({
+				type : 'notice',
+				name : 'mobserv.exit',
+				message : 'app will be closed',
+			});
+			navigator.app.exitApp();
+		} else if (navigator && navigator.device) {
+			mobserv.log({
+				type : 'notice',
+				name : 'mobserv.exit',
+				message : 'device will be closed',
+			});
+			navigator.device.exitApp();
+		} else {
+			mobserv.log({
+				type : 'error',
+				name : 'mobserv.exit',
+				message : 'app wont be closed',
+			});
+		}
 	}
 }
 
