@@ -92,6 +92,7 @@ input:invalid { box-shadow:none; }
 .section { position:absolute; top:42px; bottom:42px; left:0px; width:100%; background-color:#FFF; overflow-y:scroll; -webkit-overflow-scrolling: touch; z-index:1; }
 .section.noscroll { overflow-y:hidden !important; }
 .section.mapdata { width:auto; top:50px; background:rgba(255,255,255,.7); right:8px; bottom:auto; left:8px; z-index:2 !important; border-radius:6px; }
+.ios .section.mapdata { top:70px !important; }
 .section.mapdata.colapsed { width:24px; height:24px; top:50px; background:rgba(102,102,102,.7); right:auto; bottom:auto; left:8px; border-radius:24px; overflow:hidden !important; }
 .section.mapdata.colapsed * { display:none; }
 .section .puller { width:100%; height:0; background-color:#BBB; position:relative; overflow:hidden; -webkit-transform: translateX(0); }
@@ -210,18 +211,18 @@ form .formset .select.disable { background-image:none; background-repeat:inherit
 form .formset .select:focus { background-position:right -23px; }
 
 .courtain { background-image: url('../pic/courtain.svg') !important;
-   -webkit-animation: moveBars 200ms linear infinite;
-    -moz-animation: moveBars 200ms linear infinite;
-    -ms-animation: moveBars 200ms linear infinite;
-    -o-animation: moveBars 200ms linear infinite;
-    animation: moveBars 200ms linear infinite;
+   -webkit-animation: moveBars 400ms linear infinite;
+    -moz-animation: moveBars 400ms linear infinite;
+    -ms-animation: moveBars 400ms linear infinite;
+    -o-animation: moveBars 400ms linear infinite;
+    animation: moveBars 400ms linear infinite;
 }
 
-@keyframes moveBars { 100% { background-position: 25px 0; } }
-@-webkit-keyframes moveBars { 100% {  background-position: 25px 0; } }
-@-moz-keyframes moveBars { 100% {  background-position: 25px 0; } }
-@-ms-keyframes moveBars { 100% {  background-position: 25px 0; } }
-@-o-keyframes moveBars { 100% {  background-position: 25px 0; } }
+@keyframes moveBars { 100% { background-position: 50px 0; } }
+@-webkit-keyframes moveBars { 100% {  background-position: 50px 0; } }
+@-moz-keyframes moveBars { 100% {  background-position: 50px 0; } }
+@-ms-keyframes moveBars { 100% {  background-position: 50px 0; } }
+@-o-keyframes moveBars { 100% {  background-position: 50px 0; } }
 
 
 a[href*="//maps.google.com/maps"]{display:none !important}

@@ -326,10 +326,12 @@ var mobserv = {
 		data : {},
 		init : function(){
 			mobserv.device.ready = true;
-			if (typeof getAppVersion == 'function'){
+			if (typeof getAppVersion != 'undefined'){
 				getAppVersion(function(version){
 					mobserv.device.data.appver = version;
 				});
+			} else {
+				mobserv.device.data.appver = '0.0';
 			}
 			if (typeof device == 'object'){
 				mobserv.device.data = device;
@@ -1250,7 +1252,11 @@ var mobserv = {
 						type : status,
 						name : 'Serviços',
 						message : $this.text()
-					});	
+					});
+					mobserv.notification.open({
+						title : 'Serviços',
+						text : $this.text(),
+					});
 					$this.remove();
 				});
 				services.requestKey = $root.attr('resultKey');
@@ -1655,7 +1661,7 @@ var mobserv = {
 			}
 			
 			
-			if ($rootmark.length){
+			if ($rootmark && $rootmark.length){
 				$rootmark.each(function(){
 					var $this = $(this);
 					if ($this.text()){
@@ -1677,7 +1683,7 @@ var mobserv = {
 					}
 				});
 			}
-			if ($servmark.length){
+			if ($servmark && $servmark.length){
 				$servmark.each(function(){
 					var $this = $(this);
 					var $s = $this.parent();
@@ -1807,6 +1813,41 @@ var mobserv = {
 		},
 	},
 	mark : {			
+	},
+	notification : {
+		id : 1,
+		events : [],
+		init : function(){
+			cordova.plugins.notification.local.registerPermission(function (granted) {
+				mobserv.log({
+					type : 'notice',
+					name : 'notification.init',
+					message : 'notification permissio: '+granted,
+				});
+			});
+			cordova.plugins.notification.local.on("trigger", function (n){
+				var events = mobserv.notification.events[n.id];
+				if(events && events.trigger) events.trigger(n);
+			});
+			cordova.plugins.notification.local.on("click", function (notification){
+				var events = mobserv.notification.events[n.id];
+				if(events && events.click) events.click(n);
+			});
+		},
+		open : function(options,onclick,ontrigger){
+			var id = (options.id) ? options.id : mobserv.notification.id;
+			cordova.plugins.notification.local.schedule({
+				id: id,
+				title: options.title,
+				text: options.text,
+				sound: (options.sound)? options.sound : 'sounds/beep.mp3',
+				icon: (options.icon)? options.icon : 'pic/logo-device.png',
+				data: options.data,
+			});
+			if(ontrigger) events[id] = {trigger:ontrigger};
+			if(onclick) events[id] = {click:onclick};
+			mobserv.notification.id++;
+		}
 	},
 	notify : {
 		list : [],

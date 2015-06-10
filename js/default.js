@@ -551,6 +551,7 @@ $(function(){
 	document.addEventListener("deviceready", function(){
 		mobserv.debug.on();
 		mobserv.device.init();
+		mobserv.notification.init();
 		mobserv.geolocation.autoPosition();
 		//mobserv.bgmode.init();
 		mobserv.sqlite.init();
