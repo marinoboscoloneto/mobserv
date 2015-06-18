@@ -1,10 +1,14 @@
 // JavaScript Document
-
+function htmldecode(str){
+	return $('<div/>').html(str).text();
+}
 var mobserv = {
+	inputfocus : null,
 	globals : {
 		client : {},
 		user : {},
 		services : {},
+		talkies : {},
 		translate : {
 			license : 'Servidor de Licenças',
 			service : 'Servidor de Serviços'	
@@ -57,7 +61,7 @@ var mobserv = {
 			$dom = $('#servers');
 			$table = $dom.find('#'+server.id);
 			if (!$table.length){
-				$table = $dom.find('table.template').clone();
+				$table = $dom.find('.template').clone();
 				$table.removeClass('template').attr('id',server.id).appendTo("#servers .section");
 			}
 			$table.find('#srvid').html(server.id);
@@ -66,6 +70,7 @@ var mobserv = {
 			$table.find('#srvonline').css('color',(server.online)?'#09F':'#F00').html((server.online)?'Sim':'Não');
 			$table.find('#srvstatus').html(server.status);
 			$table.find('#srvlastrequest').html(server.lastRequest);
+			$dom.find('.bigicon').css('color',(server.online)?'#09F':'#F00');
 		},
 		test : function(type){
 			var pointer = mobserv.server.pointer;
@@ -295,7 +300,10 @@ var mobserv = {
 				cfg.data.gps.head = pos.heading;
 				cfg.data.gps.speed = pos.speed;
 				cfg.data.gps.timestamp = pos.timestamp;
+			} else {
+				cfg.data = {};
 			}
+			if (mobserv.debug.active) cfg.data.debug = 'on'
 			if (!mobserv.connection.test()){
 				//$('#preload').removeClass('courtain');
 				$('#preload .loadinfo').text('Sem internet :(');
@@ -346,7 +354,6 @@ var mobserv = {
 					success: function(response,st,xhr){
 						version = $(response).find('widget').attr('version');
 						mobserv.device.data.appver = version;
-						console.log(version);
 						$('.appver').html(mobserv.device.data.appver); 
 						$dom.find('#appver').html(mobserv.device.data.appver); 
 						mobserv.log({
@@ -365,7 +372,7 @@ var mobserv = {
 					message : 'device '+mobserv.device.data.platform+' is ready',
 				});	
 			} else {
-				mobserv.device.data.cordova = 'N/A';
+				mobserv.device.data.cordova = false;
 				mobserv.device.data.model = ($.browser.mobile)?'Mobile':'Desktop';
 				mobserv.device.data.platform = $.browser.platform;
 				mobserv.device.data.uuid = $.md5($.browser.name+$.browser.platform+$.browser.version+$.browser.versionNumber);
@@ -377,7 +384,7 @@ var mobserv = {
 				});	
 			}
 			if (mobserv.device.data.platform == 'iOS') $('#main').addClass('ios');
-			var $dom = $("#deviceinfo");
+			var $dom = $("#about");
 			if ($dom.length){
 				$dom.find('#cordova').html(mobserv.device.data.cordova); 		
 				$dom.find('#model').html(mobserv.device.data.model); 		
@@ -394,18 +401,19 @@ var mobserv = {
 			if (navigator.connection){
 				var networkState = navigator.connection.type;
 				var states = {};
-				states[Connection.UNKNOWN]  = 'Unknown connection';
-				states[Connection.ETHERNET] = 'Ethernet connection';
-				states[Connection.WIFI]     = 'WiFi connection';
-				states[Connection.CELL_2G]  = 'Cell 2G connection';
-				states[Connection.CELL_3G]  = 'Cell 3G connection';
-				states[Connection.CELL_4G]  = 'Cell 4G connection';
-				states[Connection.CELL]     = 'Cell generic connection';
-				states[Connection.NONE]     = 'No network connection';
+				states[Connection.UNKNOWN]  = 'Conexão Desconhecida';
+				states[Connection.ETHERNET] = 'Conexão de Rede';
+				states[Connection.WIFI]     = 'Conexão WiFi';
+				states[Connection.CELL_2G]  = 'Conexão 2G';
+				states[Connection.CELL_3G]  = 'Conexão 3G';
+				states[Connection.CELL_4G]  = 'Conexão 4G';
+				states[Connection.CELL]     = 'Conexão de Dados';
+				states[Connection.NONE]     = 'Sem Conexão';
 				$dom.find('#conntype').html(states[networkState]);
 				if (navigator.connection.type == Connection.NONE){
-					$dom.find('#connstatus').html('Offline');
-					mobserv.connection.online = false
+					$dom.find('#connstatus').html('Offline').css('color','#F60');
+					mobserv.connection.online = false;
+					$dom.find('.bigicon').css('color','#F60');
 					mobserv.log({
 						type : 'alert',
 						name : 'connection.test',
@@ -413,14 +421,16 @@ var mobserv = {
 					});
 					return false;
 				} else {
-					$dom.find('#connstatus').html('Online');
+					$dom.find('#connstatus').html('Online').css('color','#09F');
 					mobserv.connection.online = true;
+					$dom.find('.bigicon').css('color','#09F');
 					return true;
 				}
 			} else {
-				$dom.find('#connstatus').html('Online (default)');
+				$dom.find('#connstatus').html('Online (default)').css('color','#09F');
 				$dom.find('#conntype').html('Test impossible');	
 				mobserv.connection.online = true;
+				$dom.find('.bigicon').css('color','#09F');
 				return true;
 			}
 		},
@@ -664,13 +674,11 @@ var mobserv = {
 						')'
 					);
 					tx.executeSql(''+
-						'CREATE TABLE IF NOT EXISTS sl_messages ('+
+						'CREATE TABLE IF NOT EXISTS sl_talkies ('+
 							'"id" integer primary key, '+
 							'"code" text, '+
 							'"login" text, '+
-							'"xml" text, '+
-							'"read" integer, '+
-							'"status" text '+
+							'"xml" text '+
 						')'
 					);
 					mobserv.log({
@@ -695,7 +703,7 @@ var mobserv = {
 					tx.executeSql('DROP TABLE IF EXISTS sl_clients');
 					tx.executeSql('DROP TABLE IF EXISTS sl_users');
 					tx.executeSql('DROP TABLE IF EXISTS sl_services');
-					tx.executeSql('DROP TABLE IF EXISTS sl_messages');
+					tx.executeSql('DROP TABLE IF EXISTS sl_talkies');
 					mobserv.log({
 						type : 'notice',
 						name : 'sqlite.clear',
@@ -791,6 +799,14 @@ var mobserv = {
 		},
 	},
 	keyboard : {
+		init : function(){
+			window.addEventListener('native.keyboardshow', function(event){
+				if(mobserv.inputfocus.data('documentScroll')) $(document).scrollTop(mobserv.inputfocus.data('documentScroll'));
+				if(mobserv.inputfocus.data('sectionScroll')) mobserv.inputfocus.closest('.view').find('.section').scrollTop(mobserv.inputfocus.data('sectionScroll'));
+				if(mobserv.inputfocus.data('disableScroll')) cordova.plugins.Keyboard.disableScroll(true);
+				if(mobserv.inputfocus.data('hideAccessory')) cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
+			});
+		},
 		close  : function(){
 			if (cordova && cordova.plugins && cordova.plugins.Keyboard) cordova.plugins.Keyboard.close();	
 		}
@@ -1077,7 +1093,11 @@ var mobserv = {
 											$('.footer').transition({ y:0 }, 300);
 											mobserv.nav.toView('home');
 											mobserv.services.init(function(){
-												mobserv.services.get();
+												mobserv.services.get(function(){
+													mobserv.talkies.init(function(){
+														mobserv.talkies.get();
+													});
+												});
 											});
 										},
 										function(){
@@ -1347,12 +1367,12 @@ var mobserv = {
 						mobserv.log({
 							type : status,
 							name : 'services.post',
-							message : status+' validation: '+$this.text(),
+							message : status+' validation: '+htmldecode($this.text()),
 						});
 						mobserv.notify.open({
 							type : status,
 							name : 'Serviços',
-							message : $this.text()
+							message : htmldecode($this.text())
 						});	
 						$this.remove();
 					});
@@ -1397,7 +1417,7 @@ var mobserv = {
 						type = 'jobdetails'; 	
 						id = $current.data('id'); 	
 					} else {
-						type = 'servicelist'; 		
+						type = 'servicelist';
 					}
 				} else {
 					type = 'servicelist'; 		
@@ -1422,7 +1442,7 @@ var mobserv = {
 				$xml.service = $xml.root.find('service');
 				$xml.service.each(function(){
 					var $s = $(this), $l = {}, $t = {}, $mark;
-					$s.children('layout:not([name="content"])').each(function(){ var $this = $(this); $l[$this.attr('name')]=$this.text(); });
+					$s.children('layout:not([name="content"])').each(function(){ var $this = $(this); $l[$this.attr('name')]=htmldecode($this.text()); });
 					$s.children('setting').each(function(){ var $this = $(this); $t[$this.attr('name')]=$this.attr('value'); });
 					$mark = $s.children('mark');
 					$html += ''+
@@ -1432,7 +1452,7 @@ var mobserv = {
 							'<div>'+
 								'<h2 style="color:'+$l.indentifierColor+'">'+$l.title+'</h2>';
 								$s.children('layout').filter('[name="content"]').each(function(){
-									$html += '<p>'+$(this).text()+'</p>';
+									$html += '<p>'+htmldecode($(this).text())+'</p>';
 								});
 							$html += ''+
 							'</div>'+
@@ -1450,7 +1470,7 @@ var mobserv = {
 				$xml.job = $xml.service.find('job');
 				$xml.job.each(function(){
 					var $s = $(this), $l = {}, $t = {};
-					$s.children('layout').each(function(){ var $this = $(this); $l[$this.attr('name')]=$this.text(); });
+					$s.children('layout').each(function(){ var $this = $(this); $l[$this.attr('name')]=htmldecode($this.text()); });
 					$s.children('setting').each(function(){ var $this = $(this); $t[$this.attr('name')]=$this.attr('value'); });
 					$html += ''+
 					'<li style="display:'+(($s.attr('visible')=='true')?'block':'none')+'" style="'+(($s.attr('disable')=='true')?'.disable':'')+'">'+
@@ -1459,7 +1479,7 @@ var mobserv = {
 							'<div>'+
 								'<h2 style="color:'+$l.indentifierColor+'">'+$l.title+'</h2>';
 								$s.children('layout[name="content"]').each(function(){
-									$html += '<p>'+$(this).text()+'</p>';
+									$html += '<p>'+htmldecode($(this).text())+'</p>';
 								});
 							$html += ''+
 							'</div>'+
@@ -1482,7 +1502,7 @@ var mobserv = {
 				$dom.gmap = $dom.detail.find('.gmap');
 				$s = $(services.xml).find('job[id="'+id+'"]');
 				$xml.service = $s.closest('service');
-				$s.children('layout').each(function(){ var $this = $(this); $l[$this.attr('name')]=$this.text(); });
+				$s.children('layout').each(function(){ var $this = $(this); $l[$this.attr('name')]=htmldecode($this.text()); });
 				$s.children('setting').each(function(){ var $this = $(this); $t[$this.attr('name')]=$this.attr('value'); });
 				$html += ''+
 				'<li style="display:'+(($s.attr('visible')=='true')?'block':'none')+'" style="'+(($s.attr('disable')=='true')?'.disable':'')+'">'+
@@ -1491,7 +1511,7 @@ var mobserv = {
 						'<div>'+
 							'<h2 style="color:'+$l.indentifierColor+'">'+$l.title+'</h2>';
 							$s.children('layout[name="content"]').each(function(){
-								$html += '<p>'+$(this).text()+'</p>';
+								$html += '<p>'+htmldecode($(this).text())+'</p>';
 							});
 						$html += ''+
 						'</div>'+
@@ -1501,7 +1521,7 @@ var mobserv = {
 				$html = '';
 				$s.children('layout[name="detail"]').each(function(){
 					var $this = $(this);
-					$html += '<tr><td style="width:1%;white-space:nowrap;">'+$this.attr('label')+'</td><td><strong>'+$this.text()+'</strong></td></tr>';
+					$html += '<tr><td style="width:1%;white-space:nowrap;">'+$this.attr('label')+'</td><td><strong>'+htmldecode($this.text())+'</strong></td></tr>';
 				});
 				$dom.dets.html($html);
 				$html = '';
@@ -1654,17 +1674,20 @@ var mobserv = {
 					var $this = $(this);
 					if ($this.text()){
 						if (services.updated || !$markfoot.is(':visible')){
-							$markhome.transition({opacity:0,scale:0.01},100,function(){ $markhome.text($this.text()).addClass($this.attr('color')).transition({opacity:1,scale:1.5},500,function(){ $markhome.transition({scale:1},200) }).closest('a').removeClass('unmarked'); });
-							$markfoot.transition({opacity:0,scale:0.01},100,function(){ $markfoot.text($this.text()).addClass($this.attr('color')).transition({opacity:1,scale:1.5},500,function(){ $markfoot.transition({scale:1},200) }).parent().addClass('marked'); });
+							$markhome.text($this.text()).addClass($this.attr('color')).transition({opacity:1,scale:1.5},400,function(){ $markhome.transition({scale:1},200) }).closest('a').removeClass('unmarked');
+							$markfoot.text($this.text()).addClass($this.attr('color')).transition({opacity:1,scale:1.5},400,function(){ $markfoot.transition({scale:1},200) }).parent().addClass('marked');
 						} else {
 							$markhome.transition({opacity:1,scale:1.5},200,function(){ $markhome.text($this.text()).addClass($this.attr('color')).transition({scale:1},200).closest('a').removeClass('unmarked'); });
 							$markfoot.transition({opacity:1,scale:1.5},200,function(){ $markfoot.text($this.text()).addClass($this.attr('color')).transition({scale:1},200).parent().addClass('marked'); });
 						}
 					} else {
-						$markhome.transition({scale:1.5},200,function(){ $markhome.transition({opacity:0,scale:0.01},500,function(){ $markhome.parent().closest('a').removeClass('unmarked'); }); });
-						$markfoot.transition({scale:1.5},200,function(){ $markfoot.transition({opacity:0,scale:0.01},500,function(){ $markfoot.parent().parent().removeClass('marked'); }); });
+						$markhome.transition({opacity:0,scale:0.01},300,function(){ $markhome.parent().closest('a').removeClass('unmarked'); });
+						$markfoot.transition({opacity:0,scale:0.01},300,function(){ $markfoot.parent().parent().removeClass('marked'); });
 					}
 				});
+			} else {
+				$markhome.transition({opacity:0,scale:0.01},100);
+				$markfoot.transition({opacity:0,scale:0.01},100);
 			}
 			if ($servmark && $servmark.length){
 				$servmark.each(function(){
@@ -1678,41 +1701,12 @@ var mobserv = {
 							$markserv.transition({opacity:1,scale:1.5},200,function(){ $markserv.text($this.text()).addClass($this.attr('color')).transition({scale:1},200); });
 						}
 					} else {
-						$markserv.transition({scale:1.5},200,function(){ $markserv.transition({opacity:0,scale:0.01},500); });
+						$markserv.transition({scale:1.5},200,function(){ $markserv.transition({opacity:0,scale:0.01},300); });
 					}
 				});
-			}
-			
-			
-			if ($rootmark && $rootmark.length){
-				$rootmark.each(function(){
-					var $this = $(this);
-					if ($this.text()){
-						if (services.updated || !$markfoot.is(':visible')){
-							$markhome.transition({opacity:0,scale:0.01},100,function(){ $markhome.text($this.text()).addClass($this.attr('color')).transition({opacity:1,scale:1.5},300,function(){ $markhome.transition({scale:1},200) }) });
-							$markfoot.transition({opacity:0,scale:0.01},100,function(){ $markfoot.transition({opacity:1,scale:1.5},300,function(){ $markfoot.transition({scale:1},200) }) });
-							$markfoot.hide();
-							setTimeout(function(){
-								$markhome.text($this.text()).addClass($this.attr('color')).fadeIn(250,function(){$markhome.css('transform','scale(1)');}).css('transform','scale(1.4)');
-								$markfoot.text($this.text()).addClass($this.attr('color')).fadeIn(250,function(){$markfoot.css('transform','scale(1)');}).css('transform','scale(1.4)').parent().addClass('marked');
-							},200);
-						} else {
-							$markhome.text($this.text());
-							$markfoot.text($this.text());	
-						}
-					} else {
-						$markhome.fadeOut(250).css('transform', 'scale(0.1)');
-						$markfoot.fadeOut(250).css('transform', 'scale(0.1)').parent().removeClass('marked');
-					}
-				});
-			}
-			if ($servmark && $servmark.length){
-				$servmark.each(function(){
-					var $this = $(this);
-					var $s = $this.parent();
-					var $markservice = $('#servicelist .link[data-id="'+$s.attr('id')+'"] mark');
-					$markhome.show().text($this.text()).attr('class','').addClass($this.attr('color'));
-				});
+			} else {
+				var $markserv = $('#servicelist .link mark');
+				$markserv.transition({opacity:0,scale:0.01},100);
 			}
 		},
 		cleardom : function(type){
@@ -1728,11 +1722,381 @@ var mobserv = {
 			}
 		}
 	},
+	talkies : {
+		autogettimeout : null,
+		init : function(ondone){
+			mobserv.log({
+				name : 'talkies.init',
+				message : 'talkies initialized',
+			});
+			var client = mobserv.globals.client;
+			var user = mobserv.globals.user;
+			var talkies = mobserv.globals.talkies;
+			var totalinmark = 0;
+			mobserv.sqlite.query(
+				'select xml from sl_talkies where code = "'+client.code+'" and login = "'+user.login+'"',
+				function(res){
+					if (res.rows.length > 0){
+						if (res.rows.item(0).xml){
+							talkies.cache = $.parseXML(res.rows.item(0).xml);
+							talkies.xml = $.parseXML(res.rows.item(0).xml);
+							var $xml = $(talkies.xml);
+							talkies.requestKey = $xml.find('mobserv').attr('resultKey');
+							mobserv.log({
+								type : 'notice',
+								name : 'talkies.init',
+								message : $xml.find('talk').length+' talkies dumped from local database',
+							});
+						} else {
+							talkies.xml = '';
+							talkies.requestKey = '';
+						}
+						if (ondone) ondone();
+					} else {
+						mobserv.sqlite.query(
+							'insert into sl_talkies (code, login, xml) values ("'+client.code+'", "'+user.login+'", "")',
+							function(res){
+								talkies.xml = '';
+								talkies.requestKey = '';
+								if (ondone) ondone();
+							}
+						);	
+					}
+				}
+			);
+		},
+		autoget : function(){
+			var server = mobserv.server.online['service'];
+			mobserv.log({
+				name : 'talkies.autoget',
+				message : 'talkies autoget scheduled in '+server.interval+' seconds',
+			});
+			mobserv.talkies.autogettimeout = setTimeout(function(){
+				mobserv.talkies.get();
+			},(server.interval)?server.interval*1000:300000);
+		},
+		get : function(ondone){
+			mobserv.log({
+				name : 'talkies.get',
+				message : 'talkies get start',
+			});
+			var client = mobserv.globals.client;
+			var user = mobserv.globals.user;
+			var talkies = mobserv.globals.talkies;
+			var data = {
+				'exec': 'getTalkies',
+				'cid': client.code,
+				'sid': user.session,
+			};
+			if(mobserv.talkies.autogettimeout) clearTimeout(mobserv.talkies.autogettimeout);
+			mobserv.server.call('service',data,function(response){
+				talkies.response = response;
+				mobserv.talkies.autoget();
+				var $Rxml = $(response);
+				var $Rroot = $Rxml.find('mobserv');
+				if ($Rroot.length == 0){
+					mobserv.log({
+						type : 'error',
+						name : 'talk.get',
+						message : 'mobserv node not found in service server response to talkies',
+					});
+					return false;
+				}
+				$Rroot.children('command').each(function(){
+					var $this = $(this);
+					if (mobserv.talkies.command[$this.attr('exec')]) mobserv.talkies.command[$this.attr('exec')]($this.text(),response);
+					$this.remove();
+				});
+				var $Rtalks = $Rroot.children('talk');
+				if ($Rtalks.length){
+					var totalinmark = 0;
+					if (talkies.xml){
+						var $Lxml = $(talkies.xml);
+						var $Lroot = $Lxml.find('mobserv');
+						$Rtalks.each(function(){
+							var $Rtalk = $(this);
+							var tid = $Rtalk.attr('id');
+							var $Ltalk = $Lroot.find('talk[id="'+tid+'"]');
+							var $Rmsgs = $Rtalk.find('message');
+							if ($Ltalk.length){
+								var $Lmsgs = $Ltalk.find('message');
+								if ($Lmsgs.length > 50) $Lmsgs.filter(':lt('+($Lmsgs.length - 50)+')').remove();
+								if ($Rmsgs.length) $Ltalk.append($Rmsgs);
+								$Ltalk.attr('name',$Rtalk.attr('name'));
+								$Ltalk.attr('subject',$Rtalk.attr('subject'));
+								$Ltalk.attr('lastdate',$Rtalk.attr('lastdate'));
+								$Ltalk.attr('readed',$Rtalk.attr('readed'));
+								$Ltalk.attr('color',$Rtalk.attr('color'));
+							} else {
+								$Lroot.append($Rtalk);
+								var $Ltalk = $Lroot.find('talk[id="'+tid+'"]');
+							}
+							var mark = $Rmsgs.length + (($Ltalk.attr('mark'))?parseInt($Ltalk.attr('mark')):0);
+							$Ltalk.attr('mark',mark+'');
+							totalinmark += mark;
+							mobserv.talkies.parsedom('talkies',tid);
+						});
+					} else {
+						talkies.xml = response;	
+						var $Lxml = $(talkies.xml);
+						var $Lroot = $Lxml.find('mobserv');
+						$Rtalks.each(function(){
+							var $Rtalk = $(this);
+							var tid = $Rtalk.attr('id');
+							var $Ltalk = $Lroot.find('talk[id="'+tid+'"]');
+							var $Lmsgs = $Ltalk.find('message');
+							var mark = $Lmsgs.length;
+							$Ltalk.attr('mark',mark+'');
+							totalinmark += mark;
+							mobserv.talkies.parsedom('talkies',tid);
+						});
+					}
+					$Lroot.attr('mark',totalinmark);
+					var str = new XMLSerializer().serializeToString(talkies.xml);
+					mobserv.sqlite.query({query : 'update sl_talkies set xml = ? where code = "'+client.code+'" and login = "'+user.login+'"', statement : [str]});
+					/*
+					mobserv.log({
+						type : 'info',
+						name : 'talkies.get',
+						message : rootmark+' new messages',
+					});
+					mobserv.notify.open({
+						type : 'info',
+						name : 'Mensagens',
+						message : 'Você possui <b>'+totalinmark+'</b> novas mensagens!',
+						detail : '<b>'+rootmark+'</b> não lidas!',
+					});
+					mobserv.notification.open({
+						title : 'Mensagens',
+						text : 'Você possui <b>'+totalinmark+'</b> novas mensagens!'
+					});
+					*/
+					mobserv.talkies.mark();
+				}
+				if (ondone) ondone();
+			},
+			function(error){
+				mobserv.talkies.autoget();
+				mobserv.log({
+					type : 'error',
+					name : 'talkies.get',
+					message : 'get talkies error: '+error,
+				});
+				mobserv.notify.open({
+					type : 'error',
+					name : 'Erro ao verificar novas mensagens',
+					message : error
+				});	
+				if(onerror) onerror(error);
+			});
+		},
+		post : function(data,ondone,onerror){
+			mobserv.log({
+				name : 'talkies.post',
+				message : 'talkie message post start',
+			});
+			var client = mobserv.globals.client;
+			var user = mobserv.globals.user;
+			var talkies = mobserv.globals.talkies;
+			if (typeof data == 'object'){
+				data.cid = client.code;
+				data.sid = user.session;
+				if(mobserv.talkies.autogettimeout) clearTimeout(mobserv.talkies.autogettimeout);
+				mobserv.server.call('service',data,function(response){
+					talkies.response = response;
+					mobserv.talkies.autoget();
+					var $Rxml = $(response);
+					var $Rroot = $Rxml.find('mobserv');
+					if ($Rroot.length == 0){
+						if(onerror) onerror('mobserv node not found in service server response to talkies');
+						return false;
+					}
+					$Rroot.children('command').each(function(){
+						var $this = $(this);
+						if (mobserv.talkies.command[$this.attr('exec')]) mobserv.talkies.command[$this.attr('exec')]($this.text(),response);
+						$this.remove();
+					});
+					var $Rvalid = $Rroot.find('validation');
+					$Rvalid.each(function(){
+						var $this = $(this);
+						var status = $this.attr('status');
+						if (status != 'info' || status != 'notice'){
+							if(onerror) onerror(htmldecode($this.text()));
+							return false;
+						}
+						$this.remove();
+					});
+					var $Rtalk = $Rroot.children('talk');
+					if ($Rtalk.length){
+						var $Rmsg = $Rtalk.children('message');
+						var $Ltalk = $(talkies.xml).find('talk[id="'+$Rtalk.attr('id')+'"]');
+						if ($Ltalk.length){
+							$Ltalk.append($Rmsg);
+							var str = new XMLSerializer().serializeToString(talkies.xml);
+							mobserv.sqlite.query({query : 'update sl_services set xml = ? where code = "'+client.code+'" and login = "'+user.login+'"', statement : [str]});
+							if (ondone) ondone();
+						} else {
+							if(onerror) onerror('local talk node not found');
+							return false;
+						}
+					} else {
+						if(onerror) onerror('remote talk node not found');
+						return false;
+					}
+				},
+				function(error){
+					if(onerror) onerror(error);
+				});
+			}
+		},
+		read : function(id){
+			var client = mobserv.globals.client;
+			var user = mobserv.globals.user;
+			var talkies = mobserv.globals.talkies;
+			if (!talkies.xml) return false;
+			var $dom = {}
+			var $xml = {}
+			$xml.root = $(talkies.xml).find('mobserv');
+			var totalinmark = parseInt($xml.root.attr('mark'));
+			$xml.talk = $xml.root.find('talk[id="'+id+'"]');
+			var mark = parseInt($xml.talk.attr('mark'));
+			totalinmark = totalinmark - mark;
+			$xml.root.attr('mark',totalinmark);
+			$xml.talk.attr('readed','true');
+			$xml.talk.attr('mark','0');
+			$dom.messages = $('#messages');
+			$dom.talkies = $('#talkies');
+			$dom.talk = $dom.talkies.find('.link[data-id="'+id+'"]');
+			$dom.talk.addClass('readed');
+			$dom.messages.find('#header h1').text($xml.talk.attr('name'));
+			$dom.messages.find('#header h2').text($xml.talk.attr('subject'));
+			var $markserv = $dom.talk.find('mark');
+			$markserv.transition({opacity:0,scale:0.01},300,function(){ $markserv.text('0') });
+			var str = new XMLSerializer().serializeToString(talkies.xml);
+			mobserv.sqlite.query({query : 'update sl_talkies set xml = ? where code = "'+client.code+'" and login = "'+user.login+'"', statement : [str]});
+			mobserv.talkies.mark();
+		},
+		remove : function(id){
+			var client = mobserv.globals.client;
+			var user = mobserv.globals.user;
+			var talkies = mobserv.globals.talkies;
+			if (!talkies.xml) return false;
+			var $dom = {}
+			var $xml = {}
+			$xml.root = $(talkies.xml).find('mobserv');
+			$xml.talk = $xml.root.find('talk[id="'+id+'"]');
+			$xml.talk.find('message').remove();
+			mobserv.talkies.cleardom();
+			var str = new XMLSerializer().serializeToString(talkies.xml);
+			mobserv.sqlite.query({query : 'update sl_talkies set xml = ? where code = "'+client.code+'" and login = "'+user.login+'"', statement : [str]});
+		},
+		parsedom : function(type,id){
+			if (!type){
+				var current = mobserv.nav.getCurrentId();
+				if (current == 'talkies') {
+					type = 'talkies'; 	
+				} else if (current == 'messages') {
+					type = 'messages';
+				}
+			}
+			mobserv.log({
+				name : 'talkies.parsedom',
+				message : 'parsedom '+type+((id)?' #'+id:'')+' started',
+			});
+			var client = mobserv.globals.client;
+			var user = mobserv.globals.user;
+			var talkies = mobserv.globals.talkies;
+			if (!talkies.xml) return false;
+			var $html = '';
+			var $dom = {}
+			var $xml = {}
+			$xml.root = $(talkies.xml).find('mobserv');
+			$xml.talk = $xml.root.children('talk[id="'+id+'"]');
+			if (type == 'talkies'){
+				$dom.talkies = $('#talkies');
+				$dom.list = $dom.talkies.find('.list');
+				if ($xml.talk.length){
+					var $s = $xml.talk;
+					var mark = parseInt($s.attr('mark') || '0');
+					$html += ''+
+					'<li>'+
+						'<div class="table link'+((!mark)?' readed':'')+'" data-view="messages" data-direction="forward" data-id="'+$s.attr('id')+'">'+
+							'<div><div class="icon icon-paperplane" style="color:'+$s.attr('color')+'"></div><mark class="blue">'+mark+'</mark></div>'+
+							'<div>'+
+								'<h2 style="color:'+$s.attr('color')+'">'+$s.attr('name')+'</h2>'+
+								'<p><b style="color:'+$s.attr('color')+'">'+$s.attr('subject')+'</b></p>'+
+								'<p><small>Ultima interação: '+$s.attr('lastdate')+'</small></p>'+
+							'</div>'+
+						'</div>'+
+					'</li>';
+					$dom.list.find('.link[data-id="'+$s.attr('id')+'"]').parent().remove();
+					if(mark) $dom.list.prepend($html);
+					else $dom.list.append($html);
+					
+					var $markserv = $dom.list.find('.link[data-id="'+$s.attr('id')+'"] mark');
+					if (mark > 0){
+						$markserv.show().transition({opacity:1,scale:1.5},300,function(){ $markserv.text(mark).transition({scale:1},200); });
+					} else {
+						if ($markserv.text() != '0') $markserv.transition({opacity:0,scale:0.01},300,function(){ $markserv.text('0').hide(); });	
+					}
+				}				
+			} else if (type == 'messages') {
+				$dom.messages = $('#messages');
+				$dom.chat = $dom.messages.find('.chat').html('');
+				$xml.talk = $xml.root.children('talk[id="'+id+'"]');
+				$xml.msgs = $xml.talk.find('message');
+				$dom.messages.find('#header .remove').data('id',id);
+				$xml.msgs.each(function(){
+					var $s = $(this), $mark;
+					if ($s.attr('me')){
+						$html += ''+
+						'<div class="talk me" id="'+$s.attr('id')+'">'+
+							'<div class="text">'+$s.text()+'</div>'+
+							'<div class="info"><span class="icon-clock">'+$s.attr('time')+'</span></div>'+
+						'</div>'+
+						'<div class="clear"></div>';
+					} else {
+						$html += ''+
+						'<div class="talk" id="'+$s.attr('id')+'">'+
+							'<div class="text">'+$s.text()+'</div>'+
+							'<div class="info"><strong class="icon-user2">'+$s.attr('sender')+'</strong><span class="icon-clock">'+$s.attr('time')+'</span></div>'+
+						'</div>'+
+						'<div class="clear"></div>';
+					}
+					$dom.chat.html($html);
+				});
+			}
+		},
+		cleardom : function(type){
+			if (!type || type == 'messages'){
+				$('#messages .chat').html('');
+			} 
+		},
+		mark : function(){
+			var talkies = mobserv.globals.talkies;
+			if (!talkies.xml) return false;
+			var $root = $(talkies.xml).find('mobserv');
+			var totalinmark = parseInt($root.attr('mark'));
+			var $markhome = $('#home [data-view="talkies"] mark');
+			var $markfoot = $('#footer [data-view="talkies"] mark');
+			if (totalinmark){
+				$markhome.text(totalinmark).transition({opacity:1,scale:1.5},300,function(){ $markhome.transition({scale:1},200) }).closest('a').removeClass('unmarked');
+				$markfoot.text(totalinmark).transition({opacity:1,scale:1.5},300,function(){ $markfoot.transition({scale:1},200) }).parent().addClass('marked');
+			} else {
+				$markhome.transition({opacity:0,scale:0.01},300,function(){ $markhome.text('0'); });	
+				$markfoot.transition({opacity:0,scale:0.01},300,function(){ $markfoot.text('0'); }).parent().removeClass('marked');	
+			}
+		}
+	},
 	zindex : 3,
 	preventTap : false,
 	timeoutTap : null,
 	history : [],
 	nav : {
+		getCurrentId : function(){
+			var $current = $('.view.current:last');
+			return $current.attr('id');
+		},
 		toView : function($view){
 			var $current = $('.view.current:last');
 			$view = (typeof $view == 'string') ? $('#'+$view) : $view;
@@ -1841,6 +2205,7 @@ var mobserv = {
 	notification : {
 		id : 1,
 		events : [],
+		inited : false, 
 		init : function(){
 			cordova.plugins.notification.local.registerPermission(function (granted) {
 				mobserv.log({
@@ -1857,8 +2222,10 @@ var mobserv = {
 				var events = mobserv.notification.events[n.id];
 				if(events && events.click) events.click(n);
 			});
+			mobserv.notification.inited = true;
 		},
 		open : function(options,onclick,ontrigger){
+			if (!mobserv.notification.inited) return;
 			var id = (options.id) ? options.id : mobserv.notification.id;
 			cordova.plugins.notification.local.schedule({
 				id: id,
@@ -1930,8 +2297,17 @@ var mobserv = {
 			((obj.detail)?'<br><span class="detail">'+obj.detail+'</span> ':'')+
 			'</div>';
 			$("#log .section").prepend(html);
+			if (obj.type == 'error'){
+				var $markfoot = $('#footer [data-view="log"] mark');
+				$markfoot.transition({opacity:1,scale:1.5},200,function(){ $markfoot.transition({scale:1},200).parent().addClass('marked'); });
+			}
+			if(!mobserv.device.data.cordova) console.log('log',obj);
 		}
-		console.log('log',obj);
+	},
+	unlog : function(){
+		$("#log .section").html('');
+		var $markfoot = $('#footer [data-view="log"] mark');
+		if ($markfoot.parent().hasClass('marked')) $markfoot.transition({opacity:1,scale:1.5},200,function(){ $markfoot.transition({scale:.1,opacity:0},400).parent().removeClass('marked'); });
 	},
 	now : function(type){
 		type = (!type)?'datetime':type;
@@ -1959,6 +2335,8 @@ var mobserv = {
 				("0" + d.getMinutes()).substr(-2),
 				("0" + d.getSeconds()).substr(-2)
 			].join(':');
+		} else if (type == 'timestamp') {
+			return d.getTime();
 		}
 	},
 	exit : function(){

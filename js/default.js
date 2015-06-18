@@ -5,6 +5,12 @@ $(function(){
 	
 	var startX, startY, endX, endY, pull, $pullarea, $pullinfo;
 	$(document)
+		.on('focus','.input:not(:disabled)',function(){
+			mobserv.inputfocus = $(this);
+		})
+		.on('blur','.input:not(:disabled)',function(){
+			mobserv.inputfocus = null;
+		})
 		.on('submit','form',function(event){
 			var $form = $(this);
 			var $command = $form.find('.command');
@@ -29,7 +35,6 @@ $(function(){
 			$form.find('.input:visible:not(:disabled,.disable), input[type="hidden"]:not(:disabled,.disable)').each(function(){
 				var $this = $(this);
 				formdata[$this.attr('name')] = $this.val();
-				console.log($this.attr('name'),$this.prop('required'),$this.val());
 				if (!$this.val() && $this.prop('required') === true){
 					console.error($this.attr('name'),$this.prop('required'),$this.val());
 					$this.addClass('invalid');
@@ -44,7 +49,6 @@ $(function(){
 					message : 'Os campos são requiridos'
 				});	
 			} else {
-				console.log('formdata',event,formdata);
 				$form.trigger('send',[formdata]);	
 			}
 			mobserv.keyboard.close();
@@ -116,7 +120,11 @@ $(function(){
 								message : validation
 							});	
 							mobserv.services.init(function(){
-								mobserv.services.get();
+								mobserv.services.get(function(){
+									mobserv.talkies.init(function(){
+										mobserv.talkies.get();
+									});
+								});
 							});
 						},
 						function(){
@@ -143,35 +151,35 @@ $(function(){
 					$li.removeClass('found').show();
 				} else {
 					$li.removeClass('found');
-					var xml = mobserv.globals.services.xml;
-					if (xml){
+					if ($form.data('target') == 'service'){
+						var xml = mobserv.globals.services.xml;
 						var $xml = $(xml);
-						if ($form.data('target') == 'service'){
-							$search = $xml.find('service');
-						} else if ($form.data('target') == 'job'){
-							$search = $xml.find('job');
-						} else {
-							$search = $xml.find('job');
-						}
-						if ($search.length){
-							$search.each(function(){
-								var $s = $(this);
-								$s.children('layout').each(function(){
-									var $l = $(this);
-									if ($l.text().toLowerCase().indexOf(s) > -1){
-										$li.children('.link[data-id="'+$s.attr('id')+'"]').parent().addClass('found').show();
-										return false;
-									}
-								});
-							});
-							$li.filter(':not(.found)').hide();
-						}
+						$search = $xml.find('service');
+					} else if ($form.data('target') == 'job'){
+						var xml = mobserv.globals.services.xml;
+						var $xml = $(xml);
+						$search = $xml.find('job');
+					} else if ($form.data('target') == 'message'){
+						var xml = mobserv.globals.talkies.xml;
+						var $xml = $(xml);
+						$search = $xml.find('talk');
+					} else {
+						return false;
+					}
+					if (xml && $search.length){
+						$search.each(function(){
+							var $s = $(this);
+							var text = $s.text();
+							if (text.toLowerCase().indexOf(s) > -1){
+								$li.children('.link[data-id="'+$s.attr('id')+'"]').parent().addClass('found').show();
+							}
+						});
+						$li.filter(':not(.found)').hide();
 					}
 				}
 			}
 		})
 		.on('send','#jobdetails:visible .jobform',function(event,data){
-			console.log('formdata',event,data);
 			var $form = $(this);
 			var $view = $form.closest('.view').addClass('courtain');
 			var $section = $view.find('.section').hide();
@@ -181,11 +189,51 @@ $(function(){
 				$section.show();
 			});
 		})
+		.on('send','#messages:visible .composer',function(event,data){
+			var $form = $(this);
+			var $view = $form.closest('.view');
+			var $chat = $form.prev('.forchat').find('.chat:eq(0)');
+			if (data.message){
+				$form.find('.input').val('');
+				var post = {
+					message : {
+						id : $.md5(mobserv.now('timestamp')+mobserv.device.data.uuid+$view.data('id')+data.message),
+						text : data.message,
+						talk : $view.data('id')
+					},
+					isPost : true,
+					exec : 'postTalkieMessage'
+				}
+				var $html = ''+
+				'<div class="talk me courtain" id="'+post.message.id+'">'+
+					'<div class="text">'+post.message.text+'</div>'+
+					'<div class="info"><span class="icon-clock">'+mobserv.now('time')+'</span></div>'+
+				'</div>'+
+				'<div class="clear"></div>';
+				$html = $($html);
+				$chat.append($html.css({opacity:0,transform:'scale(0.1,0.1)'}));
+				$form.prev('.forchat').scrollTop(999999999);
+				$html.transition({opacity:1,scale:1.1},200,function(){ $html.transition({scale:1},100); });
+				mobserv.talkies.post(post,
+					function(){
+						$html.removeClass('courtain');
+					},
+					function(){
+						$html.removeClass('courtain').addClass('error');
+					}
+				);
+				
+			}
+		})
+		.on('tap','#confirmexit .exit',function(){
+			mobserv.exit();
+		})
 		.on('tap','#formuser .logoutclient',function(){
 			mobserv.nav.toView('formclient');
 		})
 		.on('tap','.input:not(:disabled)',function(){
-			$(this).focus().removeClass('invalid');
+			var $input = $(this);
+			$input.focus().removeClass('invalid');
 			event.preventDefault();
 			event.stopPropagation();
 		})
@@ -239,6 +287,14 @@ $(function(){
 				$('#nav').addClass('active');
 				$('.view.current').addClass('disable').transition({ x:'80%' }, 300).find(".header, .section").transition({ opacity:.3 }, 400);
 			}
+		})
+		.on('tap','#confirmremovelog button.remove',function(){
+			mobserv.unlog();
+		})
+		.on('tap','#confirmremovemessages button.remove',function(){
+			var $this = $(this);
+			var $view = $this.closest('.view');
+			mobserv.talkies.remove($view.data('id'));
 		})
 		.on('tap','.view.disable',function(){
 			if ($('#nav').hasClass('active')){
@@ -296,8 +352,43 @@ $(function(){
 				endX = null;
 				endY = null;
 		})		
-		.on('pull','.view .pullarea',function(event){
+		.on('pull','.view#home .pullarea',function(event){
 			mobserv.services.get(function(){
+				mobserv.talkies.get(function(){
+					$pullarea.data('moved','');
+					$pullarea.transition({ y:0 }, 300);
+					$pullinfo.transition({ y:0, opacity:0 }, 300);
+					$pullinfo.parent().removeClass('courtain');
+					$pullinfo.text('Concluído');
+					$pullarea = null;
+					$pullinfo = null;
+				});
+			});
+		})
+		.on('pull','.view#servicelist .pullarea, .view#joblist .pullarea',function(event){
+			mobserv.services.get(function(){
+				$pullarea.data('moved','');
+				$pullarea.transition({ y:0 }, 300);
+				$pullinfo.transition({ y:0, opacity:0 }, 300);
+				$pullinfo.parent().removeClass('courtain');
+				$pullinfo.text('Concluído');
+				$pullarea = null;
+				$pullinfo = null;
+			});
+		})
+		.on('pull','.view#talkies .pullarea',function(event){
+			mobserv.talkies.get(function(){
+				$pullarea.data('moved','');
+				$pullarea.transition({ y:0 }, 300);
+				$pullinfo.transition({ y:0, opacity:0 }, 300);
+				$pullinfo.parent().removeClass('courtain');
+				$pullinfo.text('Concluído');
+				$pullarea = null;
+				$pullinfo = null;
+			});
+		})
+		.on('pull','.view#messages .pullarea',function(event){
+			mobserv.talkies.get(function(){
 				$pullarea.data('moved','');
 				$pullarea.transition({ y:0 }, 300);
 				$pullinfo.transition({ y:0, opacity:0 }, 300);
@@ -344,6 +435,10 @@ $(function(){
 				if (mobserv.globals.client.cache) cache = new XMLSerializer().serializeToString(mobserv.globals.client.cache);
 				if (mobserv.globals.client.response) response = new XMLSerializer().serializeToString(mobserv.globals.client.response);
 				if (mobserv.globals.client.xml) xml = new XMLSerializer().serializeToString(mobserv.globals.client.xml);
+			} else if ($this.data('source') == 'talkies'){
+				if (mobserv.globals.talkies.cache) cache = new XMLSerializer().serializeToString(mobserv.globals.talkies.cache);
+				if (mobserv.globals.talkies.response) response = new XMLSerializer().serializeToString(mobserv.globals.talkies.response);
+				if (mobserv.globals.talkies.xml) xml = new XMLSerializer().serializeToString(mobserv.globals.talkies.xml);
 			}
 			$this.find('#header .icon-code').html($this.data('source'));
 			$this.find('code.xml').each(function(i, block) {
@@ -373,6 +468,17 @@ $(function(){
 			var $this = $(this).removeClass('courtain');
 			mobserv.services.parsedom('jobdetails',$this.data('id'));
 			$this.find('.section').fadeIn(200);
+		})
+		.on('show','#messages',function(){
+			var $this = $(this).addClass('courtain');
+			$this.find('.section').hide();
+			mobserv.talkies.cleardom('messages');
+			mobserv.talkies.read($this.data('id'));
+		})
+		.on('current','#messages',function(){
+			var $this = $(this).removeClass('courtain');
+			mobserv.talkies.parsedom('messages',$this.data('id'));
+			$this.find('.section').fadeIn(200).scrollTop(999999999);
 		})
 		.on('current','#gps',function(){
 			mobserv.geolocation.getPosition();
@@ -551,6 +657,7 @@ $(function(){
 	document.addEventListener("deviceready", function(){
 		mobserv.debug.on();
 		mobserv.device.init();
+		mobserv.keyboard.init();
 		mobserv.notification.init();
 		mobserv.geolocation.autoPosition();
 		//mobserv.bgmode.init();

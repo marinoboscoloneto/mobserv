@@ -35,11 +35,11 @@
     	<ul>
         	<li><a data-view="home" data-direction="forward"><span class="icon-home">Home</span></a></li>
         	<li><a data-view="servicelist" data-direction="forward"><span class="icon-package5">Serviços</span></a></li>
-        	<li><a data-view="messages" data-direction="forward"><span class="icon-paperplane">Mensagens</span></a></li>
+        	<li><a data-view="talkies" data-direction="forward"><span class="icon-paperplane">Mensagens</span></a></li>
         	<li><a data-view="user" data-direction="forward"><span class="icon-user2">Usuário</span></a></li>
         	<li><a data-view="configs" data-direction="forward"><span class="icon-cogs">Configurações</span></a></li>
         	<li><a data-view="confirmlogout" data-direction="foreground"><span class="icon-plug">Logout</span></a></li>
-        	<li id="exitapp"><a data-view="confirmexit" data-direction="foreground"><span class="icon-switch2">Fechar</span></a></li>
+        	<li class="exitapp"><a data-view="confirmexit" data-direction="foreground"><span class="icon-switch2">Fechar</span></a></li>
         </ul>
     </nav>
     <div class="view overall" id="confirmlogout">
@@ -57,10 +57,24 @@
        		<button class="gray">Cancelar</button>
        </div>        
     </div>
+    <div class="view overall" id="confirmremovelog">
+       <div class="btngroup">
+       		<p>Você quer mesmo apagar o log?</p>
+       		<button class="red remove">Sim, quero apagar</button>
+       		<button class="gray">Cancelar</button>
+       </div>        
+    </div>
+    <div class="view overall" id="confirmremovemessages">
+       <div class="btngroup">
+       		<p>Você quer mesmo apagar essa conversa?</p>
+       		<button class="red remove">Sim, quero apagar</button>
+       		<button class="gray">Cancelar</button>
+       </div>        
+    </div>
     <div class="view gray current courtain" id="preload" style="display:block;">
     	<div class="loadinfo">Inicializando...</div>
         <form class="auth" action="">
-            <a class="link icon-history2 fordebug" data-view="log" data-direction="foreground"></a>
+            <a class="link icon-history fordebug" data-view="log" data-direction="foreground"></a>
         </form> 
     </div>
     <div class="view gray" id="formclient">
@@ -70,7 +84,7 @@
             <div><input class="input text command" type="text" id="cid" placeholder="Código do Cliente"  autocorrect="off" autocapitalize="none" required /></div>
             <div><input class="input text" type="password" id="cpw" placeholder="Senha de Validação" autocorrect="off" autocapitalize="none" required /></div>
             <div><input type="submit" class="submit" value="Validar Cliente" /></div>
-            <a class="link icon-history2 fordebug" data-view="log" data-direction="foreground"></a>
+            <a class="link icon-history fordebug" data-view="log" data-direction="foreground"></a>
         </form>
         <div class="appver">{version}</div>
     </div>
@@ -83,7 +97,7 @@
             <div><input class="input text" type="password" id="upw" placeholder="Senha de Acesso" autocorrect="off" autocapitalize="none" required /></div>
             <div><input type="submit" class="submit yellow" value="Entrar" /></div>
             <p class="desc bottom">Não está em <b class="client">{client}</b>? <a class="logoutclient">Troque o cliente.</a></p>
-            <a class="link icon-history2 fordebug" data-view="log" data-direction="foreground"></a>
+            <a class="link icon-history fordebug" data-view="log" data-direction="foreground"></a>
         </form>
         <div class="appver">{version}</div>
     </div>
@@ -98,7 +112,7 @@
             <div class="pullarea">
                 <ul class="grid">
                     <li><a data-view="servicelist" data-direction="forward" class="unmarked"><strong class="icon-package5"></strong><span>Serviços</span><mark></mark></a></li>
-                    <li><a data-view="messages" data-direction="forward" class="unmarked"><strong class="icon-paperplane"></strong><span>Mensagens</span><mark></mark></a></li>
+                    <li><a data-view="talkies" data-direction="forward" class="unmarked"><strong class="icon-paperplane"></strong><span>Mensagens</span><mark class="blue"></mark></a></li>
                     <li><a data-view="user" data-direction="forward"><strong class="icon-user2"></strong><span>Usuário</span></a></li>
                     <li><a data-view="configs" data-direction="forward"><strong class="icon-cogs"></strong><span>Configurações</span></a></li>
                 </ul>
@@ -161,6 +175,38 @@
             </form>
         </section>
     </div>
+    <div class="view" id="talkies">
+        <header class="header" id="header">
+            <h1 class="icon-paperplane">Mensagens</h1>
+            <a class="item l1 menu icon-menu"></a>
+            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
+        </header>
+        <section class="section">
+        	<div class="pullinfo"><strong>Solte para atualizar</strong></div>
+            <div class="pullarea">
+                <form class="onlist search icon-search2" data-target="message" action=""><input class="input text command" type="search" id="search" placeholder="Pesquisar" disabled /><input type="submit" class="submit" value="" /></form>
+                <ul class="list"></ul>
+            </div>
+        </section>
+    </div>
+    <div class="view" id="messages">
+        <header class="header" id="header">
+            <h1 class="icon-paperplane small">{name}</h1>
+            <h2 class="small">{subject}</h2>
+            <a class="item l1 menu icon-menu"></a>
+            <a class="item r2 link remove iconsmall icon-remove" data-view="confirmremovemessages" data-direction="foreground"></a>
+            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
+        </header>
+        <section class="section forchat">
+        	<div class="pullinfo"><strong>Solte para atualizar</strong></div>
+            <div class="pullarea">
+            	<div class="chat"></div>
+            </div>
+        </section>
+        <form class="composer" action="">
+            <input class="input text command" type="text" id="composer" name="message" placeholder="Responder" data-documentScroll="0" data-sectionScroll="999999" data-disableScroll="true" data-hideAccessory="true" /><input type="submit" class="submit" value="Ok" />
+        </form>
+    </div>
     <div class="view" id="configs">
         <header class="header" id="header">
             <h1 class="icon-cogs">Configurações</h1>
@@ -169,71 +215,87 @@
         </header>
         <section class="section">
             <ul class="grid">
-                <li><a data-view="deviceinfo" data-direction="forward"><strong class="icon-mobile"></strong><span>Dados do Dispositivo</span></a></li>
-                <li><a data-view="connectioninfo" data-direction="forward"><strong class="icon-feed2"></strong><span>Info de Conexão</span></a></li>
+                <li><a data-view="connectioninfo" data-direction="forward"><strong class="icon-network"></strong><span>Info de Conexão</span></a></li>
                 <li><a data-view="map" data-direction="forward" data-source="gps"><strong class="icon-map3"></strong><span>Geoposição</span></a></li>
-                <li><a data-view="servers" data-direction="forward"><strong class="icon-layers"></strong><span>Servidores de Serviços</span></a></li>
+                <li><a data-view="servers" data-direction="forward"><strong class="icon-layers"></strong><span>Servidores</span></a></li>
                 <li class="fordebug"><a data-view="data" data-direction="forward"><strong class="icon-code"></strong><span>Fonte de Dados</span></a></li>
-                <li class="fordebug"><a data-view="log" data-direction="foreground" class="unmarked"><strong class="icon-history2"></strong><span>Log</span><mark>86</mark></a></li>
-                <li><a data-view="help" data-direction="forward"><strong class="icon-help2"></strong><span>Sobre o Mobserv</span></a></li>
+                <li class="fordebug"><a data-view="log" data-direction="foreground" class="unmarked"><strong class="icon-history"></strong><span>Log</span><mark>86</mark></a></li>
+                <li><a data-view="about" data-direction="forward"><strong class="icon-bald22"></strong><span>Sobre o Mobserv</span></a></li>
             </ul>
         </section>
     </div>
-    <div class="view" id="deviceinfo">
+    <div class="view" id="about">
         <header class="header" id="header">
-            <h1 class="icon-mobile">Dados do Dispositivo</h1>
+            <h1 class="icon-bald22">Sobre o Mobserv</h1>
             <a class="item l1 menu icon-menu"></a>
             <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
         </header>
-        <section class="section">
-        	<h2 style="text-align:center;">API Device</h2>
-            <p style="text-align:center;"><img src="pic/logo-device.png" width="74" height="85" /></p>
-        	<table width="96%" border="0" cellspacing="1" cellpadding="1">
-              <tr>
-                <td>Mobserv</td>
-                <td><strong id="appver">&nbsp;</strong></td>
-              </tr>
-              <tr>
-                <td>Cordova</td>
-                <td><strong id="cordova">&nbsp;</strong></td>
-              </tr>
-              <tr>
-                <td>Modelo</td>
-                <td><strong id="model">&nbsp;</strong></td>
-              </tr>
-              <tr>
-                <td>Plataforma</td>
-                <td><strong id="platform">&nbsp;</strong></td>
-              </tr>
-              <tr>
-                <td>UUID</td>
-                <td><strong id="uuid">&nbsp;</strong></td>
-              </tr>
-              <tr>
-                <td>versão</td>
-                <td><strong id="version">&nbsp;</strong></td>
-              </tr>
-            </table>
+        <section class="section"><br>
+       		<div class="bigicon icon-bald22" style="color:#F40"></div>
+            <h2>API Device</h2>
+            <div class="block gray" style="border-top:#DDD solid 1px;">
+                <table width="95%" border="0" cellspacing="6" cellpadding="0">
+                  <tr>
+                    <td>Versão do App</td>
+                    <td><strong id="appver" style="color:#F30">&nbsp;</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Versão Cordova</td>
+                    <td><strong id="cordova">&nbsp;</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Modelo</td>
+                    <td><strong id="model">&nbsp;</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Plataforma</td>
+                    <td><strong id="platform">&nbsp;</strong></td>
+                  </tr>
+                  <tr>
+                    <td>UUID Hash</td>
+                    <td><strong id="uuid">&nbsp;</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Versão do SO</td>
+                    <td><strong id="version">&nbsp;</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Copyright</td>
+                    <td><strong>SourceLab Tecnologia LTDA</strong><br><small>©2015 - Todos os direitos reservados</small></td>
+                  </tr>
+                </table>
+            </div>
         </section>
     </div>
     <div class="view" id="connectioninfo">
         <header class="header" id="header">
-            <h1 class="icon-feed2">Info de Conexão</h1>
+            <h1 class="icon-network">Info de Conexão</h1>
             <a class="item l1 menu icon-menu"></a>
             <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
         </header>
         <section class="section">
-        	<h2 style="text-align:center;">API Connection</h2>
-        	<table width="96%" border="0" cellspacing="1" cellpadding="1">
-              <tr>
-                <td>Status</td>
-                <td><strong id="connstatus">&nbsp;</strong></td>
-              </tr>
-              <tr>
-                <td>Tipo de Conexão</td>
-                <td><strong id="conntype">&nbsp;</strong></td>
-              </tr>
-            </table>
+        	<div class="bigicon icon-network"></div>
+            <h2>API Connection</h2>
+            <div class="block gray" style="border-top:#DDD solid 1px;">
+                <table width="95%" border="0" cellspacing="6" cellpadding="0">
+                  <tr>
+                    <td>Status</td>
+                    <td><strong id="connstatus">&nbsp;</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Tipo de Conexão</td>
+                    <td><strong id="conntype">&nbsp;</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Velocidade</td>
+                    <td><strong id="connspeed">&nbsp;</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Tráfego</td>
+                    <td><strong id="conntraffic">&nbsp;</strong></td>
+                  </tr>
+                </table>
+           </div>
         </section>
     </div>
     <div class="view" id="servers">
@@ -243,33 +305,36 @@
             <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
         </header>
         <section class="section">
-        	<h2 style="text-align:center;">Dados dos Servidores</h2>
-        	<table class="template" width="96%" border="0" cellspacing="1" cellpadding="1">
-              <tr>
-                <td>ID</td>
-                <td><strong id="srvid">&nbsp;</strong></td>
-              </tr>
-              <tr>
-                <td>Tipo</td>
-                <td><strong id="srvtype">&nbsp;</strong></td>
-              </tr>
-              <tr>
-                <td>URL</td>
-                <td><strong id="srvurl">&nbsp;</strong></td>
-              </tr>
-              <tr>
-                <td>Online</td>
-                <td><strong id="srvonline">&nbsp;</strong></td>
-              </tr>
-              <tr>
-                <td>Status</td>
-                <td><strong id="srvstatus">&nbsp;</strong></td>
-              </tr>
-              <tr>
-                <td>Data</td>
-                <td><strong id="srvlastrequest">&nbsp;</strong></td>
-              </tr>
-            </table>
+        	<div class="bigicon icon-layers"></div>
+        	<h2>API Servers</h2>
+            <div class="block gray template" style="border-top:#DDD solid 1px; margin-bottom:6px;">
+                <table width="95%" border="0" cellspacing="6" cellpadding="0">
+                  <tr>
+                    <td>ID</td>
+                    <td><strong id="srvid">&nbsp;</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Tipo</td>
+                    <td><strong id="srvtype">&nbsp;</strong></td>
+                  </tr>
+                  <tr>
+                    <td>URL</td>
+                    <td><strong id="srvurl">&nbsp;</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Online</td>
+                    <td><strong id="srvonline">&nbsp;</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Status</td>
+                    <td><strong id="srvstatus">&nbsp;</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Data</td>
+                    <td><strong id="srvlastrequest">&nbsp;</strong></td>
+                  </tr>
+                </table>
+            </div>
         </section>
     </div>
     <div class="view" id="data">
@@ -280,10 +345,10 @@
         </header>
         <section class="section">
             <ul class="grid">
-                <li class="fordebug"><a data-view="datasource" data-direction="foreground" data-source="client"><strong class="icon-code"></strong><span>client</span></a></li>
-                <li class="fordebug"><a data-view="datasource" data-direction="foreground" data-source="user"><strong class="icon-code"></strong><span>user</span></a></li>
-                <li class="fordebug"><a data-view="datasource" data-direction="foreground" data-source="service"><strong class="icon-code"></strong><span>service</span></a></li>
-                <li class="fordebug"><a data-view="datasource" data-direction="foreground" data-source="message"><strong class="icon-code"></strong><span>message</span></a></li>
+                <li class="fordebug"><a data-view="datasource" data-direction="foreground" data-source="client"><strong class="icon-file-xml"></strong><span>client</span></a></li>
+                <li class="fordebug"><a data-view="datasource" data-direction="foreground" data-source="user"><strong class="icon-file-xml"></strong><span>user</span></a></li>
+                <li class="fordebug"><a data-view="datasource" data-direction="foreground" data-source="service"><strong class="icon-file-xml"></strong><span>service</span></a></li>
+                <li class="fordebug"><a data-view="datasource" data-direction="foreground" data-source="talkies"><strong class="icon-file-xml"></strong><span>message</span></a></li>
             </ul>
         </section>
     </div>
@@ -293,6 +358,8 @@
             <a class="item r1 link close icon-delete2" data-view="datasource" data-direction="close"></a>
         </header>
         <section class="section">
+        	<div class="bigicon icon-code"></div>
+        	<h2>API Data</h2>
             <p><strong>Cache</strong></p>
             <pre><code class="xml cache"></code></pre>
             <p><strong>Response</strong></p>
@@ -310,9 +377,9 @@
         </header>
         <section class="section mapdata">
         	<h2 style="text-align:center;">Dados do receptor de GPS</h2>
-        	<table width="96%" border="0" cellspacing="1" cellpadding="1">
+        	<table width="95%" border="0" cellspacing="1" cellpadding="1" style="margin:0 0 8px 10px;">
               <tr>
-                <td>Latitude</td>
+                <td width="25%">Latitude</td>
                 <td><strong id="gpslat">&nbsp;</strong></td>
               </tr>
               <tr>
@@ -345,11 +412,12 @@
               </tr>
             </table>
         </section>
-        <section class="section map"></section>
+        <section class="section map" style="background-color:rgb(233, 229, 220) !important;"></section>
     </div>
-    <div class="view" id="log">
+    <div class="view log" id="log">
         <header class="header" id="header">
-            <h1 class="icon-history2">Log</h1>
+            <h1 class="icon-history">Log</h1>
+            <a class="item r2 link iconsmall icon-remove" data-view="confirmremovelog" data-direction="foreground"></a>
             <a class="item r1 link close icon-delete2" data-view="log" data-direction="close"></a>
         </header>
         <section class="section">
@@ -357,9 +425,9 @@
     </div>
     <footer class="footer" id="footer">
         <div class="user icon-user2"><strong>M01</strong><small>Nome do usuário</small></div>
-        <a class="item r3 link icon-history2 fordebug" data-view="log" data-direction="foreground"></a>
-        <a class="item r2 link icon-package5" data-view="servicelist" data-direction="forward"><mark>1</mark></a>
-        <a class="item r1 link icon-paperplane" data-view="messages" data-direction="forward"></a>
+        <a class="item r3 link icon-history fordebug" data-view="log" data-direction="foreground"><mark class="small red"></mark></a>
+        <a class="item r2 link icon-package5" data-view="servicelist" data-direction="forward"><mark></mark></a>
+        <a class="item r1 link icon-paperplane" data-view="talkies" data-direction="forward"><mark class="blue"></mark></a>
     </footer>
     <div id="notify" class="notify">
     	<strong></strong>
