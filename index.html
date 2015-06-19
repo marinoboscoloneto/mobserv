@@ -200,11 +200,15 @@
         <section class="section forchat">
         	<div class="pullinfo"><strong>Solte para atualizar</strong></div>
             <div class="pullarea">
-            	<div class="chat"></div>
+            	<div style="display:table; height:100%;">
+                    <div style="display:table-cell; vertical-align:bottom">
+                        <div class="chat"></div>
+                    </div>
+                </div>
             </div>
         </section>
         <form class="composer" action="">
-            <input class="input text command" type="text" id="composer" name="message" placeholder="Responder" data-documentScroll="0" data-sectionScroll="999999" data-disableScroll="true" data-hideAccessory="true" /><input type="submit" class="submit" value="Ok" />
+            <input class="input text command" type="text" id="composer" name="message" placeholder="Responder" data-documentscroll="0" data-sectionscroll="99999999" data-disablescroll="true" data-hideaccessory="true" data-preventcloseonsubmit="true" disabled /><input type="submit" class="submit" value="Enviar" />
         </form>
     </div>
     <div class="view" id="configs">
@@ -234,7 +238,7 @@
        		<div class="bigicon icon-bald22" style="color:#F40"></div>
             <h2>API Device</h2>
             <div class="block gray" style="border-top:#DDD solid 1px;">
-                <table width="95%" border="0" cellspacing="6" cellpadding="0">
+                <table width="100%" border="0" cellspacing="6" cellpadding="0">
                   <tr>
                     <td>Versão do App</td>
                     <td><strong id="appver" style="color:#F30">&nbsp;</strong></td>
@@ -277,7 +281,7 @@
         	<div class="bigicon icon-network"></div>
             <h2>API Connection</h2>
             <div class="block gray" style="border-top:#DDD solid 1px;">
-                <table width="95%" border="0" cellspacing="6" cellpadding="0">
+                <table width="100%" border="0" cellspacing="6" cellpadding="0">
                   <tr>
                     <td>Status</td>
                     <td><strong id="connstatus">&nbsp;</strong></td>
@@ -308,7 +312,7 @@
         	<div class="bigicon icon-layers"></div>
         	<h2>API Servers</h2>
             <div class="block gray template" style="border-top:#DDD solid 1px; margin-bottom:6px;">
-                <table width="95%" border="0" cellspacing="6" cellpadding="0">
+                <table width="100%" border="0" cellspacing="6" cellpadding="0">
                   <tr>
                     <td>ID</td>
                     <td><strong id="srvid">&nbsp;</strong></td>

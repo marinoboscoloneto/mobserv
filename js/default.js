@@ -3,7 +3,8 @@
 
 $(function(){
 	
-	var startX, startY, endX, endY, pull, $pullarea, $pullinfo;
+	var focusTimeout, holdTimout, multiTouch, startX, startY, endX, endY, pull, $pullarea, $pullinfo;
+	
 	$(document)
 		.on('focus','.input:not(:disabled)',function(){
 			mobserv.inputfocus = $(this);
@@ -20,15 +21,9 @@ $(function(){
 				if (cmd == 'debug:on') { mobserv.debug.on(); $command.val(''); executed = true; }
 				if (cmd == 'debug:off') { mobserv.debug.off(); $command.val(''); executed = true; }	
 				if (cmd == 'sqlite:reset') { mobserv.sqlite.clear(); mobserv.sqlite.create(); $command.val(''); executed = true; }
-				if (cmd == 'app:restart' || cmd == 'app:reload') { setTimeout(function(){ location.reload(true); },1000); executed = true; }
-				if (executed){
-					mobserv.notify.open({
-						type : 'alert',
-						name : 'Comando',
-						message : 'Comando '+cmd+' executado'
-					});
-					return false;
-				}
+				if (cmd == 'app:reset') {  mobserv.sqlite.clear(); mobserv.sqlite.create(); location.reload(true); executed = true; }
+				if (cmd == 'app:restart' || cmd == 'app:reload') { location.reload(true); executed = true; }
+				if (executed) return false;
 			}
 			var valid = true;
 			var formdata = {}
@@ -51,7 +46,7 @@ $(function(){
 			} else {
 				$form.trigger('send',[formdata]);	
 			}
-			mobserv.keyboard.close();
+			if(mobserv.inputfocus && !mobserv.inputfocus.data('preventcloseonsubmit')) mobserv.keyboard.close();
 			event.preventDefault();
 			return false;
 		})
@@ -195,6 +190,7 @@ $(function(){
 			var $chat = $form.prev('.forchat').find('.chat:eq(0)');
 			if (data.message){
 				$form.find('.input').val('');
+				$form.find('.input').focus();
 				var post = {
 					message : {
 						id : $.md5(mobserv.now('timestamp')+mobserv.device.data.uuid+$view.data('id')+data.message),
@@ -240,11 +236,14 @@ $(function(){
 		.on('change input','.input:not(:disabled)',function(){
 			$(this).removeClass('invalid');
 		})
-		.on('tap','form.search',function(){
+		.on('tap','form.search, form.composer',function(){
 			$(this).find('.input').prop('disabled',false).focus();
 		})
-		.on('blur focusout','.search .input',function(){
-			$(this).prop('disabled',true);
+		.on('blur focusout','.search .input, .composer .input',function(){
+			var $this = $(this);
+			setTimeout(function(){
+				$this.prop('disabled',true);
+			},500);
 		})
 		/*
 		.on('swiperight','.view:not(.disable)',function(){
@@ -305,11 +304,41 @@ $(function(){
 				}).find(".header, .section").transition({ opacity:1 }, 300);
 			}
 		})
+		.on('touchstart','#messages .chat',function(){
+			mobserv.keyboard.close();
+		})
+		/*
+		.on('touchstart',function(event){
+			if (event.originalEvent.touches.length == 2){
+				holdTimout = setTimeout(function(){
+					if(mobserv.debug.active){
+						mobserv.debug.off();
+					} else {
+						mobserv.debug.on();	
+					}
+				},3000);
+			} else if (event.originalEvent.touches.length == 3){
+				holdTimout = setTimeout(function(){
+					mobserv.sqlite.clear(); mobserv.sqlite.create(); location.reload(true);
+				},3000);
+			}
+		})
+		.on('touchmove',function(event){
+			if (holdTimout) clearTimeout(holdTimout);
+		})
+		.on('touchend',function(event){
+			if (holdTimout) clearTimeout(holdTimout);
+		})
+		*/
 		.on('touchstart','.view.current .pullarea',function(event){
-			startX = event.originalEvent.touches[0].pageX;
-			startY = event.originalEvent.touches[0].pageY;
-			$pullarea = $(this);
-			$pullinfo = $pullarea.prev().removeClass('courtain').find('strong').text('Solte para atualizar');
+			if (event.originalEvent.touches.length == 1){
+				startX = event.originalEvent.touches[0].pageX;
+				startY = event.originalEvent.touches[0].pageY;
+				$pullarea = $(this);
+				if ($pullarea.data('moved') != 'u'){
+					$pullinfo = $pullarea.prev().removeClass('courtain').find('strong').text('Solte para atualizar');
+				}
+			}
 		})
 		.on('touchmove','.view.current .pullarea',function(event){
 			endX = event.originalEvent.touches[0].pageX;
@@ -335,16 +364,16 @@ $(function(){
 					$pullarea.data('moved','u');
 					event.preventDefault();
 					event.stopPropagation();
-					if (startY+($(window).height()/3) > endY){
-						$pullarea.transition({ y:0 }, 300, function(){ $pullarea.data('moved',''); });
-						$pullinfo.transition({ y:0, opacity:0 }, 300);
+					if (startY+($(window).height()/2) > endY){
+						$pullarea.transition({ y:0 }, 250, function(){ $pullarea.data('moved',''); });
+						$pullinfo.transition({ y:0, opacity:0 }, 250);
 					} else {
-						$pullarea.transition({ y:40 }, 300,function(){
+						$pullarea.transition({ y:40 }, 250,function(){
 							$pullinfo.parent().addClass('courtain');
 							$pullinfo.text('Atualizando...');
 							$pullarea.trigger('pull');
 						});
-						$pullinfo.transition({ y:20, opacity:1 }, 300);
+						$pullinfo.transition({ y:20, opacity:1 }, 250);
 					}
 				}
 				startX = null;
@@ -479,6 +508,12 @@ $(function(){
 			var $this = $(this).removeClass('courtain');
 			mobserv.talkies.parsedom('messages',$this.data('id'));
 			$this.find('.section').fadeIn(200).scrollTop(999999999);
+			mobserv.talkies.autogetspeed = 0.1;
+			mobserv.talkies.autoreset();
+		})
+		.on('hide','#messages',function(){
+			mobserv.talkies.autogetspeed = 1;
+			mobserv.talkies.autoreset();
 		})
 		.on('current','#gps',function(){
 			mobserv.geolocation.getPosition();
@@ -660,7 +695,6 @@ $(function(){
 		mobserv.keyboard.init();
 		mobserv.notification.init();
 		mobserv.geolocation.autoPosition();
-		//mobserv.bgmode.init();
 		mobserv.sqlite.init();
 		mobserv.auth.init();
 		document.addEventListener("backbutton", function(event){
@@ -684,23 +718,36 @@ $(function(){
 				});
 			}
 		);
-		var bgmodeInt;
+		var bgmodeInt, bgmodeHops = 0;
 		cordova.plugins.backgroundMode.enable();
 		cordova.plugins.backgroundMode.onactivate = function(){
+			mobserv.services.autogetspeed = 3;
+			mobserv.talkies.autogetspeed = 3;
+			mobserv.geolocation.autopostionspeed = 10;
+			mobserv.services.autoreset();
+			mobserv.talkies.autoreset();
+			mobserv.geolocation.autoPosition();
 			mobserv.log({
 				type : 'notice',
 				name : 'backgroundMode.onactivate',
 				message : 'the background mode is active'
 			});
 			bgmodeInt = setInterval(function(){
+				bgmodeHops++;
 				mobserv.log({
-					type : 'info',
 					name : 'backgroundMode.onactivate',
-					message : 'the background mode is rolling'
+					message : 'the background mode is rolling',
+					detail : 'hops: '+bgmodeHops+' minutes'
 				});
-			},10000);
+			},60000);
 		}
 		cordova.plugins.backgroundMode.ondeactivate = function(){
+			mobserv.services.autogetspeed = 1;
+			mobserv.talkies.autogetspeed = 1;
+			mobserv.geolocation.autopostionspeed = 1;
+			mobserv.services.autoreset();
+			mobserv.talkies.autoreset();
+			mobserv.geolocation.autoPosition();
 			mobserv.log({
 				type : 'notice',
 				name : 'backgroundMode.ondeactivate',

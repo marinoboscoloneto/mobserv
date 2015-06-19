@@ -19,10 +19,18 @@ var mobserv = {
 		on : function(){
 			$('#main').addClass('debug');
 			mobserv.debug.active = true;
+			mobserv.notify.open({
+				name : 'Debug',
+				message : 'O modo debug está LIGADO.'
+			});	
 		},
 		off : function(){
 			$('#main').removeClass('debug');
 			mobserv.debug.active = false;
+			mobserv.notify.open({
+				name : 'Debug',
+				message : 'O modo debug está DESLIGADO.'
+			});	
 		}
 	},
 	server : {
@@ -440,6 +448,7 @@ var mobserv = {
 		interval : null,
 		watchID : null,
 		animID : null,
+		autopostionspeed : 1,
 		animate : function(map,marker,circle,force){
 			var $map = $('.view#map:visible .map');
 			var numDeltas = 25;
@@ -554,10 +563,10 @@ var mobserv = {
 			if(mobserv.geolocation.interval) clearInterval(mobserv.geolocation.interval);
 			mobserv.geolocation.interval = setInterval(function(){
 				mobserv.geolocation.getPosition(options);
-			},60000);
+			},60000*mobserv.geolocation.autopostionspeed);
 			mobserv.log({
 				name : 'geolocation.autoPosition',
-				message : 'auto scheduled position started',
+				message : 'auto scheduled position started for every '+(60000*mobserv.geolocation.autopostionspeed)+' seconds',
 			});	
 		},
 		getPosition : function(options){
@@ -710,6 +719,10 @@ var mobserv = {
 						message : 'tables in mobserv.db was cleared',
 					});
 					mobserv.sqlite.create();
+					mobserv.notify.open({
+						name : 'SQLite',
+						message : 'O SQLite foi restaurado'
+					});	
 				},
 				function(e) {
 					mobserv.log({
@@ -801,14 +814,36 @@ var mobserv = {
 	keyboard : {
 		init : function(){
 			window.addEventListener('native.keyboardshow', function(event){
-				if(mobserv.inputfocus.data('documentScroll')) $(document).scrollTop(mobserv.inputfocus.data('documentScroll'));
-				if(mobserv.inputfocus.data('sectionScroll')) mobserv.inputfocus.closest('.view').find('.section').scrollTop(mobserv.inputfocus.data('sectionScroll'));
-				if(mobserv.inputfocus.data('disableScroll')) cordova.plugins.Keyboard.disableScroll(true);
-				if(mobserv.inputfocus.data('hideAccessory')) cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
+				var disableScroll, hideKeyboardAccessoryBar;
+				if(mobserv.inputfocus && mobserv.inputfocus.data('documentscroll')) $(document).scrollTop(mobserv.inputfocus.data('documentscroll'));
+				if(mobserv.inputfocus && mobserv.inputfocus.data('sectionscroll')) mobserv.inputfocus.closest('.view').find('.section').scrollTop(mobserv.inputfocus.data('sectionscroll'));
+				if(mobserv.inputfocus && mobserv.inputfocus.data('disablescroll')){
+					cordova.plugins.Keyboard.disableScroll(true);
+					disableScroll = true;
+				} else {
+					cordova.plugins.Keyboard.disableScroll(false);
+					disableScroll = false;
+				}
+				if(mobserv.inputfocus && mobserv.inputfocus.data('hideaccessory')){
+					cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
+					hideKeyboardAccessoryBar = true;
+				} else {
+					cordova.plugins.Keyboard.hideKeyboardAccessoryBar(false);
+					hideKeyboardAccessoryBar = false;
+				}
+				mobserv.log({
+					name : 'native.keyboardshow',
+					message : 'keyboard has shown',
+					detail : 'disableScroll:'+((disableScroll)?'true':'false')+', hideKeyboardAccessoryBar:'+((hideKeyboardAccessoryBar)?'true':'false'),
+				});	
 			});
 		},
 		close  : function(){
-			if (cordova && cordova.plugins && cordova.plugins.Keyboard) cordova.plugins.Keyboard.close();	
+			if (cordova && cordova.plugins && cordova.plugins.Keyboard) cordova.plugins.Keyboard.close();
+			mobserv.log({
+				name : 'native.keyboardclose',
+				message : 'keyboard has closed',
+			});	
 		}
 	},
 	auth : {
@@ -1133,6 +1168,7 @@ var mobserv = {
 	},
 	services : {
 		autogettimeout : null,
+		autogetspeed : 1,
 		list : {},
 		command : {
 			viewBack : function(){
@@ -1238,15 +1274,19 @@ var mobserv = {
 				}
 			);
 		},
+		autoreset : function(){
+			if(mobserv.services.autogettimeout) clearTimeout(mobserv.services.autogettimeout);
+			mobserv.services.autoget();
+		},
 		autoget : function(){
 			var server = mobserv.server.online['service'];
 			mobserv.log({
 				name : 'services.autoget',
-				message : 'service autoget scheduled in '+server.interval+' seconds',
+				message : 'service autoget scheduled in '+(server.interval*mobserv.services.autogetspeed)+' seconds',
 			});
 			mobserv.services.autogettimeout = setTimeout(function(){
 				mobserv.services.get();
-			},(server.interval)?server.interval*1000:300000);
+			},(server.interval)?server.interval*1000*mobserv.services.autogetspeed:300000*mobserv.services.autogetspeed);
 		},
 		get : function(ondone){
 			mobserv.log({
@@ -1724,6 +1764,7 @@ var mobserv = {
 	},
 	talkies : {
 		autogettimeout : null,
+		autogetspeed : 1,
 		init : function(ondone){
 			mobserv.log({
 				name : 'talkies.init',
@@ -1765,15 +1806,19 @@ var mobserv = {
 				}
 			);
 		},
+		autoreset : function(){
+			if(mobserv.talkies.autogettimeout) clearTimeout(mobserv.talkies.autogettimeout);
+			mobserv.talkies.autoget();
+		},
 		autoget : function(){
 			var server = mobserv.server.online['service'];
 			mobserv.log({
 				name : 'talkies.autoget',
-				message : 'talkies autoget scheduled in '+server.interval+' seconds',
+				message : 'talkies autoget scheduled in '+(server.interval*mobserv.talkies.autogetspeed)+' seconds',
 			});
 			mobserv.talkies.autogettimeout = setTimeout(function(){
 				mobserv.talkies.get();
-			},(server.interval)?server.interval*1000:300000);
+			},(server.interval)?server.interval*1000*mobserv.talkies.autogetspeed:300000*mobserv.talkies.autogetspeed);
 		},
 		get : function(ondone){
 			mobserv.log({
@@ -1808,6 +1853,7 @@ var mobserv = {
 					$this.remove();
 				});
 				var $Rtalks = $Rroot.children('talk');
+				var $view = mobserv.nav.getCurrentView('messages');
 				if ($Rtalks.length){
 					var totalinmark = 0;
 					if (talkies.xml){
@@ -1831,10 +1877,14 @@ var mobserv = {
 								$Lroot.append($Rtalk);
 								var $Ltalk = $Lroot.find('talk[id="'+tid+'"]');
 							}
-							var mark = $Rmsgs.length + (($Ltalk.attr('mark'))?parseInt($Ltalk.attr('mark')):0);
+							var mark = ($view.length && $view.data('id') == tid) ? 0 : $Rmsgs.length + (($Ltalk.attr('mark'))?parseInt($Ltalk.attr('mark')):0);
 							$Ltalk.attr('mark',mark+'');
 							totalinmark += mark;
 							mobserv.talkies.parsedom('talkies',tid);
+							if ($view.length && $view.data('id') == tid) {
+								mobserv.talkies.parsedom('messages',tid); 
+								if (mobserv.inputfocus) $view.find('.section').scrollTop(999999999);
+							} 
 						});
 					} else {
 						talkies.xml = response;	
@@ -1845,10 +1895,14 @@ var mobserv = {
 							var tid = $Rtalk.attr('id');
 							var $Ltalk = $Lroot.find('talk[id="'+tid+'"]');
 							var $Lmsgs = $Ltalk.find('message');
-							var mark = $Lmsgs.length;
+							var mark = ($view.length && $view.data('id') == tid) ? 0 : $Lmsgs.length;
 							$Ltalk.attr('mark',mark+'');
 							totalinmark += mark;
 							mobserv.talkies.parsedom('talkies',tid);
+							if ($view.length && $view.data('id') == tid) {
+								mobserv.talkies.parsedom('messages',tid); 
+								if (mobserv.inputfocus) $view.find('.section').scrollTop(999999999);
+							} 
 						});
 					}
 					$Lroot.attr('mark',totalinmark);
@@ -1901,10 +1955,8 @@ var mobserv = {
 			if (typeof data == 'object'){
 				data.cid = client.code;
 				data.sid = user.session;
-				if(mobserv.talkies.autogettimeout) clearTimeout(mobserv.talkies.autogettimeout);
 				mobserv.server.call('service',data,function(response){
 					talkies.response = response;
-					mobserv.talkies.autoget();
 					var $Rxml = $(response);
 					var $Rroot = $Rxml.find('mobserv');
 					if ($Rroot.length == 0){
@@ -2032,7 +2084,6 @@ var mobserv = {
 					$dom.list.find('.link[data-id="'+$s.attr('id')+'"]').parent().remove();
 					if(mark) $dom.list.prepend($html);
 					else $dom.list.append($html);
-					
 					var $markserv = $dom.list.find('.link[data-id="'+$s.attr('id')+'"] mark');
 					if (mark > 0){
 						$markserv.show().transition({opacity:1,scale:1.5},300,function(){ $markserv.text(mark).transition({scale:1},200); });
@@ -2096,6 +2147,9 @@ var mobserv = {
 		getCurrentId : function(){
 			var $current = $('.view.current:last');
 			return $current.attr('id');
+		},
+		getCurrentView : function(viewid){
+			return $(((viewid)?'#'+viewid:'.view')+'.current:last');
 		},
 		toView : function($view){
 			var $current = $('.view.current:last');
