@@ -113,7 +113,6 @@
                 <ul class="grid">
                     <li><a data-view="servicelist" data-direction="forward" class="unmarked"><strong class="icon-package5"></strong><span>Serviços</span><mark></mark></a></li>
                     <li><a data-view="talkies" data-direction="forward" class="unmarked"><strong class="icon-paperplane"></strong><span>Mensagens</span><mark class="blue"></mark></a></li>
-                    <li><a data-view="user" data-direction="forward"><strong class="icon-user2"></strong><span>Usuário</span></a></li>
                     <li><a data-view="configs" data-direction="forward"><strong class="icon-cogs"></strong><span>Configurações</span></a></li>
                 </ul>
              </div>
@@ -198,13 +197,8 @@
             <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
         </header>
         <section class="section forchat">
-        	<div class="pullinfo"><strong>Solte para atualizar</strong></div>
-            <div class="pullarea">
-            	<div style="display:table; height:100%;">
-                    <div style="display:table-cell; vertical-align:bottom">
-                        <div class="chat"></div>
-                    </div>
-                </div>
+            <div style="display:table; height:100%; width:100%;">
+               <div class="chat" style="display:table-cell; vertical-align:bottom"></div>
             </div>
         </section>
         <form class="composer" action="">
@@ -219,13 +213,90 @@
         </header>
         <section class="section">
             <ul class="grid">
+                <li><a data-view="user" data-direction="forward"><strong class="icon-user2"></strong><span>Usuário</span></a></li>
+                <li><a data-view="battery" data-direction="forward"><strong class="icon-battery"></strong><span>Energia</span></a></li>
                 <li><a data-view="connectioninfo" data-direction="forward"><strong class="icon-network"></strong><span>Info de Conexão</span></a></li>
-                <li><a data-view="map" data-direction="forward" data-source="gps"><strong class="icon-map3"></strong><span>Geoposição</span></a></li>
                 <li><a data-view="servers" data-direction="forward"><strong class="icon-layers"></strong><span>Servidores</span></a></li>
+                <li><a data-view="map" data-direction="forward" data-source="gps"><strong class="icon-map3"></strong><span>Geoposição</span></a></li>
                 <li class="fordebug"><a data-view="data" data-direction="forward"><strong class="icon-code"></strong><span>Fonte de Dados</span></a></li>
                 <li class="fordebug"><a data-view="log" data-direction="foreground" class="unmarked"><strong class="icon-history"></strong><span>Log</span><mark>86</mark></a></li>
                 <li><a data-view="about" data-direction="forward"><strong class="icon-bald22"></strong><span>Sobre o Mobserv</span></a></li>
             </ul>
+        </section>
+    </div>
+    <div class="view" id="user">
+        <header class="header" id="header">
+            <h1 class="icon-user2">Usuário</h1>
+            <a class="item l1 menu icon-menu"></a>
+            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
+        </header>
+        <section class="section"><br>
+       		<div class="bigicon icon-user2" style="color:#09F;"></div>
+            <h2>Dados do Usuário Mobserv</h2>
+            <div class="block gray" style="border-top:#DDD solid 1px;">
+                <table width="100%" border="0" cellspacing="6" cellpadding="0">
+                  <tr>
+                    <td>Login</td>
+                    <td><strong id="login">&nbsp;</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Nome</td>
+                    <td><strong id="uname">&nbsp;</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Sessão Autenticada</td>
+                    <td><small><strong id="session">&nbsp;</strong></small></td>
+                  </tr>
+                </table>
+            </div>
+            <h2>Dados do Cliente Mobserv</h2>
+            <div class="block gray" style="border-top:#DDD solid 1px;">
+                <table width="100%" border="0" cellspacing="6" cellpadding="0">
+                  <tr>
+                    <td>Código</td>
+                    <td><strong id="code">&nbsp;</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Nome</td>
+                    <td><strong id="cname">&nbsp;</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Instalação</td>
+                    <td><small><strong id="install">&nbsp;</strong></small></td>
+                  </tr>
+                  <tr>
+                    <td>Licença Autorizada</td>
+                    <td><strong id="license">&nbsp;</strong></td>
+                  </tr>
+                </table>
+            </div>
+        </section>
+    </div>
+    <div class="view" id="battery">
+        <header class="header" id="header">
+            <h1 class="icon-bald22">Energia</h1>
+            <a class="item l1 menu icon-menu"></a>
+            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
+        </header>
+        <section class="section"><br>
+       		<div class="bigicon icon-battery"></div>
+            <h2>API Battery</h2>
+            <div class="block gray" style="border-top:#DDD solid 1px;">
+                <table width="100%" border="0" cellspacing="6" cellpadding="0">
+                  <tr>
+                    <td>Nível de Bateria</td>
+                    <td><strong id="level">&nbsp;</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Status do Carregamento</td>
+                    <td><strong id="plugged">&nbsp;</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Modo Economico</td>
+                    <td><strong id="idle">&nbsp;</strong></td>
+                  </tr>
+                </table>
+            </div>
         </section>
     </div>
     <div class="view" id="about">
@@ -257,7 +328,7 @@
                   </tr>
                   <tr>
                     <td>UUID Hash</td>
-                    <td><strong id="uuid">&nbsp;</strong></td>
+                    <td><small><strong id="uuid">&nbsp;</strong></small></td>
                   </tr>
                   <tr>
                     <td>Versão do SO</td>
@@ -413,6 +484,39 @@
               <tr>
                 <td>Timestamp</td>
                 <td><strong id="gpsstp">&nbsp;</strong></td>
+              </tr>
+            </table>
+        </section>
+        <section class="section jobdata">
+        	<h2 style="text-align:center;">Dados da Tarefa</h2>
+        	<table width="95%" border="0" cellspacing="1" cellpadding="1" style="margin:0 0 8px 10px;">
+              <tr>
+                <td width="25%">ID</td>
+                <td><strong id="jobid">&nbsp;</strong></td>
+              </tr>
+              <tr>
+                <td width="25%">Nome</td>
+                <td><strong id="jobname">&nbsp;</strong></td>
+              </tr>
+              <tr>
+                <td width="25%">Tipo</td>
+                <td><strong id="jobtype">&nbsp;</strong></td>
+              </tr>
+              <tr>
+                <td width="25%">Status</td>
+                <td><strong id="jobstatus">&nbsp;</strong></td>
+              </tr>
+              <tr>
+                <td width="25%">Endereço</td>
+                <td><a><strong id="jobarrd">&nbsp;</strong></a></td>
+              </tr>
+              <tr>
+                <td width="25%">Geoposição</td>
+                <td><a><strong id="jobgeo">&nbsp;</strong></a></td>
+              </tr>
+              <tr>
+                <td width="25%">Observações</td>
+                <td><strong id="jobobs">&nbsp;</strong></td>
               </tr>
             </table>
         </section>

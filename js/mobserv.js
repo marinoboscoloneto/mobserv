@@ -376,7 +376,7 @@ var mobserv = {
 				mobserv.device.data = device;
 				mobserv.log({
 					type : 'notice',
-					name : 'device.onready',
+					name : 'device.init',
 					message : 'device '+mobserv.device.data.platform+' is ready',
 				});	
 			} else {
@@ -399,6 +399,237 @@ var mobserv = {
 				$dom.find('#platform').html(mobserv.device.data.platform); 		
 				$dom.find('#uuid').html(mobserv.device.data.uuid); 
 				$dom.find('#version').html(mobserv.device.data.version); 
+			}
+		}
+	},
+	battery : {
+		level : 100,
+		plugged : true,
+		idle : true,
+		parsedom : function(){
+			var $dom = $("#battery");
+			if (mobserv.battery.level <= 10){
+				$dom.find('.bigicon').css('color','#F10');
+				$dom.find('#level').css('color','#F10');
+			} else if (mobserv.battery.level <= 20){
+				$dom.find('.bigicon').css('color','#F70');
+				$dom.find('#level').css('color','#F70');
+			} else {
+				$dom.find('.bigicon').css('color','#09F');
+				$dom.find('#level').css('color','#09F');
+			}
+			$dom.find('#level').html(mobserv.battery.level+'%'); 		
+			$dom.find('#plugged').html(mobserv.battery.plugged ? 'Conectado' : 'Não Conectado'); 		
+			$dom.find('#idle').html(mobserv.battery.idle ? 'Normal' : 'Avançado'); 		
+		},
+		init : function(){
+			window.addEventListener("batterycritical", function(info){
+				mobserv.battery.level = info.level;
+				mobserv.battery.plugged = info.isPlugged;
+				if (!info.isPlugged){
+					mobserv.battery.idle = false;
+					mobserv.notify.open({
+						type : 'alert',
+						name : 'Nível crítico de bateria',
+						message : 'Recarregue seu dispositivo para continuar usando o mobserv'
+					});	
+					mobserv.notification.open({
+						title : 'Nível crítico de bateria',
+						text : 'Recarregue seu dispositivo para continuar usando o mobserv',
+					});
+				} else {
+					mobserv.battery.idle = true;
+				}
+				mobserv.battery.parsedom();
+			}, false);
+			window.addEventListener("batterylow", function(info){
+				mobserv.battery.level = info.level;
+				mobserv.battery.plugged = info.isPlugged;
+				if (!info.isPlugged){
+					mobserv.battery.idle = false;
+					mobserv.notify.open({
+						type : 'alert',
+						name : 'Pouca bateria',
+						message : 'Recarregue seu dispositivo para continuar usando o mobserv'
+					});	
+					mobserv.notification.open({
+						title : 'Pouca bateria',
+						text : 'Recarregue seu dispositivo para continuar usando o mobserv',
+					});
+				} else {
+					mobserv.battery.idle = true;
+				}
+				mobserv.battery.parsedom();
+			}, false);
+			window.addEventListener("batterystatus", function(info){
+				mobserv.battery.level = info.level;
+				mobserv.battery.plugged = info.isPlugged;
+				mobserv.battery.idle = true;
+				mobserv.battery.parsedom();
+			}, false);
+			mobserv.log({
+				type : 'notice',
+				name : 'battery.init',
+				message : 'battery api is loaded'
+			});	
+			mobserv.battery.parsedom();
+		}
+	},
+	keyboard : {
+		visible : false,
+		init : function(){
+			window.addEventListener('native.keyboardshow', function(event){
+				var disableScroll, hideKeyboardAccessoryBar, $view = mobserv.nav.getCurrentView();
+				if(mobserv.inputfocus && mobserv.inputfocus.data('documentscroll')){
+					$(document).scrollTop(mobserv.inputfocus.data('documentscroll'));
+				}
+				if(mobserv.inputfocus && mobserv.inputfocus.data('sectionscroll')){
+					$view.find('.section').scrollTop(mobserv.inputfocus.data('sectionscroll'));
+				}
+				if(mobserv.inputfocus && mobserv.inputfocus.data('hideaccessory')){
+					cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
+					hideKeyboardAccessoryBar = true;
+				} else {
+					cordova.plugins.Keyboard.hideKeyboardAccessoryBar(false);
+					hideKeyboardAccessoryBar = false;
+				}
+				if(mobserv.inputfocus && mobserv.inputfocus.data('disablescroll')){
+					cordova.plugins.Keyboard.disableScroll(true);
+					$view.height($view.height()-event.keyboardHeight);
+					disableScroll = true;
+				} else {
+					cordova.plugins.Keyboard.disableScroll(false);
+					$view.height('100%');
+					disableScroll = false;
+				}
+				mobserv.log({
+					name : 'native.keyboardshow',
+					message : 'keyboard has shown',
+					detail : 'disableScroll: '+((disableScroll)?'true':'false')+', hideKeyboardAccessoryBar: '+((hideKeyboardAccessoryBar)?'true':'false'),
+				});
+				mobserv.keyboard.visible = true;
+			});
+			window.addEventListener('native.keyboardhide', function(event){
+				var $view = mobserv.nav.getCurrentView();
+				cordova.plugins.Keyboard.disableScroll(false);
+				$view.height('100%');
+				mobserv.log({
+					name : 'native.keyboardhide',
+					message : 'keyboard has hidden',
+				});	
+				mobserv.keyboard.visible = false;
+			});
+			mobserv.log({
+				type : 'notice',
+				name : 'keyboard.init',
+				message : 'keyboard api is loaded'
+			});	
+		},
+		close  : function(){
+			if (cordova && cordova.plugins && cordova.plugins.Keyboard && cordova.plugins.Keyboard.isVisible){
+				cordova.plugins.Keyboard.close();
+			}
+		}
+	},
+	backbutton : {
+		init : function(){
+			document.addEventListener("backbutton", function(event){
+				event.preventDefault();
+				if (mobserv.history.length > 0)	$(".view.current .back, .view.current .close").trigger("tap");
+				else mobserv.nav.foreground('confirmexit');
+			}, false);
+			mobserv.log({
+				type : 'notice',
+				name : 'backbutton.init',
+				message : 'backbutton api is loaded'
+			});	
+		}
+	},
+	insomnia : {
+		init : function(){
+			if (window.plugins.insomnia && window.plugins.insomnia.keepAwake){
+				window.plugins.insomnia.keepAwake(
+					function(){
+						mobserv.log({
+							type : 'notice',
+							name : 'insomnia.keepAwake',
+							message : 'the device will be awake for a life'
+						});
+					},
+					function(){
+						mobserv.log({
+							type : 'error',
+							name : 'insomnia.keepAwake',
+							message : 'the device will sleep anyway'
+						});
+					}
+				);
+				mobserv.log({
+					type : 'notice',
+					name : 'insomnia.init',
+					message : 'insomnia api is loaded'
+				});	
+			}
+		}
+	},
+	bgmode : {
+		active : false,
+		init : function(){
+			if (cordova && cordova.plugins && cordova.plugins.backgroundMode){
+				var bgmodeInt, bgmodeHops = 0;
+				cordova.plugins.backgroundMode.enable();
+				cordova.plugins.backgroundMode.onactivate = function(){
+					bgmodeHops = 0;
+					mobserv.bgmode.active = true;
+					mobserv.services.autogetspeed = 3;
+					mobserv.talkies.autogetspeed = 3;
+					mobserv.geolocation.autopostionspeed = 10;
+					mobserv.services.autoreset();
+					mobserv.talkies.autoreset();
+					mobserv.geolocation.autoPosition();
+					mobserv.log({
+						type : 'info',
+						name : 'backgroundMode.onactivate',
+						message : 'the background mode is active'
+					});
+					bgmodeInt = setInterval(function(){
+						bgmodeHops++;
+						mobserv.log({
+							name : 'backgroundMode.onactivate',
+							message : 'the background mode is rolling',
+							detail : 'hops: '+bgmodeHops+' minutes'
+						});
+					},60000);
+				}
+				cordova.plugins.backgroundMode.ondeactivate = function(){
+					mobserv.bgmode.active = false;
+					mobserv.services.autogetspeed = 1;
+					mobserv.talkies.autogetspeed = 1;
+					mobserv.geolocation.autopostionspeed = 1;
+					mobserv.services.autoreset();
+					mobserv.talkies.autoreset();
+					mobserv.geolocation.autoPosition();
+					mobserv.log({
+						type : 'info',
+						name : 'backgroundMode.ondeactivate',
+						message : 'the background mode is inactive'
+					});
+					clearInterval(bgmodeInt);
+				}
+				cordova.plugins.backgroundMode.onfailure  = function(){
+					mobserv.bgmode.active = false;
+					mobserv.log({
+						type : 'error',
+						name : 'backgroundMode.onfailure',
+						message : 'the background mode trigger error'
+					});
+					clearInterval(bgmodeInt);
+				}
+				mobserv.log({
+					type : 'notice',
+					name : 'bgmode.init',
+					message : 'bgmode api is loaded'
+				});	
 			}
 		}
 	},
@@ -558,15 +789,16 @@ var mobserv = {
 			$dom.find('#gpsstp').html(mobserv.geolocation.position.timestamp); 
 		},
 		autoPosition : function(options){
+			var milis = (mobserv.battery.idle) ? 60000*mobserv.geolocation.autopostionspeed : 600000;
 			options = options||{};
 			mobserv.geolocation.getPosition(options);
 			if(mobserv.geolocation.interval) clearInterval(mobserv.geolocation.interval);
 			mobserv.geolocation.interval = setInterval(function(){
 				mobserv.geolocation.getPosition(options);
-			},60000*mobserv.geolocation.autopostionspeed);
+			}, milis);
 			mobserv.log({
 				name : 'geolocation.autoPosition',
-				message : 'auto scheduled position started for every '+(60000*mobserv.geolocation.autopostionspeed)+' seconds',
+				message : 'auto scheduled position started for every '+(milis/1000)+' seconds',
 			});	
 		},
 		getPosition : function(options){
@@ -811,51 +1043,25 @@ var mobserv = {
 			}
 		},
 	},
-	keyboard : {
-		init : function(){
-			window.addEventListener('native.keyboardshow', function(event){
-				var disableScroll, hideKeyboardAccessoryBar;
-				if(mobserv.inputfocus && mobserv.inputfocus.data('documentscroll')) $(document).scrollTop(mobserv.inputfocus.data('documentscroll'));
-				if(mobserv.inputfocus && mobserv.inputfocus.data('sectionscroll')) mobserv.inputfocus.closest('.view').find('.section').scrollTop(mobserv.inputfocus.data('sectionscroll'));
-				if(mobserv.inputfocus && mobserv.inputfocus.data('disablescroll')){
-					cordova.plugins.Keyboard.disableScroll(true);
-					disableScroll = true;
-				} else {
-					cordova.plugins.Keyboard.disableScroll(false);
-					disableScroll = false;
-				}
-				if(mobserv.inputfocus && mobserv.inputfocus.data('hideaccessory')){
-					cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
-					hideKeyboardAccessoryBar = true;
-				} else {
-					cordova.plugins.Keyboard.hideKeyboardAccessoryBar(false);
-					hideKeyboardAccessoryBar = false;
-				}
-				mobserv.log({
-					name : 'native.keyboardshow',
-					message : 'keyboard has shown',
-					detail : 'disableScroll:'+((disableScroll)?'true':'false')+', hideKeyboardAccessoryBar:'+((hideKeyboardAccessoryBar)?'true':'false'),
-				});	
-			});
-		},
-		close  : function(){
-			if (cordova && cordova.plugins && cordova.plugins.Keyboard) cordova.plugins.Keyboard.close();
-			mobserv.log({
-				name : 'native.keyboardclose',
-				message : 'keyboard has closed',
-			});	
-		}
-	},
 	auth : {
 		clientdom : function(){
 			var client = mobserv.globals.client;
 			$('#formuser .client').text(client.name);
 			$('#nav .client').text(client.name);
+			var $dom = $('#user');
+			$dom.find('#code').text(client.code);
+			$dom.find('#cname').text(client.name);
+			$dom.find('#install').text(client.install);
+			$dom.find('#license').text(client.license);
 		},
 		userdom : function(){
 			var user = mobserv.globals.user;
 			$('#footer .user strong').text(user.login);
 			$('#footer .user small').text(user.name);
+			var $dom = $('#user');
+			$dom.find('#login').text(user.login);
+			$dom.find('#uname').text(user.name);
+			$dom.find('#session').text(user.session);
 		},
 		logout : function(what){
 			var client = mobserv.globals.client;
@@ -1280,13 +1486,14 @@ var mobserv = {
 		},
 		autoget : function(){
 			var server = mobserv.server.online['service'];
+			var milis = (mobserv.battery.idle) ? server.interval*1000*mobserv.services.autogetspeed : 1200000;
 			mobserv.log({
 				name : 'services.autoget',
-				message : 'service autoget scheduled in '+(server.interval*mobserv.services.autogetspeed)+' seconds',
+				message : 'service autoget scheduled in '+(milis/1000)+' seconds',
 			});
 			mobserv.services.autogettimeout = setTimeout(function(){
 				mobserv.services.get();
-			},(server.interval)?server.interval*1000*mobserv.services.autogetspeed:300000*mobserv.services.autogetspeed);
+			}, milis);
 		},
 		get : function(ondone){
 			mobserv.log({
@@ -1422,6 +1629,7 @@ var mobserv = {
 						services.updated = true;
 						var str = new XMLSerializer().serializeToString(services.xml);
 						mobserv.sqlite.query({query : 'update sl_services set xml = ? where code = "'+client.code+'" and login = "'+user.login+'"', statement : [str]});
+						if (navigator.vibrate) navigator.vibrate(100);
 					} else {
 						services.updated = false;	
 					}
@@ -1812,13 +2020,14 @@ var mobserv = {
 		},
 		autoget : function(){
 			var server = mobserv.server.online['service'];
+			var milis = (mobserv.battery.idle) ? server.interval*1000*mobserv.talkies.autogetspeed : 1200000;
 			mobserv.log({
 				name : 'talkies.autoget',
-				message : 'talkies autoget scheduled in '+(server.interval*mobserv.talkies.autogetspeed)+' seconds',
+				message : 'talkies autoget scheduled in '+(milis/1000)+' seconds',
 			});
 			mobserv.talkies.autogettimeout = setTimeout(function(){
 				mobserv.talkies.get();
-			},(server.interval)?server.interval*1000*mobserv.talkies.autogetspeed:300000*mobserv.talkies.autogetspeed);
+			}, milis);
 		},
 		get : function(ondone){
 			mobserv.log({
@@ -1854,6 +2063,7 @@ var mobserv = {
 				});
 				var $Rtalks = $Rroot.children('talk');
 				var $view = mobserv.nav.getCurrentView('messages');
+				var $section = ($view.length) ? $view.find('.section') : null;
 				if ($Rtalks.length){
 					var totalinmark = 0;
 					if (talkies.xml){
@@ -1882,9 +2092,20 @@ var mobserv = {
 							totalinmark += mark;
 							mobserv.talkies.parsedom('talkies',tid);
 							if ($view.length && $view.data('id') == tid) {
-								mobserv.talkies.parsedom('messages',tid); 
-								if (mobserv.inputfocus) $view.find('.section').scrollTop(999999999);
-							} 
+								mobserv.talkies.parsedom('messages',tid);
+								if (mobserv.inputfocus || $section.hasClass('scrollend')){
+									$section.scrollTop(999999999);
+								}
+							}
+							if (mobserv.bgmode.active && $Rmsgs.length){
+								$Rmsgs.each(function(){
+									$this = $(this);
+									mobserv.notification.open({
+										title : $Rtalk.attr('name'),
+										text : $this.attr('sender')+': '+$this.text(),
+									});
+								});
+							}
 						});
 					} else {
 						talkies.xml = response;	
@@ -1901,9 +2122,27 @@ var mobserv = {
 							mobserv.talkies.parsedom('talkies',tid);
 							if ($view.length && $view.data('id') == tid) {
 								mobserv.talkies.parsedom('messages',tid); 
-								if (mobserv.inputfocus) $view.find('.section').scrollTop(999999999);
+								if (mobserv.inputfocus || $section.hasClass('scrollend')){
+									$section.scrollTop(999999999);
+								}
 							} 
+							if (mobserv.bgmode.active && $Rmsgs.length){
+								$Rmsgs.each(function(){
+									$this = $(this);
+									mobserv.notification.open({
+										title : $Rtalk.attr('name'),
+										text : $this.attr('sender')+': '+$this.text(),
+									});
+								});
+							}
 						});
+					}
+					if (!$view.length){
+						mobserv.notify.open({
+							type : 'info',
+							name : 'Mensagens',
+							message : 'Você possui <b>'+totalinmark+'</b> novas mensagens'
+						});	
 					}
 					$Lroot.attr('mark',totalinmark);
 					var str = new XMLSerializer().serializeToString(talkies.xml);
@@ -1986,6 +2225,7 @@ var mobserv = {
 							$Ltalk.append($Rmsg);
 							var str = new XMLSerializer().serializeToString(talkies.xml);
 							mobserv.sqlite.query({query : 'update sl_services set xml = ? where code = "'+client.code+'" and login = "'+user.login+'"', statement : [str]});
+							if (navigator.vibrate) navigator.vibrate(100);
 							if (ondone) ondone();
 						} else {
 							if(onerror) onerror('local talk node not found');
@@ -2041,6 +2281,7 @@ var mobserv = {
 			mobserv.talkies.cleardom();
 			var str = new XMLSerializer().serializeToString(talkies.xml);
 			mobserv.sqlite.query({query : 'update sl_talkies set xml = ? where code = "'+client.code+'" and login = "'+user.login+'"', statement : [str]});
+			if (navigator.vibrate) navigator.vibrate(100);
 		},
 		parsedom : function(type,id){
 			if (!type){
@@ -2265,7 +2506,7 @@ var mobserv = {
 				mobserv.log({
 					type : 'notice',
 					name : 'notification.init',
-					message : 'notification permissio: '+granted,
+					message : 'notification permission: '+granted,
 				});
 			});
 			cordova.plugins.notification.local.on("trigger", function (n){
@@ -2279,7 +2520,8 @@ var mobserv = {
 			mobserv.notification.inited = true;
 		},
 		open : function(options,onclick,ontrigger){
-			if (!mobserv.notification.inited) return;
+			if (navigator.vibrate) navigator.vibrate(300);
+			if (!mobserv.notification.inited || !mobserv.bgmode.active) return;
 			var id = (options.id) ? options.id : mobserv.notification.id;
 			cordova.plugins.notification.local.schedule({
 				id: id,
@@ -2298,12 +2540,13 @@ var mobserv = {
 		list : [],
 		exec : function(){
 			if (mobserv.notify.list.length){
+				if (navigator.vibrate) navigator.vibrate(300);
 				var notify = mobserv.notify.list[0];
 				var $notify = $('#notify');
 				$notify.find('strong').html((notify.name)?notify.name:'');
 				$notify.find('span').html((notify.message)?notify.message:'');
 				$notify.find('small').html((notify.detail)?notify.detail:'');
-				$notify.removeClass('error alert info notice').addClass((notify.type)?notify.type:'').show().css({transform:'translate(0px, 40px);', opacity:0}).transition({ y:0, opacity:1 }, 500, function(){
+				$notify.removeClass('error alert info notice').addClass((notify.type)?notify.type:'').show().css({transform:'translate(0px, 40px);', opacity:0}).transition({ y:0, opacity:1 }, 300, function(){
 					notify.timeout = setTimeout(function(){
 						mobserv.notify.close();
 					},notify.duration);
@@ -2318,13 +2561,14 @@ var mobserv = {
 			var notify = mobserv.notify.list[0];
 			var $notify = $('#notify');
 			if(notify.timeout) clearTimeout(notify.timeout);
-			$notify.transition({ y:'40px', opacity:0 }, 500, function(){
+			$notify.transition({ y:'40px', opacity:0 }, 300, function(){
 				$notify.hide();
 				mobserv.notify.list.shift();
 				mobserv.notify.exec();
 			});
 		},
 		open : function(notify){
+			if(mobserv.bgmode.active) return false;
 			notify.id = $.md5(notify.type+notify.name+notify.message);
 			notify.duration = notify.duration || 3000;
 			notify.timeout = null;
@@ -2342,6 +2586,7 @@ var mobserv = {
 		}
 	},
 	'log' : function(obj){
+		if (obj.type == 'error' && navigator.vibrate) navigator.vibrate(500);
 		if (mobserv.debug.active || (!mobserv.debug.active && obj.type == 'error')){
 			var html = ''+
 			'<div class="logline '+((obj.type)?obj.type:'')+'"><b class="date">['+mobserv.now()+' '+Date.now()+']</b> '+
@@ -2359,6 +2604,7 @@ var mobserv = {
 		}
 	},
 	unlog : function(){
+		if (navigator.vibrate) navigator.vibrate(100);
 		$("#log .section").html('');
 		var $markfoot = $('#footer [data-view="log"] mark');
 		if ($markfoot.parent().hasClass('marked')) $markfoot.transition({opacity:1,scale:1.5},200,function(){ $markfoot.transition({scale:.1,opacity:0},400).parent().removeClass('marked'); });

@@ -3,7 +3,7 @@
         xmlns:gap   = "http://phonegap.com/ns/1.0"
         id          = "com.sourcelab.mobserv"
         versionCode = "10" 
-        version     = "1.0.30" >
+        version     = "1.0.31" >
     <name>Mobserv</name>
     <description>
         Mobile Services Application for SourceLab Systems
@@ -25,18 +25,19 @@
 	<preference name="android-minSdkVersion"		value="7" />
 	<preference name="android-installLocation"		value="auto" />
 	
+	<gap:plugin name="org.apache.cordova.device" version="0.2.12" />
+	<gap:plugin name="org.apache.cordova.device-orientation" version="0.3.9" />
 	<gap:plugin name="org.apache.cordova.battery-status" version="0.2.11" />
 	<gap:plugin name="org.apache.cordova.camera" version="0.3.2" />
 	<gap:plugin name="org.apache.cordova.console" version="0.2.11" />
-	<gap:plugin name="org.apache.cordova.device" version="0.2.12" />
-	<gap:plugin name="org.apache.cordova.device-orientation" version="0.3.9" />
-	<gap:plugin name="org.apache.cordova.file" version="1.3.1" />
-	<gap:plugin name="org.apache.cordova.file-transfer" version="0.4.6" />
+	<!--<gap:plugin name="org.apache.cordova.file" version="1.3.1" />-->
+	<!--<gap:plugin name="org.apache.cordova.file-transfer" version="0.4.6" />-->
 	<gap:plugin name="org.apache.cordova.geolocation" version="0.3.10" />
-	<gap:plugin name="org.apache.cordova.media-capture" version="0.3.3" />
+	<!--<gap:plugin name="org.apache.cordova.media-capture" version="0.3.3" />-->
 	<gap:plugin name="org.apache.cordova.network-information" version="0.2.12" />
 	<gap:plugin name="org.apache.cordova.splashscreen" version="0.3.4" />
 	<gap:plugin name="org.apache.cordova.vibration" version="0.3.11" />
+	<gap:plugin name="uk.co.workingedge.phonegap.plugin.launchnavigator" source="plugins.cordova.io" />
 	<gap:plugin name="de.appplant.cordova.plugin.background-mode" version="0.6.4" />
 	<gap:plugin name="de.appplant.cordova.plugin.local-notification" version="0.8.1" />
 	<gap:plugin name="uk.co.whiteoctober.cordova.appversion" version="0.1.4" />
@@ -67,11 +68,7 @@
     <gap:splash src="res/screen/ios/screen-ipad-portrait.png"           gap:platform="ios"     width="768" height="1024" />
     <gap:splash src="res/screen/ios/screen-ipad-landscape.png"          gap:platform="ios"     width="1024" height="768" />
     <gap:splash src="res/screen/windows-phone/screen-portrait.jpg"      gap:platform="winphone" />
-	
-    <gap:config-file platform="ios" parent="CFBundleShortVersionString">
-    <string>100</string>
-    </gap:config-file>
-	
+		
 	<feature name="Keyboard">
 		<param name="ios-package" value="IonicKeyboard" onload="true" />
 	</feature>	

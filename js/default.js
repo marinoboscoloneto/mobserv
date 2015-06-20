@@ -304,7 +304,7 @@ $(function(){
 				}).find(".header, .section").transition({ opacity:1 }, 300);
 			}
 		})
-		.on('touchstart','#messages .chat',function(){
+		.on('tap','#messages .chat',function(){
 			mobserv.keyboard.close();
 		})
 		/*
@@ -527,6 +527,7 @@ $(function(){
 			var $this = $(this);
 			var $locbtn = $this.find('.item.location');
 			var $mapdata = $this.find('.mapdata');
+			var $jobdata = $this.find('.jobdata');
 			var id = $this.data('id');
 			var src = $this.data('source');
 			var markersvalue = [];
@@ -539,10 +540,12 @@ $(function(){
 			if (id && src == 'joblist'){
 				$jobs = $(services.xml).find('service[id="'+id+'"] > job');
 				$mapdata.hide();
+				$jobdata.hide();
 			} else if (id && src == 'jobdetails'){
 				services = mobserv.globals.services;
 				$jobs = $(services.xml).find('job[id="'+id+'"]');
-				$mapdata.hide();	
+				$mapdata.hide();
+				$jobdata.hide();	
 			} else if (src == 'gps') {
 				$locbtn.addClass('hilite');	
 				$mapdata.show();
@@ -582,10 +585,10 @@ $(function(){
 								} else if (src == 'jobdetails'){
 									center = [lat,lng];
 								}
-								markersvalue.push({latLng:[lat,lng], data:job, options:{icon:icon("pic/marker-333333.png",30,30,0,0,15,15)}});
+								markersvalue.push({latLng:[lat,lng], data:job, events:{ click:function(){$('.jobdata').trigger('pick',[$this]);}}, options:{icon:icon("pic/marker-333333.png",30,30,0,0,15,15)}});
 							}
 						} else if ($location.attr('type') == 'address'){
-							markersvalue.push({address:$location.text(), data:job, options:{icon:icon("pic/marker-333333.png",30,30,0,0,15,15)}});
+							markersvalue.push({address:$location.text(), data:job, events:{ click:function(){$('.jobdata').trigger('pick',[$this]);}}, options:{icon:icon("pic/marker-333333.png",30,30,0,0,15,15)}});
 						}
 					}
 				});
@@ -658,11 +661,70 @@ $(function(){
 		})
 		.on('tap','.mapdata',function(){
 			$this = $(this);
+			var $view = $this.closest('.view');
+			$view.find('.jobdata').hide();
 			if ($this.is(':visible')) $this.hide();
 			else $this.show();
 		})
-	;
-	
+		.on('tap','.jobdata',function(){
+			$this = $(this);
+			var $view = $this.closest('.view');
+			$view.find('.mapdata').hide();
+			if ($this.is(':visible')) $this.hide();
+			else $this.show();
+		})
+		.on('pick','.jobdata',function(event,$job){
+			var $this = $(this);
+			var $view = $this.closest('.view');
+			var $table = $this.show().find('table');
+			var $layout = $job.children('layout[name="detail"]');
+			var $location = $job.children('location');
+			$view.find('.mapdata').hide();
+			$this.show();
+			if ($layout.length){
+				$table.html('');
+				$layout.each(function(){
+					var $this = $(this);
+					$table.append('<tr><td width="25%">'+$this.attr('label')+'</td><td><small><b>'+htmldecode($this.text())+'</b></small></td></tr>');
+				});
+				if ($location.length /*&& launchnavigator*/){
+					$table.append('<tr><td width="25%" colspan="2" style="text-align:center;"><br><a class="navigate">Navegar até aqui</a></td></tr>');
+					$table.find('.navigate').on('tap',function(){
+						var pos = mobserv.geolocation.position;
+						launchnavigator.navigate(
+							[pos.latitude, pos.longitude],
+							($location.attr('type') == 'geoposition') ? [$location.attr('lat'), $location.attr('lng')] : $location.text(),
+							function(){
+								mobserv.log({
+									type : 'notice',
+									name : 'launchnavigator.navigate',
+									message : 'launchnavigator has called successful',
+								});	
+							},
+							function(error){
+								mobserv.log({
+									type : 'error',
+									name : 'launchnavigator.navigate',
+									message : error,
+								});	
+							}
+						);
+					});
+				}
+			}
+			
+			$this.find('#jobid').append($job.attr('id'))
+			$this.find('#jobid').text($job.attr('id'))
+		})
+		;
+		$('.section').on('scroll',function() {
+			var $this = $(this);
+			if($this.scrollTop() + $this.innerHeight() >= this.scrollHeight) {
+				$this.addClass('scrollend');
+        	} else {
+				$this.removeClass('scrollend');	
+			}
+		});
 	
 	
 	window.addEventListener("error", function(event){
@@ -692,83 +754,21 @@ $(function(){
 	document.addEventListener("deviceready", function(){
 		mobserv.debug.on();
 		mobserv.device.init();
+		mobserv.insomnia.init();
+		mobserv.battery.init();
 		mobserv.keyboard.init();
 		mobserv.notification.init();
+		mobserv.backbutton.init();
 		mobserv.geolocation.autoPosition();
 		mobserv.sqlite.init();
 		mobserv.auth.init();
-		document.addEventListener("backbutton", function(event){
-			event.preventDefault();
-			if (mobserv.history.length > 0)	$(".view.current .back, .view.current .close").trigger("tap");
-			else mobserv.nav.foreground('confirmexit');
-		}, false);
-		window.plugins.insomnia.keepAwake(
-			function(){
-				mobserv.log({
-					type : 'notice',
-					name : 'insomnia.keepAwake',
-					message : 'the device will be awake for a life'
-				});
-			},
-			function(){
-				mobserv.log({
-					type : 'error',
-					name : 'insomnia.keepAwake',
-					message : 'the device will sleep in a while'
-				});
-			}
-		);
-		var bgmodeInt, bgmodeHops = 0;
-		cordova.plugins.backgroundMode.enable();
-		cordova.plugins.backgroundMode.onactivate = function(){
-			mobserv.services.autogetspeed = 3;
-			mobserv.talkies.autogetspeed = 3;
-			mobserv.geolocation.autopostionspeed = 10;
-			mobserv.services.autoreset();
-			mobserv.talkies.autoreset();
-			mobserv.geolocation.autoPosition();
-			mobserv.log({
-				type : 'notice',
-				name : 'backgroundMode.onactivate',
-				message : 'the background mode is active'
-			});
-			bgmodeInt = setInterval(function(){
-				bgmodeHops++;
-				mobserv.log({
-					name : 'backgroundMode.onactivate',
-					message : 'the background mode is rolling',
-					detail : 'hops: '+bgmodeHops+' minutes'
-				});
-			},60000);
-		}
-		cordova.plugins.backgroundMode.ondeactivate = function(){
-			mobserv.services.autogetspeed = 1;
-			mobserv.talkies.autogetspeed = 1;
-			mobserv.geolocation.autopostionspeed = 1;
-			mobserv.services.autoreset();
-			mobserv.talkies.autoreset();
-			mobserv.geolocation.autoPosition();
-			mobserv.log({
-				type : 'notice',
-				name : 'backgroundMode.ondeactivate',
-				message : 'the background mode is inactive'
-			});
-			clearInterval(bgmodeInt);
-		}
-		cordova.plugins.backgroundMode.onfailure  = function(){
-			mobserv.log({
-				type : 'error',
-				name : 'backgroundMode.onfailure',
-				message : 'the background mode trigger error'
-			});
-			clearInterval(bgmodeInt);
-		}
 	}, false);
 	
 	setTimeout(function(){
 		if (!mobserv.device.ready){
 			mobserv.debug.on();
 			mobserv.device.init();
+			mobserv.battery.init();
 			mobserv.geolocation.autoPosition();
 			mobserv.sqlite.init();
 			mobserv.auth.init();
