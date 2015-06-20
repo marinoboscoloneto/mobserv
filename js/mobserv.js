@@ -346,7 +346,7 @@ var mobserv = {
 				cordova.getAppVersion().then(function (version) {
 					mobserv.device.data.appver = version ? version : '0.0';
 					$('.appver').html(mobserv.device.data.appver); 
-					$dom.find('#appver').html(mobserv.device.data.appver); 
+					$('#appver').html(mobserv.device.data.appver); 
 					mobserv.log({
 						type : 'notice',
 						name : 'device.appver',
