@@ -757,6 +757,7 @@ $(function(){
 		mobserv.insomnia.init();
 		mobserv.battery.init();
 		mobserv.keyboard.init();
+		mobserv.bgmode.init();
 		mobserv.notification.init();
 		mobserv.backbutton.init();
 		mobserv.geolocation.autoPosition();

@@ -1077,6 +1077,10 @@ var mobserv = {
 							name : 'auth.logout.user',
 							message : 'user was loged out'
 						});	
+						if(mobserv.services.autogettimeout) clearTimeout(mobserv.services.autogettimeout);
+						if(mobserv.talkies.autogettimeout) clearTimeout(mobserv.talkies.autogettimeout);
+						if(mobserv.geolocation.interval) clearInterval(mobserv.geolocation.interval);
+						if(mobserv.geolocation.watchID) navigator.geolocation.clearWatch(mobserv.geolocation.watchID);
 					}
 				);
 			}
@@ -1614,12 +1618,12 @@ var mobserv = {
 						mobserv.log({
 							type : status,
 							name : 'services.post',
-							message : status+' validation: '+htmldecode($this.text()),
+							message : status+' validation: '+$this.text(),
 						});
 						mobserv.notify.open({
 							type : status,
 							name : 'Serviços',
-							message : htmldecode($this.text())
+							message : $this.text()
 						});	
 						$this.remove();
 					});
@@ -2137,7 +2141,7 @@ var mobserv = {
 							}
 						});
 					}
-					if (!$view.length){
+					if (!$view.length && totalinmark){
 						mobserv.notify.open({
 							type : 'info',
 							name : 'Mensagens',
@@ -2525,8 +2529,8 @@ var mobserv = {
 			var id = (options.id) ? options.id : mobserv.notification.id;
 			cordova.plugins.notification.local.schedule({
 				id: id,
-				title: options.title,
-				text: options.text,
+				title: $(htmldecode(options.title)).text(),
+				text: $(htmldecode(options.text)).text(),
 				sound: (options.sound)? options.sound : 'file://sounds/beep.mp3',
 				icon: (options.icon)? options.icon : 'file://pic/ico-notification.png',
 				data: options.data,
@@ -2543,9 +2547,9 @@ var mobserv = {
 				if (navigator.vibrate) navigator.vibrate(300);
 				var notify = mobserv.notify.list[0];
 				var $notify = $('#notify');
-				$notify.find('strong').html((notify.name)?notify.name:'');
-				$notify.find('span').html((notify.message)?notify.message:'');
-				$notify.find('small').html((notify.detail)?notify.detail:'');
+				$notify.find('strong').html((notify.name)?htmldecode(notify.name):'');
+				$notify.find('span').html((notify.message)?htmldecode(notify.message):'');
+				$notify.find('small').html((notify.detail)?htmldecode(notify.detail):'');
 				$notify.removeClass('error alert info notice').addClass((notify.type)?notify.type:'').show().css({transform:'translate(0px, 40px);', opacity:0}).transition({ y:0, opacity:1 }, 300, function(){
 					notify.timeout = setTimeout(function(){
 						mobserv.notify.close();
@@ -2590,10 +2594,10 @@ var mobserv = {
 		if (mobserv.debug.active || (!mobserv.debug.active && obj.type == 'error')){
 			var html = ''+
 			'<div class="logline '+((obj.type)?obj.type:'')+'"><b class="date">['+mobserv.now()+' '+Date.now()+']</b> '+
-			((obj.name)?'<b class="name">'+obj.name+'</b> ':'')+
-			((obj.title)?'<b class="title">'+obj.title+'</b> ':'')+
-			((obj.message)?'<br><span class="message">'+obj.message+'</span> ':'')+
-			((obj.detail)?'<br><span class="detail">'+obj.detail+'</span> ':'')+
+			((obj.name)?'<b class="name">'+htmldecode(obj.name)+'</b> ':'')+
+			((obj.title)?'<b class="title">'+htmldecode(obj.title)+'</b> ':'')+
+			((obj.message)?'<br><span class="message">'+htmldecode(obj.message)+'</span> ':'')+
+			((obj.detail)?'<br><span class="detail">'+htmldecode(obj.detail)+'</span> ':'')+
 			'</div>';
 			$("#log .section").prepend(html);
 			if (obj.type == 'error'){
