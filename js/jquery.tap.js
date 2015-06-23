@@ -15,6 +15,7 @@ $.event.special.tap = {
 		$self.on('touchstart', function(startEvent) {
 			// Save the target element of the start event
 			var target = startEvent.target,
+			targetelem = self,
 			touchStart = startEvent.originalEvent.touches[0],
 			startX = touchStart.pageX,
 			startY = touchStart.pageY,
@@ -32,7 +33,7 @@ $.event.special.tap = {
 				// When the touch end event fires, check if the target of the
 				// touch end is the same as the target of the start, and if
 				// so, fire a click.
-				if (target == endEvent.target) {
+				if (target === endEvent.target && targetelem === this) {
 					$.event.simulate('tap', self, endEvent);
 					//setTimeout(function(){$.event.simulate('tap', self, endEvent);},80);
 				}
@@ -44,8 +45,7 @@ $.event.special.tap = {
 				moveX = touchMove.pageX,
 				moveY = touchMove.pageY,
 				absX = Math.abs(moveX - startX),
-				absY = Math.abs(moveY - startY);
-				
+				absY = Math.abs(moveY - startY);				
 				if (absX > touchDistance || absY > touchDistance) {
 					removeTapHandler();
 				}
