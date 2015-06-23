@@ -202,7 +202,7 @@ var mobserv = {
 				mobserv.log({
 					type : 'alert',
 					name : 'server.call',
-					message : 'default '+type+' server is offline',
+					message : server.url,
 				});
 				mobserv.server.loopcall(type,data,ondone,onerror);
 				return false;
@@ -210,6 +210,7 @@ var mobserv = {
 			mobserv.log({
 				name : 'server.call',
 				message : 'default '+type+' server request called',
+				detail : 'default '+type+' server request called',
 			});
 			server.status = 'Conectando';
 			var cfg = {
@@ -495,22 +496,8 @@ var mobserv = {
 		visible : false,
 		init : function(){
 			window.addEventListener('native.keyboardshow', function(event){
-				var disableScroll, hideKeyboardAccessoryBar;
+				var disableScroll, documentScroll, sectionScroll, hideKeyboardAccessoryBar;
 				var $main = $('#main');
-				if(mobserv.inputfocus && mobserv.inputfocus.data('documentscroll')){
-					$(document).scrollTop(mobserv.inputfocus.data('documentscroll'));
-				}
-				if(mobserv.inputfocus && mobserv.inputfocus.data('sectionscroll')){
-					var $view = $main.find('.view.current:eq(0)');
-					$view.find('.section').scrollTop(mobserv.inputfocus.data('sectionscroll'));
-				}
-				if(mobserv.inputfocus && mobserv.inputfocus.data('hideaccessory')){
-					cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
-					hideKeyboardAccessoryBar = true;
-				} else {
-					cordova.plugins.Keyboard.hideKeyboardAccessoryBar(false);
-					hideKeyboardAccessoryBar = false;
-				}
 				if(mobserv.inputfocus && mobserv.inputfocus.data('disablescroll')){
 					cordova.plugins.Keyboard.disableScroll(true);
 					$main.css({height: ($(window).height() - event.keyboardHeight) + 'px'});
@@ -520,10 +507,27 @@ var mobserv = {
 					$main.css({height: '100%'});
 					disableScroll = false;
 				}
+				if(mobserv.inputfocus && mobserv.inputfocus.data('documentscroll')){
+					documentScroll = mobserv.inputfocus.data('documentscroll');
+					$(window).scrollTop(documentScroll);
+					$(document).scrollTop(documentScroll);
+				}
+				if(mobserv.inputfocus && mobserv.inputfocus.data('sectionscroll')){
+					var $view = $main.find('.view.current:eq(0)');
+					sectionScroll = mobserv.inputfocus.data('sectionscroll');
+					$view.find('.section').scrollTop(sectionScroll);
+				}
+				if(mobserv.inputfocus && mobserv.inputfocus.data('hideaccessory')){
+					cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
+					hideKeyboardAccessoryBar = true;
+				} else {
+					cordova.plugins.Keyboard.hideKeyboardAccessoryBar(false);
+					hideKeyboardAccessoryBar = false;
+				}
 				mobserv.log({
 					name : 'native.keyboardshow',
 					message : 'keyboard has shown',
-					detail : 'disableScroll: '+((disableScroll)?'true':'false')+', hideKeyboardAccessoryBar: '+((hideKeyboardAccessoryBar)?'true':'false')+', keyboardHeight: '+event.keyboardHeight+', $main.height: '+$main.height()
+					detail : 'documentScroll: '+documentScroll+', documentScroll: '+documentScroll+', disableScroll: '+((disableScroll)?'true':'false')+', hideKeyboardAccessoryBar: '+((hideKeyboardAccessoryBar)?'true':'false')+', keyboardHeight: '+event.keyboardHeight+', $main.height: '+$main.height()
 				});
 				mobserv.keyboard.visible = true;
 			});
