@@ -232,11 +232,17 @@ $(function(){
 		.on('tap','#formuser .logoutclient',function(){
 			mobserv.nav.toView('formclient');
 		})
-		.on('tap','.input:not(:disabled)',function(){
+		.on('tap','#formclient .input:not(:disabled), #formuser .input:not(:disabled)',function(event){
+			var $input = $(this);
+			$input.focus().removeClass('invalid');
+			event.preventDefault();
+			event.stopPropagation();
+		})
+		.on('tap','.input:not(:disabled)',function(event){
 			var $input = $(this);
 			$input.focus().removeClass('invalid');
 			//event.preventDefault();
-			event.stopPropagation();
+			//event.stopPropagation();
 		})
 		.on('change input','.input:not(:disabled)',function(){
 			$(this).removeClass('invalid');
