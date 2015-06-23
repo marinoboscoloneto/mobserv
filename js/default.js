@@ -242,7 +242,8 @@ $(function(){
 			$(this).removeClass('invalid');
 		})
 		.on('tap','form.search, form.composer',function(){
-			$(this).find('.input').prop('disabled',false).focus();
+			var $form = $(this);
+			$form.find('.input').prop('disabled',false).focus();
 		})
 		.on('blur focusout','.search .input, .composer .input',function(){
 			var $this = $(this);
