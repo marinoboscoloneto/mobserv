@@ -859,7 +859,7 @@ var mobserv = {
 				});	
 			}, function(error){
 				mobserv.log({
-					type : 'error',
+					type : 'alert',
 					name : 'geolocation.getPosition',
 					code : error.code,
 					message : error.message,
@@ -1604,6 +1604,8 @@ var mobserv = {
 					mobserv.notification.open({
 						title : 'Serviços',
 						text : $this.text(),
+					},function(){
+						mobserv.nav.forward('servicelist');
 					});
 					$this.remove();
 				});
@@ -2161,6 +2163,9 @@ var mobserv = {
 									mobserv.notification.open({
 										title : $Rtalk.attr('name'),
 										text : $this.attr('sender')+': '+$this.text(),
+									},function(){
+										mobserv.nav.forward('messages');
+										mobserv.talkies.parsedom('messages',tid);
 									});
 								});
 							}
@@ -2191,6 +2196,9 @@ var mobserv = {
 									mobserv.notification.open({
 										title : $Rtalk.attr('name'),
 										text : $this.attr('sender')+': '+$this.text(),
+									},function(){
+										mobserv.nav.forward('messages');
+										mobserv.talkies.parsedom('messages',tid);
 									});
 								});
 							}
@@ -2208,23 +2216,6 @@ var mobserv = {
 					$Lroot.attr('mark',totalinmark);
 					var str = new XMLSerializer().serializeToString(talkies.xml);
 					mobserv.sqlite.query({query : 'update sl_talkies set xml = ? where code = "'+client.code+'" and login = "'+user.login+'"', statement : [str]});
-					/*
-					mobserv.log({
-						type : 'info',
-						name : 'talkies.get',
-						message : rootmark+' new messages',
-					});
-					mobserv.notify.open({
-						type : 'info',
-						name : 'Mensagens',
-						message : 'Você possui <b>'+totalinmark+'</b> novas mensagens!',
-						detail : '<b>'+rootmark+'</b> não lidas!',
-					});
-					mobserv.notification.open({
-						title : 'Mensagens',
-						text : 'Você possui <b>'+totalinmark+'</b> novas mensagens!'
-					});
-					*/
 					mobserv.talkies.mark();
 				}
 				if (ondone) ondone();
