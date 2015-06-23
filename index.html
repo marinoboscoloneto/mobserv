@@ -26,7 +26,7 @@
 <link href="css/highlight.pack.css" rel="stylesheet" type="text/css">
 </head>
 <body>
-<main class="main" id="main">
+<main class="main ds" id="main">
 	<div class="statustripe"></div>
 	<nav class="nav" id="nav">
         <header class="header" id="header">
@@ -104,8 +104,8 @@
     <div class="view" id="home">
         <header class="header" id="header">
             <h1 class="icon-home">Home</h1>
-            <a class="item l1 menu icon-menu"></a>
-            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item l1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item r1 menu icon-menu"></a>
         </header>
         <section class="section">
         	<div class="pullinfo"><strong>Solte para atualizar</strong></div>
@@ -121,8 +121,8 @@
     <div class="view" id="servicelist">
         <header class="header" id="header">
             <h1 class="icon-package5">Serviços</h1>
-            <a class="item l1 menu icon-menu"></a>
-            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item l1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item r1 menu icon-menu"></a>
         </header>
         <section class="section">
         	<div class="pullinfo"><strong>Solte para atualizar</strong></div>
@@ -135,9 +135,9 @@
     <div class="view" id="joblist">
         <header class="header" id="header">
             <h1 class="icon-package5" id="screenname">{screenname}</h1>
-            <a class="item l1 menu icon-menu"></a>
+            <a class="item l1 link back icon-chevron-left" data-direction="back"></a>
             <a class="item r2 link gmap iconsmall icon-map3" data-view="map" data-direction="forward" data-source="joblist"></a>
-            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item r1 menu icon-menu"></a>
         </header>
         <section class="section">
         	<div class="pullinfo"><strong>Solte para atualizar</strong></div>
@@ -150,9 +150,9 @@
     <div class="view" id="jobdetails">
         <header class="header" id="header">
             <h1 class="icon-package5" id="screenname">Detalhes</h1>
-            <a class="item l1 menu icon-menu"></a>
+            <a class="item l1 link back icon-chevron-left" data-direction="back"></a>
             <a class="item r2 link gmap iconsmall icon-map3" data-view="map" data-direction="forward" data-source="jobdetails"></a>
-            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item r1 menu icon-menu"></a>
         </header>
         <section class="section">
             <ul class="list"></ul>
@@ -177,8 +177,8 @@
     <div class="view" id="talkies">
         <header class="header" id="header">
             <h1 class="icon-paperplane">Mensagens</h1>
-            <a class="item l1 menu icon-menu"></a>
-            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item l1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item r1 menu icon-menu"></a>
         </header>
         <section class="section">
         	<div class="pullinfo"><strong>Solte para atualizar</strong></div>
@@ -192,9 +192,9 @@
         <header class="header" id="header">
             <h1 class="icon-paperplane small">{name}</h1>
             <h2 class="small">{subject}</h2>
-            <a class="item l1 menu icon-menu"></a>
+            <a class="item l1 link back icon-chevron-left" data-direction="back"></a>
             <a class="item r2 link remove iconsmall icon-remove" data-view="confirmremovemessages" data-direction="foreground"></a>
-            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item r1 menu icon-menu"></a>
         </header>
         <section class="section forchat">
             <div style="display:table; min-height:100%; width:100%;">
@@ -210,8 +210,8 @@
     <div class="view" id="configs">
         <header class="header" id="header">
             <h1 class="icon-cogs">Configurações</h1>
-            <a class="item l1 menu icon-menu"></a>
-            <a class="item r1 link back icon-chevron-left2" data-direction="back"></a>
+            <a class="item l1 link back icon-chevron-left2" data-direction="back"></a>
+            <a class="item r1 menu icon-menu"></a>
         </header>
         <section class="section">
             <ul class="grid">
@@ -229,8 +229,8 @@
     <div class="view" id="user">
         <header class="header" id="header">
             <h1 class="icon-user2">Usuário</h1>
-            <a class="item l1 menu icon-menu"></a>
-            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item l1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item r1 menu icon-menu"></a>
         </header>
         <section class="section"><br>
        		<div class="bigicon icon-user2" style="color:#09F;"></div>
@@ -272,13 +272,14 @@
                   </tr>
                 </table>
             </div>
+            <p style="text-align:center;"><input type="button" class="submit link"  data-view="confirmlogout" data-direction="foreground" value="Logout" /></p>
         </section>
     </div>
     <div class="view" id="battery">
         <header class="header" id="header">
             <h1 class="icon-bald22">Energia</h1>
-            <a class="item l1 menu icon-menu"></a>
-            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item l1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item r1 menu icon-menu"></a>
         </header>
         <section class="section"><br>
        		<div class="bigicon icon-battery"></div>
@@ -304,8 +305,8 @@
     <div class="view" id="about">
         <header class="header" id="header">
             <h1 class="icon-bald22">Sobre o Mobserv</h1>
-            <a class="item l1 menu icon-menu"></a>
-            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item l1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item r1 menu icon-menu"></a>
         </header>
         <section class="section"><br>
        		<div class="bigicon icon-bald22" style="color:#F40"></div>
@@ -347,8 +348,8 @@
     <div class="view" id="connectioninfo">
         <header class="header" id="header">
             <h1 class="icon-network">Info de Conexão</h1>
-            <a class="item l1 menu icon-menu"></a>
-            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item l1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item r1 menu icon-menu"></a>
         </header>
         <section class="section">
         	<div class="bigicon icon-network"></div>
@@ -378,8 +379,8 @@
     <div class="view" id="servers">
         <header class="header" id="header">
             <h1 class="icon-layers">Servidores</h1>
-            <a class="item l1 menu icon-menu"></a>
-            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item l1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item r1 menu icon-menu"></a>
         </header>
         <section class="section">
         	<div class="bigicon icon-layers"></div>
@@ -417,8 +418,8 @@
     <div class="view" id="data">
         <header class="header" id="header">
             <h1 class="icon-code">Fontes de Dados</h1>
-            <a class="item l1 menu icon-menu"></a>
-            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item l1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item r1 menu icon-menu"></a>
         </header>
         <section class="section">
             <ul class="grid">
@@ -448,9 +449,9 @@
     <div class="view" id="map">
         <header class="header" id="header">
             <h1 class="icon-map3">Mapa</h1>
-            <a class="item l1 menu icon-menu"></a>
+            <a class="item l1 link back icon-chevron-left" data-direction="back"></a>
             <a class="item r2 location iconsmall icon-location"></a>
-            <a class="item r1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item r1 menu icon-menu"></a>
         </header>
         <section class="section mapdata">
         	<h2 style="text-align:center;">Dados do receptor de GPS</h2>

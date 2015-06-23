@@ -208,7 +208,7 @@ $(function(){
 				$html = $($html);
 				$chat.append($html.css({opacity:0,transform:'scale(0.1,0.1)'}));
 				$form.prev('.forchat').scrollTop(999999999);
-				$html.transition({opacity:1,scale:1.1},200,function(){ $html.transition({scale:1},100); });
+				$html.transition({opacity:1,scale:1.1},200,function(){ $html.transition({scale:1},150); });
 				mobserv.talkies.post(post,
 					function(){
 						$html.removeClass('courtain');
@@ -249,7 +249,7 @@ $(function(){
 			var $this = $(this);
 			setTimeout(function(){
 				$this.prop('disabled',true);
-			},500);
+			},300);
 		})
 		/*
 		.on('swiperight','.view:not(.disable)',function(){
@@ -290,7 +290,7 @@ $(function(){
 			if (!$('#nav').hasClass('active')){
 				$('.footer').transition({ y:'50px' }, 300);
 				$('#nav').addClass('active');
-				$('.view.current').addClass('disable').transition({ x:'80%' }, 300).find(".header, .section").transition({ opacity:.3 }, 400);
+				$('.view.current').addClass('disable').transition({ x:'-80%' }, 300).find(".header, .section").transition({ opacity:.3 }, 300);
 			}
 		})
 		.on('tap','#confirmremovelog button.remove',function(){
@@ -525,6 +525,11 @@ $(function(){
 		.on('current','#gps',function(){
 			mobserv.geolocation.getPosition();
 		})
+		.on('show','#map',function(){
+			var $this = $(this);
+			$this.find('.mapdata').hide();
+			$this.find('.jobdata').hide();
+		})
 		.on('current','#map',function(){
 			mobserv.geolocation.watchPosition({
 				enableHighAccuracy : true,
@@ -544,18 +549,15 @@ $(function(){
 			var autofit = '';
 			var zoom = 10;
 			var $jobs = [];
+			$mapdata.hide();
+			$jobdata.hide();
 			if (id && src == 'joblist'){
 				$jobs = $(services.xml).find('service[id="'+id+'"] > job');
-				$mapdata.hide();
-				$jobdata.hide();
 			} else if (id && src == 'jobdetails'){
 				services = mobserv.globals.services;
 				$jobs = $(services.xml).find('job[id="'+id+'"]');
-				$mapdata.hide();
-				$jobdata.hide();	
 			} else if (src == 'gps') {
 				$locbtn.addClass('hilite');	
-				$mapdata.show();
 				zoom = 16;	
 			}
 			function icon(image,sx,sy,cx,cy,ax,ay){
@@ -766,6 +768,7 @@ $(function(){
 		mobserv.keyboard.init();
 		mobserv.bgmode.init();
 		mobserv.notification.init();
+		mobserv.menubutton.init();
 		mobserv.backbutton.init();
 		mobserv.geolocation.autoPosition();
 		mobserv.sqlite.init();

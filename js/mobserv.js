@@ -220,6 +220,20 @@ var mobserv = {
 				url: server.url, 
 				dataType: 'xml',
 				data: data,
+				xhr: function() {
+					var xhr = new window.XMLHttpRequest();
+					var timeini = mobserv.now('timestamp'), timefin, timediff, bytesloaded, bytestotal;
+					xhr.addEventListener("progress", function (event) {
+						if (event.lengthComputable) {
+							timefin =  mobserv.now('timestamp');
+							timediff = timefin - timeini;
+							mobserv.connection.speed = (mobserv.connection.speed + ((event.loaded/timediff) * 1024)) / 2;
+							mobserv.connection.traffic += event.loaded / 1204;
+							mobserv.connection.parsedom();
+						}					
+					}, false);
+					return xhr;
+				},				
 				success: function(response,st,xhr){
 					if (response !== '' && $(response).find('mobserv').length == 1){
 						server.online = true;
@@ -531,6 +545,14 @@ var mobserv = {
 			}
 		}
 	},
+	menubutton : {
+		init : function(){
+			document.addEventListener("menubutton", function(event){
+				event.preventDefault();
+				$('.view.current:not(.disable) .menu').trigger('tap');
+			}, false);
+		}
+	},
 	backbutton : {
 		init : function(){
 			document.addEventListener("backbutton", function(event){
@@ -538,11 +560,6 @@ var mobserv = {
 				if (mobserv.history.length > 0)	$(".view.current .back, .view.current .close").trigger("tap");
 				else mobserv.nav.foreground('confirmexit');
 			}, false);
-			mobserv.log({
-				type : 'notice',
-				name : 'backbutton.init',
-				message : 'backbutton api is loaded'
-			});	
 		}
 	},
 	insomnia : {
@@ -581,9 +598,9 @@ var mobserv = {
 				cordova.plugins.backgroundMode.onactivate = function(){
 					bgmodeHops = 0;
 					mobserv.bgmode.active = true;
-					mobserv.services.autogetspeed = 3;
-					mobserv.talkies.autogetspeed = 3;
-					mobserv.geolocation.autopostionspeed = 10;
+					mobserv.services.autogetspeed = 2;
+					mobserv.talkies.autogetspeed = 2;
+					mobserv.geolocation.autopostionspeed = 2;
 					mobserv.services.autoreset();
 					mobserv.talkies.autoreset();
 					mobserv.geolocation.autoPosition();
@@ -635,8 +652,29 @@ var mobserv = {
 	},
 	connection : {
 		online : false,
-		test : function(type){
+		type : false,
+		speed : 0,
+		traffic : 0,
+		parsedom : function(){
 			var $dom = $("#connectioninfo");
+			if (navigator.connection){
+				$dom.find('#conntype').html(mobserv.connection.type);
+				if (navigator.connection.type == Connection.NONE){
+					$dom.find('#connstatus').html('Offline').css('color','#F60');
+					$dom.find('.bigicon').css('color','#F60');
+				} else {
+					$dom.find('#connstatus').html('Online').css('color','#09F');
+					$dom.find('.bigicon').css('color','#09F');
+				}
+			} else {
+				$dom.find('#connstatus').html('Online (default)').css('color','#09F');
+				$dom.find('#conntype').html('Test impossible');	
+				$dom.find('.bigicon').css('color','#09F');
+			}
+			$dom.find('#connspeed').html(mobserv.connection.speed.toFixed(2)+' kbps');
+			$dom.find('#conntraffic').html(mobserv.connection.traffic.toFixed(2)+' KB');
+		},
+		test : function(type){
 			if (navigator.connection){
 				var networkState = navigator.connection.type;
 				var states = {};
@@ -648,28 +686,24 @@ var mobserv = {
 				states[Connection.CELL_4G]  = 'Conexão 4G';
 				states[Connection.CELL]     = 'Conexão de Dados';
 				states[Connection.NONE]     = 'Sem Conexão';
-				$dom.find('#conntype').html(states[networkState]);
+				mobserv.connection.type = states[networkState];
 				if (navigator.connection.type == Connection.NONE){
-					$dom.find('#connstatus').html('Offline').css('color','#F60');
 					mobserv.connection.online = false;
-					$dom.find('.bigicon').css('color','#F60');
 					mobserv.log({
 						type : 'alert',
 						name : 'connection.test',
 						message : 'no internet connection',
 					});
+					mobserv.connection.parsedom();
 					return false;
 				} else {
-					$dom.find('#connstatus').html('Online').css('color','#09F');
 					mobserv.connection.online = true;
-					$dom.find('.bigicon').css('color','#09F');
+					mobserv.connection.parsedom();
 					return true;
 				}
 			} else {
-				$dom.find('#connstatus').html('Online (default)').css('color','#09F');
-				$dom.find('#conntype').html('Test impossible');	
 				mobserv.connection.online = true;
-				$dom.find('.bigicon').css('color','#09F');
+				mobserv.connection.parsedom();
 				return true;
 			}
 		},
@@ -1545,7 +1579,9 @@ var mobserv = {
 					mobserv.notify.open({
 						type : status,
 						name : 'Serviços',
-						message : $this.text()
+						message : $this.text(),
+						duration : 5000,
+						tap : (status == 'info' || status == 'notice') ? function(){ mobserv.nav.forward('services'); } : null
 					});
 					mobserv.notification.open({
 						title : 'Serviços',
@@ -2076,7 +2112,7 @@ var mobserv = {
 							var $Rtalk = $(this);
 							var tid = $Rtalk.attr('id');
 							var $Ltalk = $Lroot.find('talk[id="'+tid+'"]');
-							var $Rmsgs = $Rtalk.find('message');
+							var $Rmsgs = $Rtalk.find('message').attr('new','new');
 							if ($Ltalk.length){
 								var $Lmsgs = $Ltalk.find('message');
 								if ($Lmsgs.length > 50) $Lmsgs.filter(':lt('+($Lmsgs.length - 50)+')').remove();
@@ -2095,6 +2131,7 @@ var mobserv = {
 							totalinmark += mark;
 							mobserv.talkies.parsedom('talkies',tid);
 							if ($view.length && $view.data('id') == tid) {
+								if (navigator.vibrate && $Rmsgs.length) navigator.vibrate(100);
 								mobserv.talkies.parsedom('messages',tid);
 								if (mobserv.inputfocus || $section.hasClass('scrollend')){
 									$section.scrollTop(999999999);
@@ -2118,19 +2155,20 @@ var mobserv = {
 							var $Rtalk = $(this);
 							var tid = $Rtalk.attr('id');
 							var $Ltalk = $Lroot.find('talk[id="'+tid+'"]');
-							var $Lmsgs = $Ltalk.find('message');
+							var $Lmsgs = $Ltalk.find('message').attr('new','new');
 							var mark = ($view.length && $view.data('id') == tid) ? 0 : $Lmsgs.length;
 							$Ltalk.attr('mark',mark+'');
 							totalinmark += mark;
 							mobserv.talkies.parsedom('talkies',tid);
 							if ($view.length && $view.data('id') == tid) {
+								if (navigator.vibrate && $Lmsgs.length) navigator.vibrate(100);
 								mobserv.talkies.parsedom('messages',tid); 
 								if (mobserv.inputfocus || $section.hasClass('scrollend')){
 									$section.scrollTop(999999999);
 								}
 							} 
-							if (mobserv.bgmode.active && $Rmsgs.length){
-								$Rmsgs.each(function(){
+							if (mobserv.bgmode.active && $Lmsgs.length){
+								$Lmsgs.each(function(){
 									$this = $(this);
 									mobserv.notification.open({
 										title : $Rtalk.attr('name'),
@@ -2144,7 +2182,9 @@ var mobserv = {
 						mobserv.notify.open({
 							type : 'info',
 							name : 'Mensagens',
-							message : 'Você possui <b>'+totalinmark+'</b> novas mensagens'
+							message : 'Você possui <b>'+totalinmark+'</b> novas mensagens',
+							duration : 5000,
+							tap : function(){ mobserv.nav.forward('talkies'); }
 						});	
 					}
 					$Lroot.attr('mark',totalinmark);
@@ -2358,6 +2398,11 @@ var mobserv = {
 						'<div class="clear"></div>';
 					}
 					$dom.chat.html($html);
+					if ($s.attr('new') == 'new'){
+						$dom.talk = $dom.chat.find('.talk#'+$s.attr('id'));
+						$dom.talk.transition({scale:1.1},200,function(){ $dom.talk.transition({scale:1},150); });
+						$s.removeAttr("new");
+					}
 				});
 			}
 		},
@@ -2438,10 +2483,10 @@ var mobserv = {
 			$view = (typeof $view == 'string') ? $('#'+$view) : $view;
 			if ($current.length == 1 && $view.length == 1 && $current.attr('id') != $view.attr('id')){
 				mobserv.history.push($current);
-				$current.transition({ x:0, opacity:0 }, 300, function(){
+				$current.transition({ x:0, opacity:1 }, 300, function(){
 					$current.hide().removeClass('current');
 				});
-				$view.css({x:'30%', opacity:0, 'z-index':mobserv.zindex}).show().transition({ x:0, opacity:1 }, 300, function(){
+				$view.css({x:(($('#nav').hasClass('active'))?'-80%':'30%'), opacity:0, 'z-index':mobserv.zindex}).show().transition({ x:0, opacity:1 }, 300, function(){
 					$view.addClass('current');
 					$view.trigger('current');
 				});
@@ -2458,7 +2503,7 @@ var mobserv = {
 					$current.transition({ x:'30%', opacity:0 }, 300, function(){
 						$current.hide().removeClass('current');
 					});
-					$view.css({x:0, opacity:0, 'z-index':mobserv.zindex}).show().transition({ opacity:1 }, 500, function(){
+					$view.css({x:0, opacity:1}).show().transition({ opacity:1 }, 300, function(){
 						$view.addClass('current');
 						$view.trigger('current');
 					});
@@ -2527,8 +2572,8 @@ var mobserv = {
 			var id = (options.id) ? options.id : mobserv.notification.id;
 			cordova.plugins.notification.local.schedule({
 				id: id,
-				title: $(htmldecode(options.title)).text(),
-				text: $(htmldecode(options.text)).text(),
+				title: $('<span>'+htmldecode(options.title)+'</span>').text(),
+				text: $('<span>'+htmldecode(options.text)+'</span>').text(),
 				sound: (options.sound)? options.sound : 'file://sounds/beep.mp3',
 				icon: (options.icon)? options.icon : 'file://pic/ico-notification.png',
 				data: options.data,
@@ -2556,6 +2601,7 @@ var mobserv = {
 				$notify.off('tap');
 				$notify.one('tap',function(){
 					mobserv.notify.close();
+					if(notify.tap) notify.tap();
 				});
 			}
 		},
