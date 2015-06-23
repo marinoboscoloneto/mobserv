@@ -11,7 +11,7 @@ table td { font-size:11px; }
 
 a, [class*="icon-"]:before, .input:not(.select), .submit, .statustripe, .notify, .footer .item, .mapdata, .jobdata { transition: all 250ms; -webkit-backface-visibility: hidden; }
 
-input,textarea,select { -webkit-appearance: none; border-radius: 0; font-size:12px; -webkit-user-select: all; -moz-user-select: all; -ms-user-select: all; user-select: all; }
+input,textarea,select { -webkit-appearance: none; border-radius: 0; font-size:12px; }
 input:required { box-shadow:none; }
 input:invalid { box-shadow:none; }
 
