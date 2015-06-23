@@ -34,7 +34,7 @@ var mobserv = {
 		}
 	},
 	server : {
-		timeout : 60000,
+		timeout : 120000,
 		pointer : 0,
 		list : [
 			{
@@ -173,7 +173,7 @@ var mobserv = {
 		loopcall : function(type,data,ondone,onerror){
 			mobserv.server.test(type);
 			var server;
-			var limit = (mobserv.server.timeout*2)/100;
+			var limit = (mobserv.server.timeout*2)/1000;
 			var interval = setInterval(function(){
 				server = mobserv.server.online[type];
 				if (server){
@@ -194,7 +194,7 @@ var mobserv = {
 					clearInterval(interval);	
 				}
 				limit--;
-			},100);
+			},1000);
 		},
 		call : function(type,data,ondone,onerror,loop){
 			var server = mobserv.server.online[type];
@@ -500,11 +500,11 @@ var mobserv = {
 				var $main = $('#main');
 				if(mobserv.inputfocus && mobserv.inputfocus.data('disablescroll')){
 					cordova.plugins.Keyboard.disableScroll(true);
-					$main.css({height: ($(window).height() - event.keyboardHeight) + 'px'});
+					$main.css({height: ($(window).height() - event.keyboardHeight) + 'px', top:'auto', bottom:'0px'});
 					disableScroll = true;
 				} else {
 					cordova.plugins.Keyboard.disableScroll(false);
-					$main.css({height: '100%'});
+					$main.css({height: '100%', top:'0px', bottom:'auto'});
 					disableScroll = false;
 				}
 				if(mobserv.inputfocus && mobserv.inputfocus.data('documentscroll')){
@@ -527,7 +527,7 @@ var mobserv = {
 				mobserv.log({
 					name : 'native.keyboardshow',
 					message : 'keyboard has shown',
-					detail : 'documentScroll: '+documentScroll+', documentScroll: '+documentScroll+', disableScroll: '+((disableScroll)?'true':'false')+', hideKeyboardAccessoryBar: '+((hideKeyboardAccessoryBar)?'true':'false')+', keyboardHeight: '+event.keyboardHeight+', $main.height: '+$main.height()
+					detail : 'documentScroll: '+documentScroll+', sectionScroll: '+sectionScroll+', disableScroll: '+((disableScroll)?'true':'false')+', hideKeyboardAccessoryBar: '+((hideKeyboardAccessoryBar)?'true':'false')+', keyboardHeight: '+event.keyboardHeight+', $main.height: '+$main.height()
 				});
 				mobserv.keyboard.visible = true;
 			});
