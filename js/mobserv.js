@@ -501,6 +501,7 @@ var mobserv = {
 					$(document).scrollTop(mobserv.inputfocus.data('documentscroll'));
 				}
 				if(mobserv.inputfocus && mobserv.inputfocus.data('sectionscroll')){
+					var $view = $main.find('.view.current:eq(0)');
 					$view.find('.section').scrollTop(mobserv.inputfocus.data('sectionscroll'));
 				}
 				if(mobserv.inputfocus && mobserv.inputfocus.data('hideaccessory')){
@@ -2580,8 +2581,8 @@ var mobserv = {
 			mobserv.notification.inited = true;
 		},
 		open : function(options,onclick,ontrigger){
-			if (navigator.vibrate) navigator.vibrate(300);
 			if (!mobserv.notification.inited || !mobserv.bgmode.active) return;
+			if (navigator.vibrate) navigator.vibrate(300);
 			var id = (options.id) ? options.id : mobserv.notification.id;
 			cordova.plugins.notification.local.schedule({
 				id: id,
@@ -2647,7 +2648,7 @@ var mobserv = {
 		}
 	},
 	'log' : function(obj){
-		if (obj.type == 'error' && navigator.vibrate) navigator.vibrate(500);
+		if (obj.type == 'error' && navigator.vibrate && !mobserv.bgmode.active) navigator.vibrate(500);
 		if (mobserv.debug.active || (!mobserv.debug.active && obj.type == 'error')){
 			var html = ''+
 			'<div class="logline '+((obj.type)?obj.type:'')+'"><b class="date">['+mobserv.now()+' '+Date.now()+']</b> '+
