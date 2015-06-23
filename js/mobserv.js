@@ -509,7 +509,7 @@ var mobserv = {
 				}
 				if(mobserv.inputfocus && mobserv.inputfocus.data('documentscroll')){
 					documentScroll = mobserv.inputfocus.data('documentscroll');
-					$(window).scrollTop(documentScroll);
+					$(window).scrollTop(documentScroll == 'true' ? 0 : documentScroll);
 					$(document).scrollTop(documentScroll);
 				}
 				if(mobserv.inputfocus && mobserv.inputfocus.data('sectionscroll')){
