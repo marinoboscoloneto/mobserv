@@ -235,7 +235,7 @@ $(function(){
 		.on('tap','.input:not(:disabled)',function(){
 			var $input = $(this);
 			$input.focus().removeClass('invalid');
-			event.preventDefault();
+			//event.preventDefault();
 			event.stopPropagation();
 		})
 		.on('change input','.input:not(:disabled)',function(){
