@@ -190,7 +190,6 @@ $(function(){
 			var $chat = $form.prev('.forchat').find('.chat:eq(0)');
 			if (data.message){
 				$form.find('.input').val('');
-				$form.find('.input').focus();
 				var post = {
 					message : {
 						id : $.md5(mobserv.now('timestamp')+mobserv.device.data.uuid+$view.data('id')+data.message),
@@ -220,6 +219,12 @@ $(function(){
 				);
 				
 			}
+		})
+		.on('tap','#messages:visible .composer .submit',function(event,data){
+			var $form = $(this).closest('form');
+			$form.submit();
+			event.preventDefault();
+			event.stopPropagation();
 		})
 		.on('tap','#confirmexit .exit',function(){
 			mobserv.exit();
@@ -429,6 +434,7 @@ $(function(){
 		})
 		.on('show','.view',function(){
 			var $this = $(this);
+			mobserv.keyboard.close();
 			if (mobserv.history.length == 0){
 				$this.find('.header .back').hide();
 			} else {

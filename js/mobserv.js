@@ -1633,7 +1633,6 @@ var mobserv = {
 						services.updated = true;
 						var str = new XMLSerializer().serializeToString(services.xml);
 						mobserv.sqlite.query({query : 'update sl_services set xml = ? where code = "'+client.code+'" and login = "'+user.login+'"', statement : [str]});
-						if (navigator.vibrate) navigator.vibrate(100);
 					} else {
 						services.updated = false;	
 					}
@@ -2229,7 +2228,6 @@ var mobserv = {
 							$Ltalk.append($Rmsg);
 							var str = new XMLSerializer().serializeToString(talkies.xml);
 							mobserv.sqlite.query({query : 'update sl_services set xml = ? where code = "'+client.code+'" and login = "'+user.login+'"', statement : [str]});
-							if (navigator.vibrate) navigator.vibrate(100);
 							if (ondone) ondone();
 						} else {
 							if(onerror) onerror('local talk node not found');
