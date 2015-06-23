@@ -1586,6 +1586,7 @@ var mobserv = {
 				});
 				var $valid = $root.find('validation');
 				var $services = $root.children('service');
+				var $rootmark = $root.children('mark');
 				$valid.each(function(){
 					var $this = $(this);
 					var status = $this.attr('status');
@@ -2015,6 +2016,7 @@ var mobserv = {
 				var $markserv = $('#servicelist .link mark');
 				$markserv.transition({opacity:0,scale:0.01},100);
 			}
+			mobserv.badge.set();
 		},
 		cleardom : function(type){
 			if (!type || type == 'serviceslist'){
@@ -2434,6 +2436,7 @@ var mobserv = {
 				$markhome.transition({opacity:0,scale:0.01},300,function(){ $markhome.text('0'); });	
 				$markfoot.transition({opacity:0,scale:0.01},300,function(){ $markfoot.text('0'); }).parent().removeClass('marked');	
 			}
+			mobserv.badge.set();
 		}
 	},
 	zindex : 3,
@@ -2552,6 +2555,29 @@ var mobserv = {
 		},
 	},
 	mark : {			
+	},
+	badge : {
+		inited : false, 
+		init : function(){
+			cordova.plugins.notification.badge.registerPermission(function (granted) {
+				mobserv.log({
+					type : 'notice',
+					name : 'badge.init',
+					message : 'badge permission: '+granted,
+				});
+				mobserv.badge.inited = true;
+			});
+		},
+		set : function(){
+			if (!mobserv.badge.inited) return;
+			var $markservices = $('#home [data-view="servicelist"] mark');
+			var $marktalkies = $('#home [data-view="talkies"] mark');
+			var ms = (($markservices.length) ? parseInt($markservices.text()) : 0) || 0;
+			var mt = (($marktalkies.length) ? parseInt($marktalkies.text()) : 0) || 0;
+			var bdg = ms + mt;
+			if (bdg) cordova.plugins.notification.badge.set(bdg);
+			else cordova.plugins.notification.badge.clear();
+		},
 	},
 	notification : {
 		id : 1,

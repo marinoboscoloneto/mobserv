@@ -754,6 +754,7 @@ $(function(){
 		mobserv.keyboard.init();
 		mobserv.bgmode.init();
 		mobserv.notification.init();
+		mobserv.badge.init();
 		mobserv.menubutton.init();
 		mobserv.backbutton.init();
 		mobserv.geolocation.autoPosition();
