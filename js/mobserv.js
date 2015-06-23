@@ -355,6 +355,8 @@ var mobserv = {
 		ready : false,
 		data : {},
 		init : function(){
+			mobserv.globals.client = {};
+			mobserv.globals.user = {};
 			mobserv.device.ready = true;
 			if (typeof cordova.getAppVersion != 'undefined'){
 				cordova.getAppVersion().then(function (version) {
@@ -599,12 +601,14 @@ var mobserv = {
 				cordova.plugins.backgroundMode.onactivate = function(){
 					bgmodeHops = 0;
 					mobserv.bgmode.active = true;
-					mobserv.services.autogetspeed = 2;
-					mobserv.talkies.autogetspeed = 2;
-					mobserv.geolocation.autopostionspeed = 2;
-					mobserv.services.autoreset();
-					mobserv.talkies.autoreset();
-					mobserv.geolocation.autoPosition();
+					if (mobserv.auth.loggedin()){
+						mobserv.services.autogetspeed = 2;
+						mobserv.talkies.autogetspeed = 2;
+						mobserv.geolocation.autopostionspeed = 2;
+						mobserv.services.autoreset();
+						mobserv.talkies.autoreset();
+						mobserv.geolocation.autoPosition();
+					}
 					mobserv.log({
 						type : 'info',
 						name : 'backgroundMode.onactivate',
@@ -621,12 +625,14 @@ var mobserv = {
 				}
 				cordova.plugins.backgroundMode.ondeactivate = function(){
 					mobserv.bgmode.active = false;
-					mobserv.services.autogetspeed = 1;
-					mobserv.talkies.autogetspeed = 1;
-					mobserv.geolocation.autopostionspeed = 1;
-					mobserv.services.autoreset();
-					mobserv.talkies.autoreset();
-					mobserv.geolocation.autoPosition();
+					if (mobserv.auth.loggedin()){
+						mobserv.services.autogetspeed = 1;
+						mobserv.talkies.autogetspeed = 1;
+						mobserv.geolocation.autopostionspeed = 1;
+						mobserv.services.autoreset();
+						mobserv.talkies.autoreset();
+						mobserv.geolocation.autoPosition();
+					}
 					mobserv.log({
 						type : 'info',
 						name : 'backgroundMode.ondeactivate',
@@ -1079,6 +1085,12 @@ var mobserv = {
 		},
 	},
 	auth : {
+		loggedin : function(){
+			if (mobserv.globals.user.session && mobserv.globals.client.license){
+				return true;	
+			}
+			return false;
+		},
 		clientdom : function(){
 			var client = mobserv.globals.client;
 			$('#formuser .client').text(client.name);
