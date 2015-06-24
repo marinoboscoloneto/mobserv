@@ -2559,14 +2559,22 @@ var mobserv = {
 	badge : {
 		inited : false, 
 		init : function(){
-			cordova.plugins.notification.badge.registerPermission(function (granted) {
-				mobserv.log({
-					type : 'notice',
-					name : 'badge.init',
-					message : 'badge permission: '+granted,
+			if (cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.badge){
+				cordova.plugins.notification.badge.registerPermission(function (granted) {
+					mobserv.log({
+						type : 'notice',
+						name : 'badge.init',
+						message : 'badge permission: '+granted,
+					});
+					mobserv.badge.inited = true;
 				});
-				mobserv.badge.inited = true;
-			});
+			} else {
+				mobserv.log({
+					type : 'error',
+					name : 'badge.init',
+					message : 'badge plugin not found'
+				});
+			}
 		},
 		set : function(){
 			if (!mobserv.badge.inited) return;
