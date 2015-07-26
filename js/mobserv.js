@@ -2614,8 +2614,8 @@ var mobserv = {
 				icon: (options.icon)? options.icon : 'file://pic/ico-notification.png',
 				data: options.data,
 			});
-			if(ontrigger) events[id] = {trigger:ontrigger};
-			if(onclick) events[id] = {click:onclick};
+			if(ontrigger) mobserv.notification.events[id] = {trigger:ontrigger};
+			if(onclick) mobserv.notification.events[id] = {click:onclick};
 			mobserv.notification.id++;
 		}
 	},
