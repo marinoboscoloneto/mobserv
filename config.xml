@@ -3,7 +3,7 @@
         xmlns:gap   = "http://phonegap.com/ns/1.0"
         id          = "com.sourcelab.mobserv"
         versionCode = "10" 
-        version     = "1.0.52" >
+        version     = "1.0.53" >
     <name>Mobserv</name>
     <description>
         Mobile Services Application for SourceLab Systems
