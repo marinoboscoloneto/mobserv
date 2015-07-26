@@ -453,6 +453,8 @@ var mobserv = {
 					mobserv.notification.open({
 						title : 'Nível crítico de bateria',
 						text : 'Recarregue seu dispositivo para continuar usando o mobserv',
+						sound : 'alert.mp3',
+						icon : 'ico-notification-error.png'
 					});
 				} else {
 					mobserv.battery.idle = true;
@@ -472,6 +474,8 @@ var mobserv = {
 					mobserv.notification.open({
 						title : 'Pouca bateria',
 						text : 'Recarregue seu dispositivo para continuar usando o mobserv',
+						sound : 'alert.mp3',
+						icon : 'ico-notification-alert.png'
 					});
 				} else {
 					mobserv.battery.idle = true;
@@ -1612,6 +1616,8 @@ var mobserv = {
 					mobserv.notification.open({
 						title : client.servertitle,
 						text : $this.text(),
+						sound : 'beep2.mp3',
+						icon : 'ico-notification-info.png',
 						bagde : mobserv.badge.get()
 					},function(){
 						mobserv.nav.forward('servicelist');
@@ -2173,6 +2179,8 @@ var mobserv = {
 									mobserv.notification.open({
 										title : $Rtalk.attr('name'),
 										text : $this.attr('sender')+': '+$this.text(),
+										sound : 'beep.mp3',
+										icon : 'ico-notification-paperplane.png',
 										bagde : mobserv.badge.get()
 									},function(){
 										mobserv.nav.forward('messages');
@@ -2207,6 +2215,8 @@ var mobserv = {
 									mobserv.notification.open({
 										title : $Rtalk.attr('name'),
 										text : $this.attr('sender')+': '+$this.text(),
+										sound : 'beep.mp3',
+										icon : 'ico-notification-paperplane.png',
 										bagde : mobserv.badge.get()
 									},function(){
 										mobserv.nav.forward('messages');
@@ -2605,18 +2615,18 @@ var mobserv = {
 			if (!mobserv.notification.inited || !mobserv.bgmode.active) return;
 			if (navigator.vibrate) navigator.vibrate(300);
 			var id = (options.id) ? options.id : mobserv.notification.id;
+			mobserv.notification.id++;
 			cordova.plugins.notification.local.schedule({
 				id: id,
 				title: $('<span>'+htmldecode(options.title)+'</span>').text(),
 				text: $('<span>'+htmldecode(options.text)+'</span>').text(),
 				badge: (options.badge)? options.badge : 0,
-				sound: (options.sound)? options.sound : 'file://sounds/beep.mp3',
-				icon: (options.icon)? options.icon : 'file://pic/ico-notification.png',
+				sound: (options.sound)? options.sound : 'file://sounds/'+options.sound,
+				icon: (options.icon)? options.icon : 'file://pic/'+options.icon,
 				data: options.data,
 			});
 			if(ontrigger) mobserv.notification.events[id] = {trigger:ontrigger};
 			if(onclick) mobserv.notification.events[id] = {click:onclick};
-			mobserv.notification.id++;
 		}
 	},
 	notify : {
