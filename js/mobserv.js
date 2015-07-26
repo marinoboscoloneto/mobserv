@@ -2621,8 +2621,8 @@ var mobserv = {
 				title: $('<span>'+htmldecode(options.title)+'</span>').text(),
 				text: $('<span>'+htmldecode(options.text)+'</span>').text(),
 				badge: (options.badge)? options.badge : 0,
-				sound: (options.sound)? options.sound : 'file://sounds/'+options.sound,
-				icon: (options.icon)? options.icon : 'file://pic/'+options.icon,
+				sound: (options.sound)? 'file://sounds/'+options.sound : null,
+				icon: (options.icon)? 'file://pic/'+options.icon : null,
 				data: options.data,
 			});
 			if(ontrigger) mobserv.notification.events[id] = {trigger:ontrigger};
