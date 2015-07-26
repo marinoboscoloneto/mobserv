@@ -95,6 +95,7 @@ $(function(){
 			if (client.code && client.password){
 				var data = {
 					'exec': 'authUser',
+					'lc': client.license,
 					'in': client.install,
 					'cid': client.code,
 					'us': user.login,
@@ -747,7 +748,7 @@ $(function(){
 		})
 	}, false);
 	document.addEventListener("deviceready", function(){
-		mobserv.debug.on();
+		//mobserv.debug.on();
 		mobserv.device.init();
 		mobserv.insomnia.init();
 		mobserv.battery.init();

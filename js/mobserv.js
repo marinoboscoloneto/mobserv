@@ -2180,7 +2180,7 @@ var mobserv = {
 										title : $Rtalk.attr('name'),
 										text : $this.attr('sender')+': '+$this.text(),
 										sound : 'beep.mp3',
-										icon : 'ico-notification-paperplane.png',
+										icon : 'ico-notification-chat.png',
 										bagde : mobserv.badge.get()
 									},function(){
 										mobserv.nav.forward('messages');
@@ -2216,7 +2216,7 @@ var mobserv = {
 										title : $Rtalk.attr('name'),
 										text : $this.attr('sender')+': '+$this.text(),
 										sound : 'beep.mp3',
-										icon : 'ico-notification-paperplane.png',
+										icon : 'ico-notification-chat.png',
 										bagde : mobserv.badge.get()
 									},function(){
 										mobserv.nav.forward('messages');
