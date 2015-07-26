@@ -34,7 +34,7 @@
         </header>
     	<ul>
         	<li><a data-view="home" data-direction="forward"><span class="icon-home">Home</span></a></li>
-        	<li><a data-view="servicelist" data-direction="forward"><span class="icon-package5">Serviços</span></a></li>
+        	<li><a data-view="servicelist" data-direction="forward"><span class="icon-package5 service-icon service-name">Serviços</span></a></li>
         	<li><a data-view="talkies" data-direction="forward"><span class="icon-paperplane">Mensagens</span></a></li>
         	<li><a data-view="user" data-direction="forward"><span class="icon-user2">Usuário</span></a></li>
         	<li><a data-view="configs" data-direction="forward"><span class="icon-cogs">Configurações</span></a></li>
@@ -112,7 +112,7 @@
         	<div class="pullinfo"><strong>Solte para atualizar</strong></div>
             <div class="pullarea">
                 <ul class="grid">
-                    <li><a data-view="servicelist" data-direction="forward" class="unmarked"><strong class="icon-package5"></strong><span>Serviços</span><mark></mark></a></li>
+                    <li><a data-view="servicelist" data-direction="forward" class="unmarked"><strong class="icon-package5 service-icon"></strong><span class="service-name">Serviços</span><mark></mark></a></li>
                     <li><a data-view="talkies" data-direction="forward" class="unmarked"><strong class="icon-paperplane"></strong><span>Mensagens</span><mark class="blue"></mark></a></li>
                     <li><a data-view="configs" data-direction="forward"><strong class="icon-cogs"></strong><span>Configurações</span></a></li>
                 </ul>
@@ -121,7 +121,7 @@
     </div>
     <div class="view" id="servicelist">
         <header class="header ds" id="header">
-            <h1 class="icon-package5">Serviços</h1>
+            <h1 class="icon-package5 service-icon service-name">Serviços</h1>
             <a class="item l1 link back icon-chevron-left" data-direction="back"></a>
             <a class="item r1 menu icon-menu"></a>
         </header>
@@ -135,7 +135,7 @@
     </div>
     <div class="view" id="joblist">
         <header class="header ds" id="header">
-            <h1 class="icon-package5" id="screenname">{screenname}</h1>
+            <h1 class="icon-package5 service-icon" id="screenname">{screenname}</h1>
             <a class="item l1 link back icon-chevron-left" data-direction="back"></a>
             <a class="item r2 link gmap iconsmall icon-map3" data-view="map" data-direction="forward" data-source="joblist"></a>
             <a class="item r1 menu icon-menu"></a>
@@ -150,7 +150,7 @@
     </div>
     <div class="view" id="jobdetails">
         <header class="header ds" id="header">
-            <h1 class="icon-package5" id="screenname">Detalhes</h1>
+            <h1 class="icon-package5 service-icon" id="screenname">Detalhes</h1>
             <a class="item l1 link back icon-chevron-left" data-direction="back"></a>
             <a class="item r2 link gmap iconsmall icon-map3" data-view="map" data-direction="forward" data-source="jobdetails"></a>
             <a class="item r1 menu icon-menu"></a>
@@ -538,7 +538,7 @@
     <footer class="footer ds" id="footer">
         <div class="user icon-user2"><strong>M01</strong><small>Nome do usuário</small></div>
         <a class="item r3 link icon-history fordebug" data-view="log" data-direction="foreground"><mark class="small red"></mark></a>
-        <a class="item r2 link icon-package5" data-view="servicelist" data-direction="forward"><mark></mark></a>
+        <a class="item r2 link icon-package5 service-icon" data-view="servicelist" data-direction="forward"><mark></mark></a>
         <a class="item r1 link icon-paperplane" data-view="talkies" data-direction="forward"><mark class="blue"></mark></a>
     </footer>
     <div id="notify" class="notify ds">

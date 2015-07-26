@@ -1211,9 +1211,16 @@ var mobserv = {
 						if ($server.length > 0){
 							$server.each(function(){
 								var $srv = $(this);
+								var name = $srv.attr('name');
+								var icon = $srv.attr('icon');
 								var url = $srv.attr('url');
 								var sinterval = $srv.attr('interval');
 								if (url){
+									if (icon) $('.service-icon').switchClass('icon-package5',icon);
+									if (name){
+										client.servertitle = name;
+										$('.service-name').text(name);
+									}
 									mobserv.server.list.push({
 										id : 'srv'+mobserv.server.list.length,
 										type : 'service',
@@ -1597,14 +1604,15 @@ var mobserv = {
 					});
 					mobserv.notify.open({
 						type : status,
-						name : 'Serviços',
+						name : client.servertitle,
 						message : $this.text(),
 						duration : 5000,
 						tap : (status == 'info' || status == 'notice') ? function(){ mobserv.nav.forward('services'); } : null
 					});
 					mobserv.notification.open({
-						title : 'Serviços',
+						title : client.servertitle,
 						text : $this.text(),
+						bagde : mobserv.badge.get()
 					},function(){
 						mobserv.nav.forward('servicelist');
 					});
@@ -1679,7 +1687,7 @@ var mobserv = {
 						});
 						mobserv.notify.open({
 							type : status,
-							name : 'Serviços',
+							name : client.servertitle,
 							message : $this.text()
 						});	
 						$this.remove();
@@ -2016,7 +2024,7 @@ var mobserv = {
 				var $markserv = $('#servicelist .link mark');
 				$markserv.transition({opacity:0,scale:0.01},100);
 			}
-			mobserv.badge.set();
+			//mobserv.badge.set();
 		},
 		cleardom : function(type){
 			if (!type || type == 'serviceslist'){
@@ -2165,6 +2173,7 @@ var mobserv = {
 									mobserv.notification.open({
 										title : $Rtalk.attr('name'),
 										text : $this.attr('sender')+': '+$this.text(),
+										bagde : mobserv.badge.get()
 									},function(){
 										mobserv.nav.forward('messages');
 										mobserv.talkies.parsedom('messages',tid);
@@ -2198,6 +2207,7 @@ var mobserv = {
 									mobserv.notification.open({
 										title : $Rtalk.attr('name'),
 										text : $this.attr('sender')+': '+$this.text(),
+										bagde : mobserv.badge.get()
 									},function(){
 										mobserv.nav.forward('messages');
 										mobserv.talkies.parsedom('messages',tid);
@@ -2436,7 +2446,7 @@ var mobserv = {
 				$markhome.transition({opacity:0,scale:0.01},300,function(){ $markhome.text('0'); });	
 				$markfoot.transition({opacity:0,scale:0.01},300,function(){ $markfoot.text('0'); }).parent().removeClass('marked');	
 			}
-			mobserv.badge.set();
+			//mobserv.badge.set();
 		}
 	},
 	zindex : 3,
@@ -2557,34 +2567,16 @@ var mobserv = {
 	mark : {			
 	},
 	badge : {
-		inited : false, 
-		init : function(){
-			if (cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.badge){
-				cordova.plugins.notification.badge.registerPermission(function (granted) {
-					mobserv.log({
-						type : 'notice',
-						name : 'badge.init',
-						message : 'badge permission: '+granted,
-					});
-					mobserv.badge.inited = true;
-				});
-			} else {
-				mobserv.log({
-					type : 'error',
-					name : 'badge.init',
-					message : 'badge plugin not found'
-				});
-			}
-		},
 		set : function(){
-			if (!mobserv.badge.inited) return;
+			// set badges inside dom interafce
+		},
+		get : function(){
 			var $markservices = $('#home [data-view="servicelist"] mark');
 			var $marktalkies = $('#home [data-view="talkies"] mark');
 			var ms = (($markservices.length) ? parseInt($markservices.text()) : 0) || 0;
 			var mt = (($marktalkies.length) ? parseInt($marktalkies.text()) : 0) || 0;
 			var bdg = ms + mt;
-			if (bdg) cordova.plugins.notification.badge.set(bdg);
-			else cordova.plugins.notification.badge.clear();
+			return bdg;
 		},
 	},
 	notification : {
@@ -2617,6 +2609,7 @@ var mobserv = {
 				id: id,
 				title: $('<span>'+htmldecode(options.title)+'</span>').text(),
 				text: $('<span>'+htmldecode(options.text)+'</span>').text(),
+				badge: (options.badge)? options.badge : 0,
 				sound: (options.sound)? options.sound : 'file://sounds/beep.mp3',
 				icon: (options.icon)? options.icon : 'file://pic/ico-notification.png',
 				data: options.data,
