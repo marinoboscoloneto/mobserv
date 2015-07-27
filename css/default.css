@@ -223,7 +223,8 @@ form .items { width:100%; margin:0; position:relative; }
 form .items .item { display:table; width:100%; border-bottom:#DDD solid 1px; color:#555; }
 form .items .item .check { display:table-cell; width:30px; background-image:url(../pic/item-check.png); background-repeat:no-repeat; background-position:0px center; }
 form .items .item .image { display:table-cell; width:48px; padding:10px 0; vertical-align:top; }
-form .items .item .image .icon { width:48px; height:48px; line-height:48px; background-color:#666; color:#FFF; text-align:center; font-size:15px; font-weight:bold; border-radius:48px; letter-spacing:-1px; }
+form .items .item .image .icon { width:48px; height:48px; line-height:48px; background-color:#CCC; color:#555; text-align:center; font-size:15px; font-weight:bold; border-radius:48px; letter-spacing:-1px; position:relative; }
+form .items .item .image .icon:before { font-size:24px; }
 form .items .item .image .thumb { width:48px; height:48px; background-color:#FFF; background-position:center center; background-size:cover; border-radius:48px; }
 form .items .item .data { display:table-cell; padding:6px 0 6px 10px; vertical-align:middle; }
 form .items .item .data h2 { margin:0px; }
@@ -231,7 +232,7 @@ form .items .item .data p { margin:0px; margin-top:6px; }
 form .items .item .data *[class*="icon-"]:before { margin-right:3px; }
 form .items .item.match { color:#333; background-color:#F2F2F2; }
 form .items .item.match .check { background-position:-30px center; }
-form .items .item.match .icon { background-color:#333; }
+form .items .item.match .icon { background-color:#333; color:#FFF; }
 form .items .item.unmatch { color:#666; background-color:#FFEAEE; }
 form .items .item.unmatch .check { background-position:-60px center; }
 form .items .item.unmatch .icon { background-color:#666; }
