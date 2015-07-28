@@ -71,6 +71,13 @@
        		<button class="gray">Cancelar</button>
        </div>        
     </div>
+    <div class="view overall ds" id="confirmmasterreset">
+       <div class="btngroup">
+       		<p><strong>Você quer mesmo limpar as configurações e restaurar o padrão pós instalação?</strong></p><p>Todos os dados armazenados no banco de dados local do aplicativo serão removidos.</p>
+       		<button class="red remove">Sim, quero limpar</button>
+       		<button class="gray">Cancelar</button>
+       </div>        
+    </div>
     <div class="view gray current courtain ds" id="preload" style="display:block;">
     	<div class="loadinfo">Inicializando...</div>
         <form class="auth" action="">
@@ -221,6 +228,7 @@
                 <li><a data-view="connectioninfo" data-direction="forward"><strong class="icon-network"></strong><span>Info de Conexão</span></a></li>
                 <li><a data-view="servers" data-direction="forward"><strong class="icon-layers"></strong><span>Servidores</span></a></li>
                 <li><a data-view="map" data-direction="forward" data-source="gps"><strong class="icon-map3"></strong><span>Geoposição</span></a></li>
+                <li><a data-view="vectormap" data-direction="forward" data-source="gps"><strong class="icon-map3"></strong><span>VMAP</span></a></li>
                 <li class="fordebug"><a data-view="data" data-direction="forward"><strong class="icon-code"></strong><span>Fonte de Dados</span></a></li>
                 <li class="fordebug"><a data-view="log" data-direction="foreground" class="unmarked"><strong class="icon-history"></strong><span>Log</span><mark>86</mark></a></li>
                 <li><a data-view="about" data-direction="forward"><strong class="icon-bald22"></strong><span>Sobre o Mobserv</span></a></li>
@@ -344,6 +352,7 @@
                   </tr>
                 </table>
             </div>
+            <p style="text-align:center;"><input type="button" class="submit link"  data-view="confirmmasterreset" data-direction="foreground" value="Master Reset" /></p>
         </section>
     </div>
     <div class="view" id="connectioninfo">
@@ -451,6 +460,14 @@
             <pre><code class="xml"></code></pre>
         </section>
     </div>
+    <div class="view" id="vectormap">
+        <header class="header ds" id="header">
+            <h1 class="icon-map3">VectorMap</h1>
+            <a class="item l1 link back icon-chevron-left" data-direction="back"></a>
+            <a class="item r1 menu icon-three-bars"></a>
+        </header>
+        <section class="section vmap" style="background-color:#EBEBEB !important;"></section>
+	</div>
     <div class="view" id="map">
         <header class="header ds" id="header">
             <h1 class="icon-map3">Mapa</h1>
@@ -528,7 +545,7 @@
               </tr>
             </table>
         </section>
-        <section class="section map" style="background-color:rgb(233, 229, 220) !important;"></section>
+        <section class="section map" style="background-color:#EBEBEB !important;"></section>
     </div>
     <div class="view log" id="log">
         <header class="header ds" id="header">
@@ -546,9 +563,12 @@
         <a class="item r1 link icon-paperplane" data-view="talkies" data-direction="forward"><mark class="blue"></mark></a>
     </footer>
     <div id="notify" class="notify ds">
-    	<strong></strong>
-        <span></span>
-        <small></small>
+    	<div class="hide"><a></a></div>
+        <div class="content">
+            <strong></strong>
+            <span></span>
+            <small></small>
+        </div>
     </div>
 </main>
 <div class="spin"></div>

@@ -79,7 +79,7 @@ input:invalid { box-shadow:none; }
 .nav ul li a [class*="icon-"]:before { margin-right:12px; }
 .nav ul li a.hover { background-color:#222; }
 
-.view { display:none; opacity:0; width:100%; height:100%; top:0; background-color:#FFF; overflow:hidden; position:absolute; z-index:2; -webkit-transform: translateZ(0); -webkit-backface-visibility: hidden; perspective: 1000; }
+.view { display:none; opacity:0; width:100%; height:100%; top:0; background-color:#FFF; overflow:hidden; position:absolute; z-index:2; -webkit-transform: translateZ(0); -webkit-backface-visibility: hidden; perspective: 1000; box-shadow: 0 0 40px rgba(64,64,64,.2); }
 .view.current { left:0; opacity:1; }
 .view.inactive { left:80%;  }
 .view.gray { background-color:#EEE; }
@@ -185,7 +185,9 @@ form.composer .submit { float:right; width:50px; border:none; border-radius:3px;
 .footer .user small { display:block; margin-left:27px; margin-top:-10px; font-size:9px; }
 .footer .user:before { margin:7px 3px 0 0; font-size:24px; }
 
-.notify { display:none; position:absolute; bottom:0; left:0; width:100%; background:rgba(51,51,51,.92); z-index:100000000; padding:16px; color:#FFF; }
+.notify { display:none; position:absolute; bottom:0; left:0; width:100%; background:rgba(51,51,51,.92); z-index:100000000; padding:20px 12px 12px; color:#FFF; }
+.notify .hide { height:20px; position:relative; margin-top:-20px; }
+.notify .hide a { display:block; width:40px; height:6px; background:#FFF; position:absolute; top:50%; left:50%; margin-left:-20px; margin-top:-3px; border-radius:10px;  }
 .notify strong { display:block; padding:0 4px; font-size:13px; }
 .notify span { display:block; padding:4px; }
 .notify small { display:block; padding:0 4px; }

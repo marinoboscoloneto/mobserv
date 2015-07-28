@@ -603,66 +603,77 @@ var mobserv = {
 		}
 	},
 	bgmode : {
+		bgintval : null,
 		active : false,
+		activate : function(){
+			var bgmodeHops = 0;
+			mobserv.bgmode.active = true;
+			if (mobserv.auth.loggedin()){
+				mobserv.services.autogetspeed = 2;
+				mobserv.talkies.autogetspeed = 2;
+				mobserv.geolocation.autopostionspeed = 2;
+				mobserv.services.autoreset();
+				mobserv.talkies.autoreset();
+				mobserv.geolocation.autoPosition();
+			}
+			mobserv.log({
+				type : 'info',
+				name : 'backgroundMode.onactivate',
+				message : 'the background mode is active'
+			});
+			mobserv.bgmode.bgintval = setInterval(function(){
+				bgmodeHops++;
+				mobserv.log({
+					name : 'backgroundMode.onactivate',
+					message : 'the background mode is rolling',
+					detail : 'hops: '+bgmodeHops+' minutes'
+				});
+			},60000);
+		},
+		deactivate : function(){
+			mobserv.bgmode.active = false;
+			if (mobserv.auth.loggedin()){
+				mobserv.services.autogetspeed = 1;
+				mobserv.talkies.autogetspeed = 1;
+				mobserv.geolocation.autopostionspeed = 1;
+				mobserv.services.autoreset();
+				mobserv.talkies.autoreset();
+				mobserv.geolocation.autoPosition();
+			}
+			mobserv.log({
+				type : 'info',
+				name : 'backgroundMode.ondeactivate',
+				message : 'the background mode is inactive'
+			});
+			clearInterval(mobserv.bgmode.bgintval);
+		},
+		faulure : function(){
+			mobserv.bgmode.active = false;
+			mobserv.log({
+				type : 'error',
+				name : 'backgroundMode.onfailure',
+				message : 'the background mode trigger error'
+			});
+			clearInterval(mobserv.bgmode.bgintval);
+		},
 		init : function(){
 			if (cordova && cordova.plugins && cordova.plugins.backgroundMode){
-				var bgmodeInt, bgmodeHops = 0;
 				cordova.plugins.backgroundMode.enable();
-				cordova.plugins.backgroundMode.onactivate = function(){
-					bgmodeHops = 0;
-					mobserv.bgmode.active = true;
-					if (mobserv.auth.loggedin()){
-						mobserv.services.autogetspeed = 2;
-						mobserv.talkies.autogetspeed = 2;
-						mobserv.geolocation.autopostionspeed = 2;
-						mobserv.services.autoreset();
-						mobserv.talkies.autoreset();
-						mobserv.geolocation.autoPosition();
-					}
-					mobserv.log({
-						type : 'info',
-						name : 'backgroundMode.onactivate',
-						message : 'the background mode is active'
-					});
-					bgmodeInt = setInterval(function(){
-						bgmodeHops++;
-						mobserv.log({
-							name : 'backgroundMode.onactivate',
-							message : 'the background mode is rolling',
-							detail : 'hops: '+bgmodeHops+' minutes'
-						});
-					},60000);
-				}
-				cordova.plugins.backgroundMode.ondeactivate = function(){
-					mobserv.bgmode.active = false;
-					if (mobserv.auth.loggedin()){
-						mobserv.services.autogetspeed = 1;
-						mobserv.talkies.autogetspeed = 1;
-						mobserv.geolocation.autopostionspeed = 1;
-						mobserv.services.autoreset();
-						mobserv.talkies.autoreset();
-						mobserv.geolocation.autoPosition();
-					}
-					mobserv.log({
-						type : 'info',
-						name : 'backgroundMode.ondeactivate',
-						message : 'the background mode is inactive'
-					});
-					clearInterval(bgmodeInt);
-				}
-				cordova.plugins.backgroundMode.onfailure  = function(){
-					mobserv.bgmode.active = false;
-					mobserv.log({
-						type : 'error',
-						name : 'backgroundMode.onfailure',
-						message : 'the background mode trigger error'
-					});
-					clearInterval(bgmodeInt);
-				}
+				cordova.plugins.backgroundMode.onactivate = mobserv.bgmode.activate;
+				cordova.plugins.backgroundMode.ondeactivate = mobserv.bgmode.deactivate;
+				cordova.plugins.backgroundMode.onfailure  = mobserv.bgmode.failure;
 				mobserv.log({
 					type : 'notice',
 					name : 'bgmode.init',
 					message : 'bgmode api is loaded'
+				});	
+			} else {
+				window.addEventListener("focus", mobserv.bgmode.deactivate);
+				window.addEventListener("blur", mobserv.bgmode.activate);
+				mobserv.log({
+					type : 'notice',
+					name : 'bgmode.init',
+					message : 'bgmode with js window focus/blur is loaded'
 				});	
 			}
 		}
@@ -722,6 +733,16 @@ var mobserv = {
 				mobserv.connection.online = true;
 				mobserv.connection.parsedom();
 				return true;
+			}
+		}
+	},
+	vectormap : {
+		map : function(div){
+			var mapDiv = document.getElementById(div);
+			var map = plugin.google.maps.Map.getMap(mapDiv);
+			map.on(plugin.google.maps.event.MAP_READY, onMapInit);
+			function onMapInit(map) {
+				alert('map ready');
 			}
 		}
 	},
@@ -1096,9 +1117,15 @@ var mobserv = {
 	},
 	auth : {
 		loggedin : function(){
-			if (mobserv.globals.user.session && mobserv.globals.client.license){
+			if (mobserv.globals.user.session){
 				return true;	
 			}
+			mobserv.log({
+				type : 'alert',
+				name : 'auth.loggedin',
+				message : 'user is logged off',
+				detail : query
+			});	
 			return false;
 		},
 		clientdom : function(){
@@ -1134,10 +1161,6 @@ var mobserv = {
 							name : 'auth.logout.user',
 							message : 'user was loged out'
 						});	
-						if(mobserv.services.autogettimeout) clearTimeout(mobserv.services.autogettimeout);
-						if(mobserv.talkies.autogettimeout) clearTimeout(mobserv.talkies.autogettimeout);
-						if(mobserv.geolocation.interval) clearInterval(mobserv.geolocation.interval);
-						if(mobserv.geolocation.watchID) navigator.geolocation.clearWatch(mobserv.geolocation.watchID);
 					}
 				);
 			}
@@ -1158,6 +1181,10 @@ var mobserv = {
 					if (server.type == 'service') delete server;
 				});
 			}
+			if(mobserv.services.autogettimeout) clearTimeout(mobserv.services.autogettimeout);
+			if(mobserv.talkies.autogettimeout) clearTimeout(mobserv.talkies.autogettimeout);
+			//if(mobserv.geolocation.interval) clearInterval(mobserv.geolocation.interval);
+			if(mobserv.geolocation.watchID) navigator.geolocation.clearWatch(mobserv.geolocation.watchID);
 		},
 		client : function(res,data,ondone,onerror) {
 			var client = mobserv.globals.client;
@@ -1609,22 +1636,24 @@ var mobserv = {
 						name : 'services.get',
 						message : status+' validation: '+$this.text()
 					});
-					mobserv.notify.open({
-						type : status,
-						name : client.servertitle,
-						message : $this.text(),
-						duration : 5000,
-						tap : (status == 'info' || status == 'notice') ? function(){ mobserv.nav.forward('services'); } : null
-					});
-					mobserv.notification.open({
-						title : client.servertitle,
-						text : $this.text(),
-						sound : 'beep2.mp3',
-						icon : 'ico-notification-info.png',
-						bagde : mobserv.badge.get()
-					},function(){
-						mobserv.nav.forward('servicelist');
-					});
+					if (services.requestKey != $root.attr('resultKey')){
+						mobserv.notify.open({
+							type : status,
+							name : client.servertitle,
+							message : $this.text(),
+							duration : 5000,
+							tap : (status == 'info' || status == 'notice') ? function(){ mobserv.nav.forward('services'); } : null
+						});
+						mobserv.notification.open({
+							title : client.servertitle,
+							text : $this.text(),
+							sound : 'beep2.mp3',
+							icon : 'ico-notification-info.png',
+							badge : mobserv.badge.get()
+						},function(){
+							mobserv.nav.forward('servicelist');
+						});
+					}
 					$this.remove();
 				});
 				services.requestKey = $root.attr('resultKey');
@@ -2191,7 +2220,7 @@ var mobserv = {
 										text : $this.attr('sender')+': '+$this.text(),
 										sound : 'beep.mp3',
 										icon : 'ico-notification-chat.png',
-										bagde : mobserv.badge.get()
+										badge : mobserv.badge.get()
 									},function(){
 										$('#talkies').find('.list .link[data-id="'+tid+'"]').trigger('tap');
 									});
@@ -2226,7 +2255,7 @@ var mobserv = {
 										text : $this.attr('sender')+': '+$this.text(),
 										sound : 'beep.mp3',
 										icon : 'ico-notification-chat.png',
-										bagde : mobserv.badge.get()
+										badge : mobserv.badge.get()
 									},function(){
 										mobserv.nav.forward('messages');
 										mobserv.talkies.parsedom('messages',tid);
@@ -2645,6 +2674,8 @@ var mobserv = {
 				if (navigator.vibrate) navigator.vibrate(300);
 				var notify = mobserv.notify.list[0];
 				var $notify = $('#notify');
+				var $hide = $notify.find('.hide');
+				var $content = $notify.find('.content');
 				$notify.find('strong').html((notify.name)?htmldecode(notify.name):'');
 				$notify.find('span').html((notify.message)?htmldecode(notify.message):'');
 				$notify.find('small').html((notify.detail)?htmldecode(notify.detail):'');
@@ -2653,8 +2684,14 @@ var mobserv = {
 						mobserv.notify.close();
 					},notify.duration);
 				});
-				$notify.off('tap');
-				$notify.one('tap',function(){
+				$hide.off('tap');
+				$hide.one('tap',function(event){
+					event.preventDefault();
+					event.stopPropagation();
+					mobserv.notify.close();
+				});
+				$content.off('touchstart');
+				$content.one('touchstart',function(){
 					mobserv.notify.close();
 					if(notify.tap) notify.tap();
 				});
@@ -2663,7 +2700,7 @@ var mobserv = {
 		close : function(){
 			var notify = mobserv.notify.list[0];
 			var $notify = $('#notify');
-			if(notify.timeout) clearTimeout(notify.timeout);
+			if(notify && notify.timeout) clearTimeout(notify.timeout);
 			$notify.transition({ y:'40px', opacity:0 }, 300, function(){
 				$notify.hide();
 				mobserv.notify.list.shift();

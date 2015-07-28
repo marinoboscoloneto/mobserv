@@ -308,6 +308,15 @@ $(function(){
 			var $view = $this.closest('.view');
 			mobserv.talkies.remove($view.data('id'));
 		})
+		.on('tap','#confirmmasterreset button.remove',function(){
+			mobserv.sqlite.clear();
+			mobserv.sqlite.create();
+			$('#main > *').hide();
+			$('#main').addClass('courtain');
+			setTimeout(function(){
+				location.reload(true);
+			},2000);
+		})
 		.on('tap','.view.disable',function(){
 			if ($('#nav').hasClass('active')){
 				$('.footer').transition({ y:0 }, 300);
@@ -537,6 +546,9 @@ $(function(){
 			$this.find('.mapdata').hide();
 			$this.find('.jobdata').hide();
 		})
+		.on('current','#vectormap',function(){
+			mobserv.vectormap.map('vmap');
+		})
 		.on('current','#map',function(){
 			mobserv.geolocation.watchPosition({
 				enableHighAccuracy : true,
@@ -756,6 +768,7 @@ $(function(){
 			mobserv.debug.on();
 			mobserv.device.init();
 			mobserv.battery.init();
+			mobserv.bgmode.init();
 			mobserv.geolocation.autoPosition();
 			mobserv.sqlite.init();
 			mobserv.auth.init();
