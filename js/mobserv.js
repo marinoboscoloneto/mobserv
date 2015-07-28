@@ -75,6 +75,7 @@ var mobserv = {
 			$table.find('#srvid').html(server.id);
 			$table.find('#srvtype').html(server.type);
 			$table.find('#srvurl').html(server.url);
+			$table.find('#srvintval').html(server.interval);
 			$table.find('#srvonline').css('color',(server.online)?'#09F':'#F00').html((server.online)?'Sim':'Não');
 			$table.find('#srvstatus').html(server.status);
 			$table.find('#srvlastrequest').html(server.lastRequest);
@@ -86,7 +87,7 @@ var mobserv = {
 			if (server){
 				mobserv.log({
 					name : 'server.test',
-					message : 'init test on '+type+' server '+server.url,
+					message : 'init test on '+type+' server '+server.url
 				});
 				if (type === server.type){
 					server.status = 'Conectando';
@@ -107,7 +108,7 @@ var mobserv = {
 								mobserv.log({
 									type : 'notice',
 									name : 'server.test',
-									message : server.url+' is now the online '+type+' server',
+									message : server.url+' is now the online '+type+' server'
 								});
 							} else {
 								server.online = false;
@@ -115,7 +116,7 @@ var mobserv = {
 								mobserv.log({
 									type : 'error',
 									name : 'server.test',
-									message : server.url+' response invalid xml',
+									message : server.url+' response invalid xml'
 								});
 								mobserv.server.pointer++;
 								mobserv.server.test(type);
@@ -128,7 +129,7 @@ var mobserv = {
 							mobserv.log({
 								type : 'error',
 								name : 'server.test',
-								message : server.url+' response error ('+((err)?err:'unknown')+')',
+								message : server.url+' response error ('+((err)?err:'unknown')+')'
 							});
 							$('#preload .loadinfo').text('Impossível conectar ao servidor :(');	
 							mobserv.server.pointer++;
@@ -157,7 +158,7 @@ var mobserv = {
 								mobserv.log({
 									type : 'error',
 									name : 'server.test',
-									message : server.url+' response timeout)',
+									message : server.url+' response timeout)'
 								});
 								$('#preload .loadinfo').text('O servidor não responde :(');	
 							},mobserv.server.timeout/2);
@@ -185,7 +186,7 @@ var mobserv = {
 						mobserv.log({
 							type : 'error',
 							name : 'server.loopcall',
-							message : 'no '+type+' servers available',
+							message : 'no '+type+' servers available'
 						});
 						if(onerror) onerror('Os servidores de '+((server.type == 'license')?'validação de licença':'serviço do cliente')+' não responderam');
 						clearInterval(interval);
@@ -202,7 +203,7 @@ var mobserv = {
 				mobserv.log({
 					type : 'alert',
 					name : 'server.call',
-					message : server.url,
+					message : server.url
 				});
 				mobserv.server.loopcall(type,data,ondone,onerror);
 				return false;
@@ -210,7 +211,7 @@ var mobserv = {
 			mobserv.log({
 				name : 'server.call',
 				message : 'default '+type+' server request called',
-				detail : 'default '+type+' server request called',
+				detail : 'default '+type+' server request called'
 			});
 			server.status = 'Conectando';
 			var cfg = {
@@ -312,7 +313,7 @@ var mobserv = {
 				cfg.data.device = {
 					model : mobserv.device.data.model,
 					platform : mobserv.device.data.platform,
-					version : mobserv.device.data.version,
+					version : mobserv.device.data.version
 				}
 				var pos = mobserv.geolocation.position;
 				cfg.data.gps = {}
@@ -394,7 +395,7 @@ var mobserv = {
 				mobserv.log({
 					type : 'notice',
 					name : 'device.init',
-					message : 'device '+mobserv.device.data.platform+' is ready',
+					message : 'device '+mobserv.device.data.platform+' is ready'
 				});	
 			} else {
 				mobserv.device.data.cordova = false;
@@ -405,7 +406,7 @@ var mobserv = {
 				mobserv.log({
 					type : 'alert',
 					name : 'device.onready',
-					message : 'native device properties not available',
+					message : 'native device properties not available'
 				});	
 			}
 			if (mobserv.device.data.platform == 'iOS') $('#main').addClass('ios');
@@ -541,7 +542,7 @@ var mobserv = {
 				$main.css({height: '100%'});
 				mobserv.log({
 					name : 'native.keyboardhide',
-					message : 'keyboard has hidden',
+					message : 'keyboard has hidden'
 				});	
 				mobserv.keyboard.visible = false;
 			});
@@ -708,7 +709,7 @@ var mobserv = {
 					mobserv.log({
 						type : 'alert',
 						name : 'connection.test',
-						message : 'no internet connection',
+						message : 'no internet connection'
 					});
 					mobserv.connection.parsedom();
 					return false;
@@ -722,7 +723,7 @@ var mobserv = {
 				mobserv.connection.parsedom();
 				return true;
 			}
-		},
+		}
 	},
 	geolocation : {
 		position : {},
@@ -848,7 +849,7 @@ var mobserv = {
 			}, milis);
 			mobserv.log({
 				name : 'geolocation.autoPosition',
-				message : 'auto scheduled position started for every '+(milis/1000)+' seconds',
+				message : 'auto scheduled position started for every '+(milis/1000)+' seconds'
 			});	
 		},
 		getPosition : function(options){
@@ -859,14 +860,14 @@ var mobserv = {
 					type : 'notice',
 					name : 'geolocation.getPosition',
 					message : 'position has gotten',
-					detail : 'lat: '+pos.coords.latitude+', lng: '+pos.coords.longitude,
+					detail : 'lat: '+pos.coords.latitude+', lng: '+pos.coords.longitude
 				});	
 			}, function(error){
 				mobserv.log({
 					type : 'alert',
 					name : 'geolocation.getPosition',
 					code : error.code,
-					message : error.message,
+					message : error.message
 				});	
 				if (error.PERMISSION_DENIED){
 					mobserv.notify.open({
@@ -881,7 +882,7 @@ var mobserv = {
 			mobserv.log({
 				type : 'notice',
 				name : 'geolocation.watchPosition',
-				message : 'watch position started',
+				message : 'watch position started'
 			});	
 			if(mobserv.geolocation.watchID) return;
 			options = options||{};
@@ -893,7 +894,7 @@ var mobserv = {
 					type : 'error',
 					name : 'geolocation.watchPosition',
 					code : error.code,
-					message : error.message,
+					message : error.message
 				});	
 				if (error.PERMISSION_DENIED){
 					mobserv.notify.open({
@@ -907,7 +908,7 @@ var mobserv = {
 		clearWatch : function(){
 			mobserv.log({
 				name : 'geolocation.clearWatch',
-				message : 'watch position cleared',
+				message : 'watch position cleared'
 			});	
 			if (mobserv.geolocation.watchID) navigator.geolocation.clearWatch(mobserv.geolocation.watchID);
 			mobserv.geolocation.autoPosition();
@@ -919,7 +920,7 @@ var mobserv = {
 		init : function(){
 			mobserv.log({
 				name : 'sqlite.init',
-				message : 'db mobserv.db initializing',
+				message : 'db mobserv.db initializing'
 			});	
 			var db;
 			if (!window.sqlitePlugin && window.openDatabase){
@@ -975,14 +976,14 @@ var mobserv = {
 					mobserv.log({
 						type : 'notice',
 						name : 'sqlite.create',
-						message : 'tables in mobserv.db are idle',
+						message : 'tables in mobserv.db are idle'
 					});	
 				},
 				function(e) {
 					mobserv.log({
 						type : 'error',
 						name : 'sqlite.create',
-						message : 'transaction error: '+e.message,
+						message : 'transaction error: '+e.message
 					});	
 				}
 			);
@@ -998,7 +999,7 @@ var mobserv = {
 					mobserv.log({
 						type : 'notice',
 						name : 'sqlite.clear',
-						message : 'tables in mobserv.db was cleared',
+						message : 'tables in mobserv.db was cleared'
 					});
 					mobserv.sqlite.create();
 					mobserv.notify.open({
@@ -1010,7 +1011,7 @@ var mobserv = {
 					mobserv.log({
 						type : 'error',
 						name : 'sqlite.clear',
-						message : 'transaction error: '+e.message,
+						message : 'transaction error: '+e.message
 					});	
 				}
 			);
@@ -1021,14 +1022,14 @@ var mobserv = {
 					mobserv.log({
 						type : 'notice',
 						name : 'sqlite.drop',
-						message : 'mobserv.db droped',
+						message : 'mobserv.db droped'
 					});	
 				},
 				function(e){
 					mobserv.log({
 						type : 'error',
 						name : 'sqlite.drop',
-						message : 'mobserv.db was not droped: '+e.message,
+						message : 'mobserv.db was not droped: '+e.message
 					});	
 				}
 			);	
@@ -1045,7 +1046,7 @@ var mobserv = {
 					mobserv.log({
 						type : 'error',
 						name : 'sqlite.loop',
-						message : 'no database available',
+						message : 'no database available'
 					});
 					if(onerror) onerror('O banco de dados não está disponível');
 					clearInterval(interval);
@@ -1062,7 +1063,7 @@ var mobserv = {
 				mobserv.log({
 					type : 'alert',
 					name : 'sqlite.query',
-					message : 'databse is stoped',
+					message : 'databse is stoped'
 				});
 				mobserv.sqlite.loop(query,ondone,onerror);	
 				return false;
@@ -1076,7 +1077,7 @@ var mobserv = {
 								type : 'info',
 								name : 'sqlite.query',
 								message : 'query executed: '+query,
-								detail : 'rows: '+res.rows.length+', rowsAffected: '+res.rowsAffected,
+								detail : 'rows: '+res.rows.length+', rowsAffected: '+res.rowsAffected
 							});	
 						}
 					);
@@ -1087,11 +1088,11 @@ var mobserv = {
 						type : 'error',
 						name : 'sqlite.query',
 						message : 'query error: '+e.message,
-						detail : query,
+						detail : query
 					});	
 				});
 			}
-		},
+		}
 	},
 	auth : {
 		loggedin : function(){
@@ -1169,7 +1170,7 @@ var mobserv = {
 					mobserv.log({
 						type : status,
 						name : 'auth.client',
-						message : status+' validation: '+$valid.text(),
+						message : status+' validation: '+$valid.text()
 					});
 					if (status == 'info' || status == 'notice'){
 						var $lic = $response.find('license:eq(0)');
@@ -1224,6 +1225,8 @@ var mobserv = {
 									if (name){
 										client.servertitle = name;
 										$('.service-name').text(name);
+									} else {
+										client.servertitle = 'Serviços';
 									}
 									mobserv.server.list.push({
 										id : 'srv'+mobserv.server.list.length,
@@ -1237,13 +1240,13 @@ var mobserv = {
 									mobserv.log({
 										type : 'notice',
 										name : 'auth.client.serviceserver',
-										message : 'added service server: '+url,
+										message : 'added service server: '+url
 									});
 								} else {
 									mobserv.log({
 										type : 'error',
 										name : 'auth.client',
-										message : 'client do not have a service server url',
+										message : 'client do not have a service server url'
 									});
 									mobserv.notify.open({
 										type : 'error',
@@ -1256,7 +1259,7 @@ var mobserv = {
 							mobserv.log({
 								type : 'error',
 								name : 'auth.client',
-								message : 'client do not have a service server',
+								message : 'client do not have a service server'
 							});
 							mobserv.notify.open({
 								type : 'error',
@@ -1297,7 +1300,7 @@ var mobserv = {
 					mobserv.log({
 						type : status,
 						name : 'auth.user',
-						message : status+' validation: '+$valid.text(),
+						message : status+' validation: '+$valid.text()
 					});
 					if (status == 'info' || status == 'notice'){
 						var $session = $response.find('session:eq(0)');
@@ -1362,7 +1365,7 @@ var mobserv = {
 		init : function(){
 			mobserv.log({
 				name : 'auth.init',
-				message : 'auth initialized',
+				message : 'auth initialized'
 			});
 			mobserv.sqlite.query(
 				'select * from sl_clients where active = 1',
@@ -1501,7 +1504,7 @@ var mobserv = {
 						mobserv.log({
 							type : 'notice',
 							name : 'command.removeNodes',
-							message : total+' nodes '+((param)?' "'+param+'"':'')+' were removed',
+							message : total+' nodes '+((param)?' "'+param+'"':'')+' were removed'
 						});
 					}
 				);
@@ -1510,7 +1513,7 @@ var mobserv = {
 		init : function(ondone){
 			mobserv.log({
 				name : 'services.init',
-				message : 'services initialized',
+				message : 'services initialized'
 			});
 			var client = mobserv.globals.client;
 			var user = mobserv.globals.user;
@@ -1527,7 +1530,7 @@ var mobserv = {
 							mobserv.log({
 								type : 'notice',
 								name : 'services.init',
-								message : $xml.length+' services dumped from local database',
+								message : $xml.length+' services dumped from local database'
 							});
 						} else {
 							services.xml = '';
@@ -1556,7 +1559,7 @@ var mobserv = {
 			var milis = (mobserv.battery.idle) ? server.interval*1000*mobserv.services.autogetspeed : 1200000;
 			mobserv.log({
 				name : 'services.autoget',
-				message : 'service autoget scheduled in '+(milis/1000)+' seconds',
+				message : 'service autoget scheduled in '+(milis/1000)+' seconds'
 			});
 			mobserv.services.autogettimeout = setTimeout(function(){
 				mobserv.services.get();
@@ -1565,7 +1568,7 @@ var mobserv = {
 		get : function(ondone){
 			mobserv.log({
 				name : 'services.get',
-				message : 'services get start',
+				message : 'services get start'
 			});
 			var client = mobserv.globals.client;
 			var user = mobserv.globals.user;
@@ -1586,7 +1589,7 @@ var mobserv = {
 					mobserv.log({
 						type : 'error',
 						name : 'services.get',
-						message : 'mobserv node not found in service server response',
+						message : 'mobserv node not found in service server response'
 					});
 					return false;
 				}
@@ -1604,7 +1607,7 @@ var mobserv = {
 					mobserv.log({
 						type : status,
 						name : 'services.get',
-						message : status+' validation: '+$this.text(),
+						message : status+' validation: '+$this.text()
 					});
 					mobserv.notify.open({
 						type : status,
@@ -1641,7 +1644,7 @@ var mobserv = {
 				mobserv.log({
 					type : 'error',
 					name : 'services.get',
-					message : 'get services error: '+error,
+					message : 'get services error: '+error
 				});
 				mobserv.notify.open({
 					type : 'error',
@@ -1655,7 +1658,7 @@ var mobserv = {
 		post : function(data,ondone){
 			mobserv.log({
 				name : 'services.post',
-				message : 'services post start',
+				message : 'services post start'
 			});
 			var client = mobserv.globals.client;
 			var user = mobserv.globals.user;
@@ -1672,7 +1675,7 @@ var mobserv = {
 						mobserv.log({
 							type : 'error',
 							name : 'services.post',
-							message : 'mobserv node not found in service server response',
+							message : 'mobserv node not found in service server response'
 						});
 						return false;
 					}
@@ -1689,7 +1692,7 @@ var mobserv = {
 						mobserv.log({
 							type : status,
 							name : 'services.post',
-							message : status+' validation: '+$this.text(),
+							message : status+' validation: '+$this.text()
 						});
 						mobserv.notify.open({
 							type : status,
@@ -1714,7 +1717,7 @@ var mobserv = {
 					mobserv.log({
 						type : 'error',
 						name : 'services.post',
-						message : 'get services error: '+error,
+						message : 'get services error: '+error
 					});
 					mobserv.notify.open({
 						type : 'error',
@@ -1747,7 +1750,7 @@ var mobserv = {
 			}
 			mobserv.log({
 				name : 'services.parsedom',
-				message : 'parsedom '+type+((id)?' #'+id:'')+' started',
+				message : 'parsedom '+type+((id)?' #'+id:'')+' started'
 			});
 			mobserv.services.cleardom(type);
 			var client = mobserv.globals.client;
@@ -1851,10 +1854,17 @@ var mobserv = {
 				if ($items.length){
 					$items.each(function(){
 						var $this = $(this);
+						if ($this.attr('thumb')){
+							var itemimage = '<div class="thumb" style="background-image:url('+$this.attr('thumb')+');"></div>';
+						} else if ($this.attr('icon')){
+							var itemimage = '<div class="icon icon-'+$this.attr('icon')+'"></div>';
+						} else {
+							var itemimage = '<div class="abbr">'+(($this.attr('abbr'))?$this.attr('abbr'):'ITEM')+'</div>';	
+						}
 						$html = $(''+
 						'<div class="item">'+
 							'<div class="check"></div>'+
-							'<div class="image">'+(($this.attr('thumb'))?'<div class="thumb" style="background-image:url('+$this.attr('thumb')+');"></div>':'<div class="icon">'+(($this.attr('abbr'))?$this.attr('abbr'):'ITM')+'</div>')+'</div>'+
+							'<div class="image">'+itemimage+'</div>'+
 							'<div class="data">'+
 								'<h2 style="color:'+$this.attr('color')+'">'+$this.attr('name')+'</h2>'+
 								'<p><b>'+$this.attr('type')+'</b></p>'+
@@ -1876,7 +1886,7 @@ var mobserv = {
 													mobserv.log({
 														type : 'info',
 														name : 'item.barcode',
-														message : 'item '+result.text+' ('+result.format+','+result.cancelled+') match',
+														message : 'item '+result.text+' ('+result.format+','+result.cancelled+') match'
 													});
 													mobserv.notify.open({
 														type : 'info',
@@ -1889,7 +1899,7 @@ var mobserv = {
 													mobserv.log({
 														type : 'alert',
 														name : 'item.barcode',
-														message : 'item '+result.text+' ('+result.format+','+result.cancelled+') unmatch',
+														message : 'item '+result.text+' ('+result.format+','+result.cancelled+') unmatch'
 													});
 													mobserv.notify.open({
 														type : 'alert',
@@ -1905,7 +1915,7 @@ var mobserv = {
 										mobserv.log({
 											type : 'error',
 											name : 'item.barcode',
-											message : 'item '+result.text+' ('+result.type+','+result.cancelled+') has not match',
+											message : 'item '+result.text+' ('+result.type+','+result.cancelled+') has not match'
 										});
 										mobserv.notify.open({
 											type : 'error',
@@ -1964,7 +1974,7 @@ var mobserv = {
 									$dom.field.append('<option value="'+$option.attr('value')+'">'+$option.text()+'</option>');
 								});
 							} else if ($field.attr('type') == 'text' || $field.attr('type') == 'number' || $field.attr('type') == 'email'){
-								$dom.field = $('<input type="'+$field.attr('type')+'" class="input '+$field.attr('type')+'" placeholder="'+$field.attr('label')+'"  '+(($field.attr('required') == 'true')?' required':'')+' />');	
+								$dom.field = $('<input type="'+$field.attr('type')+'" class="input '+$field.attr('type')+'" placeholder="'+$field.attr('label')+'" '+(($field.attr('required') == 'true')?' required':'')+' data-documentscroll="true" data-sectionscroll="99999999" data-disablescroll="true" />');	
 							}
 							if ($formset.attr('disable') == 'true') $dom.field.prop('disabled',true);
 							$dom.field.on('change',function(){
@@ -2051,7 +2061,7 @@ var mobserv = {
 		init : function(ondone){
 			mobserv.log({
 				name : 'talkies.init',
-				message : 'talkies initialized',
+				message : 'talkies initialized'
 			});
 			var client = mobserv.globals.client;
 			var user = mobserv.globals.user;
@@ -2069,7 +2079,7 @@ var mobserv = {
 							mobserv.log({
 								type : 'notice',
 								name : 'talkies.init',
-								message : $xml.find('talk').length+' talkies dumped from local database',
+								message : $xml.find('talk').length+' talkies dumped from local database'
 							});
 						} else {
 							talkies.xml = '';
@@ -2098,7 +2108,7 @@ var mobserv = {
 			var milis = (mobserv.battery.idle) ? server.interval*1000*mobserv.talkies.autogetspeed : 1200000;
 			mobserv.log({
 				name : 'talkies.autoget',
-				message : 'talkies autoget scheduled in '+(milis/1000)+' seconds',
+				message : 'talkies autoget scheduled in '+(milis/1000)+' seconds'
 			});
 			mobserv.talkies.autogettimeout = setTimeout(function(){
 				mobserv.talkies.get();
@@ -2107,7 +2117,7 @@ var mobserv = {
 		get : function(ondone){
 			mobserv.log({
 				name : 'talkies.get',
-				message : 'talkies get start',
+				message : 'talkies get start'
 			});
 			var client = mobserv.globals.client;
 			var user = mobserv.globals.user;
@@ -2115,7 +2125,7 @@ var mobserv = {
 			var data = {
 				'exec': 'getTalkies',
 				'cid': client.code,
-				'sid': user.session,
+				'sid': user.session
 			};
 			if(mobserv.talkies.autogettimeout) clearTimeout(mobserv.talkies.autogettimeout);
 			mobserv.server.call('service',data,function(response){
@@ -2127,7 +2137,7 @@ var mobserv = {
 					mobserv.log({
 						type : 'error',
 						name : 'talk.get',
-						message : 'mobserv node not found in service server response to talkies',
+						message : 'mobserv node not found in service server response to talkies'
 					});
 					return false;
 				}
@@ -2183,8 +2193,7 @@ var mobserv = {
 										icon : 'ico-notification-chat.png',
 										bagde : mobserv.badge.get()
 									},function(){
-										mobserv.nav.forward('messages');
-										mobserv.talkies.parsedom('messages',tid);
+										$('#talkies').find('.list .link[data-id="'+tid+'"]').trigger('tap');
 									});
 								});
 							}
@@ -2247,7 +2256,7 @@ var mobserv = {
 				mobserv.log({
 					type : 'error',
 					name : 'talkies.get',
-					message : 'get talkies error: '+error,
+					message : 'get talkies error: '+error
 				});
 				mobserv.notify.open({
 					type : 'error',
@@ -2260,7 +2269,7 @@ var mobserv = {
 		post : function(data,ondone,onerror){
 			mobserv.log({
 				name : 'talkies.post',
-				message : 'talkie message post start',
+				message : 'talkie message post start'
 			});
 			var client = mobserv.globals.client;
 			var user = mobserv.globals.user;
@@ -2367,7 +2376,7 @@ var mobserv = {
 			}
 			mobserv.log({
 				name : 'talkies.parsedom',
-				message : 'parsedom '+type+((id)?' #'+id:'')+' started',
+				message : 'parsedom '+type+((id)?' #'+id:'')+' started'
 			});
 			var client = mobserv.globals.client;
 			var user = mobserv.globals.user;
@@ -2572,7 +2581,7 @@ var mobserv = {
 			} else if (direction == 'back'){
 				mobserv.nav.back();
 			}
-		},
+		}
 	},
 	mark : {			
 	},
@@ -2587,7 +2596,7 @@ var mobserv = {
 			var mt = (($marktalkies.length) ? parseInt($marktalkies.text()) : 0) || 0;
 			var bdg = ms + mt;
 			return bdg;
-		},
+		}
 	},
 	notification : {
 		id : 1,
@@ -2598,7 +2607,7 @@ var mobserv = {
 				mobserv.log({
 					type : 'notice',
 					name : 'notification.init',
-					message : 'notification permission: '+granted,
+					message : 'notification permission: '+granted
 				});
 			});
 			cordova.plugins.notification.local.on("trigger", function (n){
@@ -2623,7 +2632,7 @@ var mobserv = {
 				badge: (options.badge)? options.badge : 0,
 				sound: (options.sound)? 'file://sounds/'+options.sound : null,
 				icon: (options.icon)? 'file://pic/'+options.icon : null,
-				data: options.data,
+				data: options.data
 			});
 			if(ontrigger) mobserv.notification.events[id] = {trigger:ontrigger};
 			if(onclick) mobserv.notification.events[id] = {click:onclick};
@@ -2738,21 +2747,21 @@ var mobserv = {
 			mobserv.log({
 				type : 'notice',
 				name : 'mobserv.exit',
-				message : 'app will be closed',
+				message : 'app will be closed'
 			});
 			navigator.app.exitApp();
 		} else if (navigator && navigator.device) {
 			mobserv.log({
 				type : 'notice',
 				name : 'mobserv.exit',
-				message : 'device will be closed',
+				message : 'device will be closed'
 			});
 			navigator.device.exitApp();
 		} else {
 			mobserv.log({
 				type : 'error',
 				name : 'mobserv.exit',
-				message : 'app wont be closed',
+				message : 'app wont be closed'
 			});
 		}
 	}

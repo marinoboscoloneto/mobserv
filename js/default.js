@@ -620,6 +620,7 @@ $(function(){
 					zoomControl: false,
 					rotateControl: false,
 					scrollwheel: false,
+					styles : [ { "featureType": "landscape", "stylers": [ { "saturation": -100 }, { "visibility": "simplified" } ] },{ "featureType": "road", "elementType": "geometry.stroke", "stylers": [ { "visibility": "on" }, { "saturation": -100 }, { "lightness": -18 } ] },{ "featureType": "poi", "stylers": [ { "saturation": -100 } ] },{ "featureType": "landscape.man_made", "stylers": [ { "visibility": "off" } ] } ]
 				},
 				events:{
 					dragstart : function(){
@@ -631,19 +632,7 @@ $(function(){
 			var marker = {
 				values : markersvalue	
 			}
-			var styledmaptype = {  
-				id:"noplaces",
-				styles:[{  
-					featureType:"poi",
-					stylers:[{  
-						  visibility:"off"
-					   }]
-				 }],
-				callback:function() {  
-					$(".map").gmap3("get").setMapTypeId("noplaces");
-				}
-			}
-			$(".map").gmap3({map:map,marker:marker,circle:circle,styledmaptype:styledmaptype},autofit);			
+			$(".map").gmap3({map:map,marker:marker,circle:circle},autofit);			
 		})
 		.on('hide','#map',function(){
 			mobserv.geolocation.clearWatch();
@@ -688,20 +677,20 @@ $(function(){
 					$table.find('.navigate').on('tap',function(){
 						var pos = mobserv.geolocation.position;
 						launchnavigator.navigate(
-							[pos.latitude, pos.longitude],
 							($location.attr('type') == 'geoposition') ? [$location.attr('lat'), $location.attr('lng')] : $location.text(),
+							[pos.latitude, pos.longitude],
 							function(){
 								mobserv.log({
 									type : 'notice',
 									name : 'launchnavigator.navigate',
-									message : 'launchnavigator has called successful',
+									message : 'launchnavigator has called successful'
 								});	
 							},
 							function(error){
 								mobserv.log({
 									type : 'error',
 									name : 'launchnavigator.navigate',
-									message : error,
+									message : error
 								});	
 							}
 						);
@@ -728,7 +717,7 @@ $(function(){
 			type : 'error',
 			name : 'JS',
 			title : 'javascript error on '+event.filename+' ('+event.lineno+', '+event.colno+')',
-			message : event.message,
+			message : event.message
 		});	
 		return false;
 	}, false);
