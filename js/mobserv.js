@@ -658,6 +658,12 @@ var mobserv = {
 		},
 		init : function(){
 			if (cordova && cordova.plugins && cordova.plugins.backgroundMode){
+				cordova.plugins.backgroundMode.setDefaults({
+					title: 'O Mobserv está funcionando em modo de espera.',
+					ticker: 'O Mobserv está em espera.',
+					text: 'Você pode receber notificações automáticas.',
+					resume: false
+				});
 				cordova.plugins.backgroundMode.enable();
 				cordova.plugins.backgroundMode.onactivate = mobserv.bgmode.activate;
 				cordova.plugins.backgroundMode.ondeactivate = mobserv.bgmode.deactivate;
@@ -1748,15 +1754,21 @@ var mobserv = {
 							duration : 5000,
 							tap : (status == 'info' || status == 'notice') ? function(){ mobserv.nav.forward('services'); } : null
 						});
-						mobserv.notification.open({
-							title : client.servertitle,
-							text : $this.text(),
-							sound : 'beep2.mp3',
-							icon : 'ico-notification-info.png',
-							badge : mobserv.badge.get()
-						},function(){
-							mobserv.nav.forward('servicelist');
-						});
+						setTimeout(function(){
+							if (mobserv.bgmode.active){
+								mobserv.notification.open({
+									title : client.servertitle,
+									text : $this.text(),
+									sound : 'beep2.mp3',
+									icon : 'ico-notification-info.png',
+									badge : mobserv.badge.get()
+								},function(){
+									mobserv.nav.forward('servicelist');
+								});
+							} else {
+								mobserv.notification.open({ id:999999, badge : mobserv.badge.get()	});	
+							}
+						},1000);
 					}
 					$this.remove();
 				});
@@ -2173,7 +2185,6 @@ var mobserv = {
 				var $markserv = $('#servicelist .link mark');
 				$markserv.transition({opacity:0,scale:0.01},100);
 			}
-			//mobserv.badge.set();
 		},
 		cleardom : function(type){
 			if (!type || type == 'serviceslist'){
@@ -2316,20 +2327,24 @@ var mobserv = {
 									$section.scrollTop(999999999);
 								}
 							}
-							if (mobserv.bgmode.active && $Rmsgs.length){
-								$Rmsgs.each(function(){
-									$this = $(this);
-									mobserv.notification.open({
-										title : $Rtalk.attr('name'),
-										text : $this.attr('sender')+': '+$this.text(),
-										sound : 'beep.mp3',
-										icon : 'ico-notification-chat.png',
-										badge : mobserv.badge.get()
-									},function(){
-										$('#talkies').find('.list .link[data-id="'+tid+'"]').trigger('tap');
+							setTimeout(function(){
+								if (mobserv.bgmode.active && $Rmsgs.length){
+									$Rmsgs.each(function(){
+										$this = $(this);
+										mobserv.notification.open({
+											title : $Rtalk.attr('name'),
+											text : $this.attr('sender')+': '+$this.text(),
+											sound : 'beep.mp3',
+											icon : 'ico-notification-chat.png',
+											badge : mobserv.badge.get()
+										},function(){
+											$('#talkies').find('.list .link[data-id="'+tid+'"]').trigger('tap');
+										});
 									});
-								});
-							}
+								} else {
+									mobserv.notification.open({ id:999999, badge : mobserv.badge.get()	});	
+								}
+							},1000);
 						});
 					} else {
 						talkies.xml = response;	
@@ -2351,21 +2366,25 @@ var mobserv = {
 									$section.scrollTop(999999999);
 								}
 							} 
-							if (mobserv.bgmode.active && $Lmsgs.length){
-								$Lmsgs.each(function(){
-									$this = $(this);
-									mobserv.notification.open({
-										title : $Rtalk.attr('name'),
-										text : $this.attr('sender')+': '+$this.text(),
-										sound : 'beep.mp3',
-										icon : 'ico-notification-chat.png',
-										badge : mobserv.badge.get()
-									},function(){
-										mobserv.nav.forward('messages');
-										mobserv.talkies.parsedom('messages',tid);
+							setTimeout(function(){
+								if (mobserv.bgmode.active && $Lmsgs.length){
+									$Lmsgs.each(function(){
+										$this = $(this);
+										mobserv.notification.open({
+											title : $Rtalk.attr('name'),
+											text : $this.attr('sender')+': '+$this.text(),
+											sound : 'beep.mp3',
+											icon : 'ico-notification-chat.png',
+											badge : mobserv.badge.get()
+										},function(){
+											mobserv.nav.forward('messages');
+											mobserv.talkies.parsedom('messages',tid);
+										});
 									});
-								});
-							}
+								} else {
+									mobserv.notification.open({ id:999999,  badge : mobserv.badge.get()	});
+								}
+							},1000);
 						});
 					}
 					if (!$view.length && totalinmark){

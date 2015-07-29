@@ -2,8 +2,8 @@
     <widget xmlns   = "http://www.w3.org/ns/widgets"
         xmlns:gap   = "http://phonegap.com/ns/1.0"
         id          = "com.sourcelab.mobserv"
-        versionCode = "12" 
-        version     = "1.0.57" >
+        versionCode = "13" 
+        version     = "1.0.58" >
     <name>Mobserv</name>
     <description>
         Mobile Services Application for SourceLab Systems
@@ -23,6 +23,7 @@
 	<preference name="show-splash-screen-spinner"	value="false" />
 	<preference name="auto-hide-splash-screen"		value="true" />
 	<preference name="android-minSdkVersion"		value="7" />
+	<preference name="android-windowSoftInputMode"	value="adjustResize" />
 	<preference name="android-installLocation"		value="auto" />
 	
 	<gap:plugin name="org.apache.cordova.device" version="0.2.12" />
@@ -64,10 +65,13 @@
     <icon src="res/icon/windows-phone/icon-48.png"  gap:platform="winphone" />
     <icon src="res/icon/windows-phone/icon-173.png" gap:platform="winphone"   gap:role="background" />
 	
+	<gap:splash src="splash.png" />
     <gap:splash src="res/screen/android/screen-ldpi-portrait.png"       gap:platform="android" gap:qualifier="port-ldpi" />
     <gap:splash src="res/screen/android/screen-mdpi-portrait.png"       gap:platform="android" gap:qualifier="port-mdpi" />
     <gap:splash src="res/screen/android/screen-hdpi-portrait.png"       gap:platform="android" gap:qualifier="port-hdpi" />
     <gap:splash src="res/screen/android/screen-xhdpi-portrait.png"      gap:platform="android" gap:qualifier="port-xhdpi" />
+    <gap:splash src="res/screen/android/screen-xhdpi-portrait.png"      gap:platform="android" gap:qualifier="port-xhdpi" />
+    <gap:splash src="res/screen/android/screen-xhdpi2-portrait.png"     gap:platform="android" gap:qualifier="port-xxhdpi" />
     <gap:splash src="res/screen/ios/screen-iphone-portrait.png"         gap:platform="ios"     width="320" height="480" />
     <gap:splash src="res/screen/ios/screen-iphone-portrait-2x.png"      gap:platform="ios"     width="640" height="960" />
     <gap:splash src="res/screen/ios/screen-iphone-portrait-568h-2x.png" gap:platform="ios"     width="640" height="1136" />
