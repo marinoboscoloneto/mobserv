@@ -503,37 +503,50 @@ var mobserv = {
 			window.addEventListener('native.keyboardshow', function(event){
 				var disableScroll, documentScroll, sectionScroll, hideKeyboardAccessoryBar;
 				var $main = $('#main');
-				if(mobserv.inputfocus && mobserv.inputfocus.data('disablescroll')){
-					cordova.plugins.Keyboard.disableScroll(true);
-					$main.css({height: ($(window).height() - event.keyboardHeight) + 'px', top:'auto', bottom:'0px'});
-					disableScroll = true;
+				if(mobserv.inputfocus){
+					if(mobserv.inputfocus.data('disablescroll')){
+						cordova.plugins.Keyboard.disableScroll(true);
+						$main.css({height: ($(window).height() - event.keyboardHeight) + 'px', top:'auto', bottom:'0px'});
+						disableScroll = true;
+					} else {
+						cordova.plugins.Keyboard.disableScroll(false);
+						$main.css({height: '100%', top:'0px', bottom:'auto'});
+						disableScroll = false;
+					}
+					if(mobserv.inputfocus.data('documentscroll')){
+						documentScroll = mobserv.inputfocus.data('documentscroll');
+						$(window).scrollTop(documentScroll == 'true' ? 0 : documentScroll);
+						$(document).scrollTop(documentScroll);
+					}
+					if(mobserv.inputfocus.data('sectionscroll')){
+						var $view = $main.find('.view.current:eq(0)');
+						sectionScroll = mobserv.inputfocus.data('sectionscroll');
+						$view.find('.section').scrollTop(sectionScroll);
+					}
+					if(mobserv.inputfocus.data('hideaccessory')){
+						cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
+						hideKeyboardAccessoryBar = true;
+					} else {
+						cordova.plugins.Keyboard.hideKeyboardAccessoryBar(false);
+						hideKeyboardAccessoryBar = false;
+					}
+					mobserv.log({
+						name : 'native.keyboardshow',
+						message : 'keyboard has shown',
+						detail : 'documentScroll: '+documentScroll+', sectionScroll: '+sectionScroll+', disableScroll: '+((disableScroll)?'true':'false')+', hideKeyboardAccessoryBar: '+((hideKeyboardAccessoryBar)?'true':'false')+', keyboardHeight: '+event.keyboardHeight+', $main.height: '+$main.height()
+					});
 				} else {
 					cordova.plugins.Keyboard.disableScroll(false);
 					$main.css({height: '100%', top:'0px', bottom:'auto'});
 					disableScroll = false;
-				}
-				if(mobserv.inputfocus && mobserv.inputfocus.data('documentscroll')){
-					documentScroll = mobserv.inputfocus.data('documentscroll');
-					$(window).scrollTop(documentScroll == 'true' ? 0 : documentScroll);
-					$(document).scrollTop(documentScroll);
-				}
-				if(mobserv.inputfocus && mobserv.inputfocus.data('sectionscroll')){
-					var $view = $main.find('.view.current:eq(0)');
-					sectionScroll = mobserv.inputfocus.data('sectionscroll');
-					$view.find('.section').scrollTop(sectionScroll);
-				}
-				if(mobserv.inputfocus && mobserv.inputfocus.data('hideaccessory')){
-					cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
-					hideKeyboardAccessoryBar = true;
-				} else {
 					cordova.plugins.Keyboard.hideKeyboardAccessoryBar(false);
 					hideKeyboardAccessoryBar = false;
+					mobserv.log({
+						type : 'alert',
+						name : 'native.keyboardshow',
+						message : 'keyboard has shown without a focused input',
+					});
 				}
-				mobserv.log({
-					name : 'native.keyboardshow',
-					message : 'keyboard has shown',
-					detail : 'documentScroll: '+documentScroll+', sectionScroll: '+sectionScroll+', disableScroll: '+((disableScroll)?'true':'false')+', hideKeyboardAccessoryBar: '+((hideKeyboardAccessoryBar)?'true':'false')+', keyboardHeight: '+event.keyboardHeight+', $main.height: '+$main.height()
-				});
 				mobserv.keyboard.visible = true;
 			});
 			window.addEventListener('native.keyboardhide', function(event){
@@ -646,7 +659,7 @@ var mobserv = {
 				message : 'the background mode is inactive'
 			});
 			clearInterval(mobserv.bgmode.bgintval);
-			window.plugin.notification.local.cancelAll();
+			mobserv.notification.cancelAll();
 		},
 		faulure : function(){
 			mobserv.bgmode.active = false;
@@ -746,7 +759,11 @@ var mobserv = {
 	bing : {
 		maps : {},
 		pins : {},
+		lines : {},
 		current : null,
+		has : function(id){
+			return (mobserv.bing.maps[id])?true:false;
+		},
 		load : function(id,lat,lng,zoom,move){
 			if (!mobserv.bing.maps[id]){
 				var mapOptions = {
@@ -784,10 +801,62 @@ var mobserv = {
 			mobserv.bing.me(lat,lng);
 			if (mobserv.bing.forcepam) mobserv.bing.center(lat,lng);
 		},
+		bounds : function(id,bounds){
+			if (!mobserv.bing.current) return;
+			var id = mobserv.bing.current;
+			var map = mobserv.bing.maps[id];
+			var locs = [0,0];
+			$.each(bounds||[],function(b,bound){
+				locs.push(new Microsoft.Maps.Location(bound[0],bound[1]));
+			});
+			bounds = Microsoft.Maps.LocationRect.fromLocations(locs);
+			map.setView({bounds:bounds, padding: 10});
+		},
 		me : function(lat,lng,click){
 			var lat = lat || mobserv.geolocation.position.latitude;
 			var lng = lng || mobserv.geolocation.position.longitude;
 			return mobserv.bing.pin.add('_me_',lat,lng,'pic/marker-mobserv.png',click);
+		},
+		line : {
+			add : function(id,coords,color,stroke,alpha){
+				if (!mobserv.bing.current) return;
+				var cur = mobserv.bing.current;
+				var map = mobserv.bing.maps[cur];
+				if (!mobserv.bing.lines[id]){
+					if (coords.length > 1){
+						var loc = [];
+						$.each(coords,function(c,co){
+							loc.push(new Microsoft.Maps.Location(co[0],co[1]));
+						});	
+						color = (color)?mobserv.color.torgb(color):mobserv.color.torgb('#666666');
+						console.log(color);
+						var options = {
+							strokeColor:  new Microsoft.Maps.Color((alpha || alpha === 0)?parseInt(alpha*255):255,color.r,color.g,color.b),
+							strokeThickness: (stroke)?stroke:1, 
+						}; 
+						var line = mobserv.bing.lines[id] = new Microsoft.Maps.Polyline(loc, options);
+						map.entities.push(line);	
+					}
+				}
+				return mobserv.bing.pins[id];
+			},
+			remove : function(id){
+				if (!mobserv.bing.current) return;
+				var cur = mobserv.bing.current;
+				var map = mobserv.bing.maps[cur];
+				for(var i=map.entities.getLength()-1;i>=0;i--) {
+					var line = map.entities.get(i);
+					if (line instanceof Microsoft.Maps.Polyline){
+						if (id && mobserv.bing.lines[id] === line){
+							map.entities.removeAt(i);
+							delete mobserv.bing.lines[id]; 	
+						} else if (!id) {
+							map.entities.removeAt(i);
+							mobserv.bing.lines = {};
+						}
+					}
+				}
+			},
 		},
 		pin : {
 			animate : function(id,lat,lng){
@@ -817,6 +886,32 @@ var mobserv = {
 				}
 				transition();
 			},
+			box : function(id,lat,lng,ax,ay,html,click){
+				if (!mobserv.bing.current) return;
+				var cur = mobserv.bing.current;
+				var map = mobserv.bing.maps[cur];
+				if (!mobserv.bing.pins[id]){
+					var options = {
+						htmlContent: html,
+						width: null, 
+						height: null,
+						anchor:new Microsoft.Maps.Point(ax, ay),
+						zIndex:2
+					}; 
+					var pin = mobserv.bing.pins[id] = new Microsoft.Maps.Pushpin(new Microsoft.Maps.Location(lat,lng), options);
+					if (click) Microsoft.Maps.Events.addHandler(pin, 'click', click);
+					map.entities.push(pin);	
+				} else {
+					mobserv.bing.pin.animate(id,lat,lng);
+				}
+				return mobserv.bing.pins[id];
+			},
+			circle : function(id,lat,lng,size,color,label,click){
+				var lh = (size - (size/4));
+				var html = '<div style="font-weight:bold; background:'+((color)?color:'#666')+'; border:3px solid rgba(0,0,0,.2); color:#FFF; font-size:8px; width:'+size+'px; height:'+size+'px; line-height:'+lh+'px; text-align:center; border-radius:'+size+'px; box-shadow:0 0 12px #444;">'+((label)?label:'')+'</div>';
+				var pin = mobserv.bing.pin.box(id, lat,lng,size/2,size/2,html,click);
+				pin.setOptions({zIndex:3});
+			},
 			add : function(id,lat,lng,img,click){
 				if (!mobserv.bing.current) return;
 				var cur = mobserv.bing.current;
@@ -826,7 +921,8 @@ var mobserv = {
 						icon: img,
 						width: 30, 
 						height: 30,
-						anchor:new Microsoft.Maps.Point(15, 15)
+						anchor:new Microsoft.Maps.Point(15, 15),
+						zIndex:1
 					}; 
 					var pin = mobserv.bing.pins[id] = new Microsoft.Maps.Pushpin(new Microsoft.Maps.Location(lat,lng), options);
 					if (click) Microsoft.Maps.Events.addHandler(pin, 'click', click);
@@ -845,7 +941,7 @@ var mobserv = {
 					if (pin instanceof Microsoft.Maps.Pushpin){
 						if (id && mobserv.bing.pins[id] === pin){
 							map.entities.removeAt(i);
-							delete mobserv.maps.pins[id]; 	
+							delete mobserv.bing.pins[id]; 	
 						} else if (!id && mobserv.bing.pins['_me_'] !== pin) {
 							map.entities.removeAt(i);
 							$.each(mobserv.bing.pins||[],function(p,pn){
@@ -858,6 +954,9 @@ var mobserv = {
 			},
 			location : function(id,lat,lng,img,click){
 				return mobserv.bing.pin.add(id,lat,lng,img,click);
+			},
+			address : function(){
+				//to implement	
 			}
 		}
 		
@@ -868,76 +967,6 @@ var mobserv = {
 		watchID : null,
 		animID : null,
 		autopostionspeed : 1,
-		/*
-		animate : function(map,marker,circle,force){
-			var $map = $('.view#map:visible .map');
-			var numDeltas = 25;
-			var delay = 10; //milliseconds
-			var i = 0;
-			var deltaLat;
-			var deltaLng;
-			var deltaAcr;
-			var lat = marker.getPosition().lat();
-			var lng = marker.getPosition().lng();
-			var acr = circle.getRadius();
-			//var hed = (map.getHeading()||0);
-			function transition(){
-				i = 0;
-				deltaLat = (mobserv.geolocation.position.latitude - lat)/numDeltas;
-				deltaLng = (mobserv.geolocation.position.longitude - lng)/numDeltas;
-				deltaAcr = (mobserv.geolocation.position.accuracy - acr)/numDeltas;
-				//deltaHed = (mobserv.geolocation.position.heading - hed)/numDeltas;
-				if (force){
-					map.panTo({lat:mobserv.geolocation.position.latitude,lng:mobserv.geolocation.position.longitude});
-				}
-				move();
-			}
-			function move(){
-				lat += deltaLat;
-				lng += deltaLng;
-				acr += deltaAcr;
-				//hed += deltaHed;
-				var latlng = new google.maps.LatLng(lat,lng);
-				marker.setPosition(latlng);
-				circle.setCenter(latlng);
-				circle.setRadius(acr);
-				if(i!=numDeltas){
-					i++;
-					setTimeout(move, delay);
-				}
-			}
-			transition();
-		},
-		panMap : function(force){
-			var $map = $('.view#map:visible .map');
-			if (!$map.length) return;
-			var map = $map.gmap3('get');
-			if ($map.length){
-				var $location = $('.view#map:visible .item.location');
-				force = $location.hasClass('hilite')?true:force;
-				$map.gmap3({
-					get: {
-						name:"marker",
-						tag: "mydevice",
-						callback: function(marker){
-							if (marker){
-								$map.gmap3({
-									get: {
-										name:"circle",
-										callback: function(circle){
-											if (circle){
-												mobserv.geolocation.animate(map,marker,circle,force);
-											}
-										}
-									}
-								});
-							}
-						}
-					}
-				});
-			}
-		},
-		*/
 		parsedom : function(pos){
 			var direction, h = pos.coords.heading;
 			if (h >= 0 && h < 22.5) direction = 'N';
@@ -1264,7 +1293,7 @@ var mobserv = {
 			if(user.login && (what == 'client' || what == 'user' || !what)){
 				var $form = $('#formuser');
 				mobserv.sqlite.query(
-					'update sl_users set active = 0, session = "" where login = "'+user.login+'"',
+					'update sl_users set active = 0, session = ""',
 					function(res){
 						mobserv.globals.user = {};
 						mobserv.log({
@@ -1278,7 +1307,7 @@ var mobserv = {
 			if(client.code && (what == 'client' || !what)){
 				var $form = $('#formclient');
 				mobserv.sqlite.query(
-					'update sl_clients set active = 0 where code = "'+client.code+'"',
+					'update sl_clients set active = 0',
 					function(res){
 						mobserv.globals.client = {};
 						mobserv.log({
@@ -1794,7 +1823,7 @@ var mobserv = {
 					message : error
 				});	
 				mobserv.services.parsedom();
-				if(onerror) onerror(error);
+				if (ondone) ondone();
 			});
 		},
 		post : function(data,ondone){
@@ -2116,7 +2145,7 @@ var mobserv = {
 									$dom.field.append('<option value="'+$option.attr('value')+'">'+$option.text()+'</option>');
 								});
 							} else if ($field.attr('type') == 'text' || $field.attr('type') == 'number' || $field.attr('type') == 'email'){
-								$dom.field = $('<input type="'+$field.attr('type')+'" class="input '+$field.attr('type')+'" placeholder="'+$field.attr('label')+'" '+(($field.attr('required') == 'true')?' required':'')+' data-documentscroll="true" data-sectionscroll="99999999" data-disablescroll="true" />');	
+								$dom.field = $('<input class="input '+$field.attr('type')+'" type="'+$field.attr('type')+'" name="'+$field.attr('name')+'" placeholder="'+$field.attr('label')+'" '+(($field.attr('required') == 'true')?' required':'')+' data-documentscroll="true" data-sectionscroll="99999999" data-hideaccessory="true" data-disablescroll="true" />');	
 							}
 							if ($formset.attr('disable') == 'true') $dom.field.prop('disabled',true);
 							$dom.field.on('change',function(){
@@ -2408,7 +2437,7 @@ var mobserv = {
 					name : 'Erro ao verificar novas mensagens',
 					message : error
 				});	
-				if(onerror) onerror(error);
+				if (ondone) ondone();
 			});
 		},
 		post : function(data,ondone,onerror){
@@ -2567,6 +2596,11 @@ var mobserv = {
 				$dom.messages.find('#header .remove').data('id',id);
 				$xml.msgs.each(function(){
 					var $s = $(this), $mark;
+					if ($s.attr('date')){
+						if (!$dom.chat.children('.date[data-date="'+$s.attr('date')+'"]').length){
+							$html += '<div class="date" data-date="'+$s.attr('date')+'"><span>'+$s.attr('date')+'</span></div>';	
+						}
+					}
 					if ($s.attr('me')){
 						$html += ''+
 						'<div class="talk me" id="'+$s.attr('id')+'">'+
@@ -2771,10 +2805,12 @@ var mobserv = {
 				if(events && events.click) events.click(n);
 			});
 			mobserv.notification.inited = true;
+			mobserv.notification.cancelAll();
 		},
 		open : function(options,onclick,ontrigger){
-			if (!mobserv.notification.inited || !mobserv.bgmode.active) return;
-			if (navigator.vibrate) navigator.vibrate(300);
+			if (!mobserv.notification.inited) return;
+			//if (!mobserv.notification.inited/* || !mobserv.bgmode.active*/) return;
+			if (navigator.vibrate) navigator.vibrate(200);
 			var id = (options.id) ? options.id : mobserv.notification.id;
 			mobserv.notification.id++;
 			cordova.plugins.notification.local.schedule({
@@ -2788,6 +2824,10 @@ var mobserv = {
 			});
 			if(ontrigger) mobserv.notification.events[id] = {trigger:ontrigger};
 			if(onclick) mobserv.notification.events[id] = {click:onclick};
+		},
+		cancelAll : function(){
+			if (!mobserv.notification.inited) return;
+			window.plugin.notification.local.cancelAll();
 		}
 	},
 	notify : {
@@ -2900,6 +2940,31 @@ var mobserv = {
 			].join(':');
 		} else if (type == 'timestamp') {
 			return d.getTime();
+		}
+	},
+	color : {
+		tohex : function(r,g,b){
+			function componentToHex(c) {
+				var hex = c.toString(16);
+				return hex.length == 1 ? "0" + hex : hex;
+			}
+			function rgbToHex(r, g, b) {
+				return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+			}
+			if (color.search("#") !== -1) return color;
+			return rgbToHex(r,g,b)
+		},
+		torgb : function(hex){
+			var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+			hex = hex.replace(shorthandRegex, function(m, r, g, b) {
+				return r + r + g + g + b + b;
+			});
+			var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+			return result ? {
+				r: parseInt(result[1], 16),
+				g: parseInt(result[2], 16),
+				b: parseInt(result[3], 16)
+			} : null;
 		}
 	},
 	exit : function(){

@@ -380,8 +380,6 @@ $(function(){
 			}
 		})		
 		.on('touchend','.view.current .pullarea',function(event){
-				var $section = $pullarea.parent();
-				$section.removeClass('noscroll');
 				if ($pullarea.data('moved') == 'y'){
 					$pullarea.data('moved','u');
 					event.preventDefault();
@@ -404,11 +402,12 @@ $(function(){
 				endY = null;
 		})		
 		.on('pull','.view#home .pullarea',function(event){
+			var $section = $pullarea.parent();
 			mobserv.services.get(function(){
 				mobserv.talkies.get(function(){
 					$pullarea.data('moved','');
 					$pullarea.transition({ y:0 }, 300);
-					$pullinfo.transition({ y:0, opacity:0 }, 300);
+					$pullinfo.transition({ y:0, opacity:0 }, 300, function(){$section.removeClass('noscroll');});
 					$pullinfo.parent().removeClass('courtain');
 					$pullinfo.text('Concluído');
 					$pullarea = null;
@@ -417,10 +416,11 @@ $(function(){
 			});
 		})
 		.on('pull','.view#servicelist .pullarea, .view#joblist .pullarea',function(event){
+			var $section = $pullarea.parent();
 			mobserv.services.get(function(){
 				$pullarea.data('moved','');
 				$pullarea.transition({ y:0 }, 300);
-				$pullinfo.transition({ y:0, opacity:0 }, 300);
+				$pullinfo.transition({ y:0, opacity:0 }, 300, function(){$section.removeClass('noscroll');});
 				$pullinfo.parent().removeClass('courtain');
 				$pullinfo.text('Concluído');
 				$pullarea = null;
@@ -428,10 +428,11 @@ $(function(){
 			});
 		})
 		.on('pull','.view#talkies .pullarea',function(event){
+			var $section = $pullarea.parent();
 			mobserv.talkies.get(function(){
 				$pullarea.data('moved','');
 				$pullarea.transition({ y:0 }, 300);
-				$pullinfo.transition({ y:0, opacity:0 }, 300);
+				$pullinfo.transition({ y:0, opacity:0 }, 300, function(){$section.removeClass('noscroll');});
 				$pullinfo.parent().removeClass('courtain');
 				$pullinfo.text('Concluído');
 				$pullarea = null;
@@ -439,10 +440,11 @@ $(function(){
 			});
 		})
 		.on('pull','.view#messages .pullarea',function(event){
+			var $section = $pullarea.parent();
 			mobserv.talkies.get(function(){
 				$pullarea.data('moved','');
 				$pullarea.transition({ y:0 }, 300);
-				$pullinfo.transition({ y:0, opacity:0 }, 300);
+				$pullinfo.transition({ y:0, opacity:0 }, 300, function(){$section.removeClass('noscroll');});
 				$pullinfo.parent().removeClass('courtain');
 				$pullinfo.text('Concluído');
 				$pullarea = null;
@@ -557,12 +559,21 @@ $(function(){
 			var lat = mobserv.geolocation.position.latitude;
 			var lng = mobserv.geolocation.position.longitude;
 			var zoom = 10;
+			var $route = null;
+			var route = []
+			var $service = [];
 			var $jobs = [];
+			var hasmap = mobserv.bing.has('bingmap');
+			var bounds = [[lat,lng]];
 			if (id && src == 'joblist'){
-				$jobs = $(services.xml).find('service[id="'+id+'"] > job');
+				$service = $(services.xml).find('service[id="'+id+'"]');
+				$jobs = $service.children('job');
+				$route = $service.children('route');
 			} else if (id && src == 'jobdetails'){
 				services = mobserv.globals.services;
 				$jobs = $(services.xml).find('job[id="'+id+'"]');
+				$service = $jobs.parent();
+				$route = $service.children('route');
 			} else if (src == 'gps') {
 				$locbtn.addClass('hilite');	
 				zoom = 16;	
@@ -575,6 +586,7 @@ $(function(){
 			});
 			mobserv.bing.me(lat,lng,function(){$('.mapdata').trigger('tap');});
 			mobserv.bing.pin.remove();
+			mobserv.bing.line.remove();
 			if ($jobs.length){
 				$jobs.each(function(){
 					var $this = $(this);
@@ -585,14 +597,27 @@ $(function(){
 							var lat = parseFloat($location.attr('lat'));
 							var lng = parseFloat($location.attr('lng'));
 							if (lat && lng){
-								mobserv.bing.pin.location(job,lat,lng,'pic/marker-333333.png',function(){ $('.jobdata').trigger('pick',[$this]); });
+								if (!hasmap){
+									bounds.push([lat,lng]);
+								}
+								var name = $this.find('layout[name="screenName"]').text();
+								var num = $this.find('layout[name="indentifierNumber"]').text();
+								var color = $this.find('layout[name="indentifierColor"]').text();
+								//mobserv.bing.pin.location(job,lat,lng,'pic/marker-333333.png',function(){ $('.jobdata').trigger('pick',[$this]); });
+								//mobserv.bing.pin.box(job,lat,lng,10,10,'',function(){ $('.jobdata').trigger('pick',[$this]); });
+								mobserv.bing.pin.circle(job,lat,lng,20,color,num,function(){ $('.jobdata').trigger('pick',[$this]); });
+								mobserv.bing.pin.box(job+'box',lat,lng,40,20,'<div style="font-weight:bold; color:'+((color)?color:'#000')+'; font-size:8px; width:80px; text-align:center;">'+((name)?name:job)+'</div>');
+								if ($route.length) route.push([lat,lng]);
 							}
 						} else if ($location.attr('type') == 'address'){
 							mobserv.bing.pin.address(job,$location.text(),'pic/marker-333333.png',function(){ $('.jobdata').trigger('pick',[$this]); });
+							mobserv.bing.pin.box(job+'box',lat,lng,'REM '+job);
 						}
 					}
 				});
+				if ($route.length) mobserv.bing.line.add('route'+id,route,$route.attr('color'),$route.attr('stroke'),$route.attr('alpha'));
 			}
+			if (!hasmap) mobserv.bing.bounds('bingmap',bounds);
 			mobserv.geolocation.watchPosition({
 				enableHighAccuracy : true,
 				timeout : 10000,
@@ -624,21 +649,30 @@ $(function(){
 			var $table = $this.show().find('table');
 			var $layout = $job.children('layout[name="detail"]');
 			var $location = $job.children('location');
+			var name = $job.find('layout[name="screenName"]').text();
+			var color = $job.find('layout[name="indentifierColor"]').text();
 			$view.find('.mapdata').hide();
 			$this.show();
 			if ($layout.length){
+				$table.prev('h2').css('color',(color)?color:'#333').text((name)?htmldecode(name):'Dados do Ponto');
 				$table.html('');
 				$layout.each(function(){
 					var $this = $(this);
 					$table.append('<tr><td width="25%">'+$this.attr('label')+'</td><td><small><b>'+htmldecode($this.text())+'</b></small></td></tr>');
 				});
+				var $options = $('<tr><td width="100%" colspan="2" style="text-align:center; padding:10px 0 4px 0;" class="options"></td></tr>').appendTo($table);
+				$options = $options.find('td');
+				$options.append('<a class="details" style="background:'+((color)?color:'#333')+'">Detalhes</a>');
+				$options.find('.details').on('tap',function(event){
+					$('#joblist .list .link[data-id="'+$job.attr('id')+'"]').trigger('tap');
+				});
 				if ($location.length){
-					$table.append('<tr><td width="25%" colspan="2" style="text-align:center;"><br><a class="navigate">Navegar até aqui</a></td></tr>');
-					$table.find('.navigate').on('tap',function(){
+					$options.append('<a class="navigate">Navegar até aqui</a>');
+					$options.find('.navigate').on('tap',function(event){
 						var pos = mobserv.geolocation.position;
 						launchnavigator.navigate(
 							($location.attr('type') == 'geoposition') ? [$location.attr('lat'), $location.attr('lng')] : $location.text(),
-							[pos.latitude, pos.longitude],
+							null,
 							function(){
 								mobserv.log({
 									type : 'notice',
@@ -652,6 +686,8 @@ $(function(){
 									name : 'launchnavigator.navigate',
 									message : error
 								});	
+							},{ 
+								preferGoogleMaps: true
 							}
 						);
 					});
