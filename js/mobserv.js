@@ -646,6 +646,7 @@ var mobserv = {
 				message : 'the background mode is inactive'
 			});
 			clearInterval(mobserv.bgmode.bgintval);
+			window.plugin.notification.local.cancelAll();
 		},
 		faulure : function(){
 			mobserv.bgmode.active = false;
@@ -659,7 +660,7 @@ var mobserv = {
 		init : function(){
 			if (cordova && cordova.plugins && cordova.plugins.backgroundMode){
 				cordova.plugins.backgroundMode.setDefaults({
-					title: 'O Mobserv está funcionando em modo de espera.',
+					title: 'O Mobserv está em espera.',
 					ticker: 'O Mobserv está em espera.',
 					text: 'Você pode receber notificações automáticas.',
 					resume: false
@@ -1755,19 +1756,15 @@ var mobserv = {
 							tap : (status == 'info' || status == 'notice') ? function(){ mobserv.nav.forward('services'); } : null
 						});
 						setTimeout(function(){
-							if (mobserv.bgmode.active){
-								mobserv.notification.open({
-									title : client.servertitle,
-									text : $this.text(),
-									sound : 'beep2.mp3',
-									icon : 'ico-notification-info.png',
-									badge : mobserv.badge.get()
-								},function(){
-									mobserv.nav.forward('servicelist');
-								});
-							} else {
-								mobserv.notification.open({ id:999999, badge : mobserv.badge.get()	});	
-							}
+							mobserv.notification.open({
+								title : client.servertitle,
+								text : $this.text(),
+								sound : 'beep2.mp3',
+								icon : 'ico-notification-info.png',
+								badge : mobserv.badge.get()
+							},function(){
+								mobserv.nav.forward('servicelist');
+							});
 						},1000);
 					}
 					$this.remove();
@@ -2328,7 +2325,7 @@ var mobserv = {
 								}
 							}
 							setTimeout(function(){
-								if (mobserv.bgmode.active && $Rmsgs.length){
+								if ($Rmsgs.length){
 									$Rmsgs.each(function(){
 										$this = $(this);
 										mobserv.notification.open({
@@ -2341,8 +2338,6 @@ var mobserv = {
 											$('#talkies').find('.list .link[data-id="'+tid+'"]').trigger('tap');
 										});
 									});
-								} else {
-									mobserv.notification.open({ id:999999, badge : mobserv.badge.get()	});	
 								}
 							},1000);
 						});
@@ -2367,7 +2362,7 @@ var mobserv = {
 								}
 							} 
 							setTimeout(function(){
-								if (mobserv.bgmode.active && $Lmsgs.length){
+								if ($Lmsgs.length){
 									$Lmsgs.each(function(){
 										$this = $(this);
 										mobserv.notification.open({
@@ -2381,8 +2376,6 @@ var mobserv = {
 											mobserv.talkies.parsedom('messages',tid);
 										});
 									});
-								} else {
-									mobserv.notification.open({ id:999999,  badge : mobserv.badge.get()	});
 								}
 							},1000);
 						});
@@ -2746,7 +2739,13 @@ var mobserv = {
 			var $marktalkies = $('#home [data-view="talkies"] mark');
 			var ms = (($markservices.length) ? parseInt($markservices.text()) : 0) || 0;
 			var mt = (($marktalkies.length) ? parseInt($marktalkies.text()) : 0) || 0;
+			ms = (typeof ms == "number") ? ms : 0;
+			mt = (typeof mt == "number") ? mt : 0;
 			var bdg = ms + mt;
+			mobserv.log({
+				name : 'badge.get',
+				message : 'badge number: '+bdg
+			});
 			return bdg;
 		}
 	},
@@ -2755,6 +2754,7 @@ var mobserv = {
 		events : [],
 		inited : false, 
 		init : function(){
+			window.plugin.notification.local.cancelAll();
 			cordova.plugins.notification.local.registerPermission(function (granted) {
 				mobserv.log({
 					type : 'notice',
