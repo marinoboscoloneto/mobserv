@@ -736,15 +736,124 @@ var mobserv = {
 			}
 		}
 	},
-	vectormap : {
-		map : function(div){
-			var mapDiv = document.getElementById(div);
-			var map = plugin.google.maps.Map.getMap(mapDiv);
-			map.on(plugin.google.maps.event.MAP_READY, onMapInit);
-			function onMapInit(map) {
-				alert('map ready');
+	bing : {
+		maps : {},
+		pins : {},
+		current : null,
+		load : function(id,lat,lng,zoom,move){
+			if (!mobserv.bing.maps[id]){
+				var mapOptions = {
+					credentials: "Apdih_ZEtJRQ7b5R0qEtfymz42_Yr-WqTqEfICR5JzeW8uj6Ou_n_M9hxyc6pCHE",
+					mapTypeId: Microsoft.Maps.MapTypeId.road,
+					enableSearchLogo: false,
+					showDashboard: false,
+					center: new Microsoft.Maps.Location(lat,lng),
+					zoom: zoom || 10
+				};
+				var map = mobserv.bing.maps[id] = new Microsoft.Maps.Map(document.getElementById(id), mapOptions);
+				if (move) Microsoft.Maps.Events.addHandler(map, 'viewchangestart', move);
+			}
+			mobserv.bing.current = id;
+			return mobserv.bing.maps[id];
+		},
+		center : function(lat,lng){
+			if (!mobserv.bing.current) return;
+			var id = mobserv.bing.current;
+			var map = mobserv.bing.maps[id];
+			if (lat && lng) map.setView({ center: new Microsoft.Maps.Location(lat,lng) });
+		},
+		zoom : function(zoom){
+			if (!mobserv.bing.current) return;
+			var id = mobserv.bing.current;
+			var map = mobserv.bing.maps[id];
+			if (zoom) map.setView({ zoom: zoom })	
+		},
+		pam : function(force){
+			mobserv.bing.forcepam = force;
+			if (!mobserv.bing.current) return;
+			var id = mobserv.bing.current;
+			var lat = mobserv.geolocation.position.latitude;
+			var lng = mobserv.geolocation.position.longitude;
+			mobserv.bing.me(lat,lng);
+			if (mobserv.bing.forcepam) mobserv.bing.center(lat,lng);
+		},
+		me : function(lat,lng,click){
+			var lat = lat || mobserv.geolocation.position.latitude;
+			var lng = lng || mobserv.geolocation.position.longitude;
+			return mobserv.bing.pin.add('_me_',lat,lng,'pic/marker-mobserv.png',click);
+		},
+		pin : {
+			animate : function(id,lat,lng){
+				if (!mobserv.bing.pins[id]) return;
+				var pin = mobserv.bing.pins[id];
+				var numDeltas = 25;
+				var delay = 10; //milliseconds
+				var i = 0;
+				var deltaLat;
+				var deltaLng;
+				var plat = pin.getLocation().latitude;
+				var plng = pin.getLocation().longitude;
+				function transition(){
+					i = 0;
+					deltaLat = (lat - plat)/numDeltas;
+					deltaLng = (lng - plng)/numDeltas;
+					move();
+				}
+				function move(){
+					plat += deltaLat;
+					plng += deltaLng;
+					pin.setLocation(new Microsoft.Maps.Location(plat,plng));
+					if(i!=numDeltas){
+						i++;
+						setTimeout(move, delay);
+					}
+				}
+				transition();
+			},
+			add : function(id,lat,lng,img,click){
+				if (!mobserv.bing.current) return;
+				var cur = mobserv.bing.current;
+				var map = mobserv.bing.maps[cur];
+				if (!mobserv.bing.pins[id]){
+					var options = {
+						icon: img,
+						width: 30, 
+						height: 30,
+						anchor:new Microsoft.Maps.Point(15, 15)
+					}; 
+					var pin = mobserv.bing.pins[id] = new Microsoft.Maps.Pushpin(new Microsoft.Maps.Location(lat,lng), options);
+					if (click) Microsoft.Maps.Events.addHandler(pin, 'click', click);
+					map.entities.push(pin);	
+				} else {
+					mobserv.bing.pin.animate(id,lat,lng);
+				}
+				return mobserv.bing.pins[id];
+			},
+			remove : function(id){
+				if (!mobserv.bing.current) return;
+				var cur = mobserv.bing.current;
+				var map = mobserv.bing.maps[cur];
+				for(var i=map.entities.getLength()-1;i>=0;i--) {
+					var pin = map.entities.get(i);
+					if (pin instanceof Microsoft.Maps.Pushpin){
+						if (id && mobserv.bing.pins[id] === pin){
+							map.entities.removeAt(i);
+							delete mobserv.maps.pins[id]; 	
+						} else if (!id && mobserv.bing.pins['_me_'] !== pin) {
+							map.entities.removeAt(i);
+							$.each(mobserv.bing.pins||[],function(p,pn){
+								if (pn === pin) delete mobserv.bing.pins[p];
+							})
+							
+						}
+					}
+				}
+			},
+			location : function(id,lat,lng,img,click){
+				return mobserv.bing.pin.add(id,lat,lng,img,click);
 			}
 		}
+		
 	},
 	geolocation : {
 		position : {},
@@ -752,6 +861,7 @@ var mobserv = {
 		watchID : null,
 		animID : null,
 		autopostionspeed : 1,
+		/*
 		animate : function(map,marker,circle,force){
 			var $map = $('.view#map:visible .map');
 			var numDeltas = 25;
@@ -784,13 +894,6 @@ var mobserv = {
 				marker.setPosition(latlng);
 				circle.setCenter(latlng);
 				circle.setRadius(acr);
-				/*
-				if (force){
-					map.setHeading(hed); $map.find('.gm-style').css('transform','rotate('+hed+'deg)');
-				} else {
-					map.setHeading(0); $map.find('.gm-style').css('transform','rotate(0deg)');	
-				}
-				*/
 				if(i!=numDeltas){
 					i++;
 					setTimeout(move, delay);
@@ -827,6 +930,7 @@ var mobserv = {
 				});
 			}
 		},
+		*/
 		parsedom : function(pos){
 			var direction, h = pos.coords.heading;
 			if (h >= 0 && h < 22.5) direction = 'N';
@@ -849,7 +953,8 @@ var mobserv = {
 			mobserv.geolocation.position.direction = direction;
 			mobserv.geolocation.position.speed = speed;
 			mobserv.geolocation.position.timestamp = pos.timestamp||0;
-			mobserv.geolocation.panMap();
+			//mobserv.geolocation.panMap();
+			mobserv.bing.pam($('.view#map .item.location').hasClass('hilite'));
 			var $dom = $('#map');
 			$dom.find('#gpslat').html(mobserv.geolocation.position.latitude); 		
 			$dom.find('#gpslng').html(mobserv.geolocation.position.longitude); 		
@@ -1124,7 +1229,6 @@ var mobserv = {
 				type : 'alert',
 				name : 'auth.loggedin',
 				message : 'user is logged off',
-				detail : query
 			});	
 			return false;
 		},

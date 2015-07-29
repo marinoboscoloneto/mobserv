@@ -10,6 +10,7 @@ table td { font-size:11px; }
 .ds { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
 
 a, [class*="icon-"]:before, .input:not(.select), .submit, .statustripe, .notify, .footer .item, .mapdata, .jobdata { transition: all 250ms; -webkit-backface-visibility: hidden; }
+#map a { transition:none !important; -webkit-backface-visibility: hidden; }
 
 input,textarea,select { -webkit-appearance: none; border-radius: 0; font-size:12px; }
 input:required { box-shadow:none; }
@@ -260,9 +261,8 @@ form .formset .select:focus { background-position:right -23px; }
 @-o-keyframes moveBars { 100% {  background-position: 50px 0; } }
 
 
-a[href*="//maps.google.com/maps"]{display:none !important}
-.gmnoprint a, .gmnoprint span {display:none;}
-.gmnoprint div {background:none !important;}
+#map .OverlaysBR-logoAware{display:none !important}
+#map .OverlaysBL{display:none !important}
 
 @media only screen and (-webkit-min-device-pixel-ratio: 2), only screen and (min-device-pixel-ratio: 2) {
 	.auth .logo { background-image:url(../pic/auth-logo-2x.png); background-size: 97px 105px; }

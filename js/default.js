@@ -546,9 +546,121 @@ $(function(){
 			$this.find('.mapdata').hide();
 			$this.find('.jobdata').hide();
 		})
-		.on('current','#vectormap',function(){
-			mobserv.vectormap.map('vmap');
+		.on('current','#map',function(){
+			var $this = $(this);
+			var $locbtn = $this.find('.item.location');
+			var $mapdata = $this.find('.mapdata').hide();
+			var $jobdata = $this.find('.jobdata').hide();
+			var id = $this.data('id');
+			var src = $this.data('source');
+			var services = mobserv.globals.services;
+			var lat = mobserv.geolocation.position.latitude;
+			var lng = mobserv.geolocation.position.longitude;
+			var zoom = 10;
+			var $jobs = [];
+			if (id && src == 'joblist'){
+				$jobs = $(services.xml).find('service[id="'+id+'"] > job');
+			} else if (id && src == 'jobdetails'){
+				services = mobserv.globals.services;
+				$jobs = $(services.xml).find('job[id="'+id+'"]');
+			} else if (src == 'gps') {
+				$locbtn.addClass('hilite');	
+				zoom = 16;	
+			}
+			mobserv.bing.load('bingmap',lat,lng,zoom,function(){
+				if (!mobserv.bing.forcepam){
+					$('.view#map .item.location').removeClass('hilite');
+				}
+				mobserv.bing.forcepam = false;
+			});
+			mobserv.bing.me(lat,lng,function(){$('.mapdata').trigger('tap');});
+			mobserv.bing.pin.remove();
+			if ($jobs.length){
+				$jobs.each(function(){
+					var $this = $(this);
+					var $location = $this.children('location:eq(0)');
+					var job = $this.attr('id');
+					if ($location.length){
+						if ($location.attr('type') == 'geoposition'){
+							var lat = parseFloat($location.attr('lat'));
+							var lng = parseFloat($location.attr('lng'));
+							if (lat && lng){
+								mobserv.bing.pin.location(job,lat,lng,'pic/marker-333333.png',function(){ $('.jobdata').trigger('pick',[$this]); });
+							}
+						} else if ($location.attr('type') == 'address'){
+							mobserv.bing.pin.address(job,$location.text(),'pic/marker-333333.png',function(){ $('.jobdata').trigger('pick',[$this]); });
+						}
+					}
+				});
+			}
+			mobserv.geolocation.watchPosition({
+				enableHighAccuracy : true,
+				timeout : 10000,
+				maximumAge : 60000
+			});
 		})
+		.on('tap','#map .location',function(){
+			var $this = $(this);
+			mobserv.bing.pam(true);
+			$this.addClass('hilite');
+		})
+		.on('tap','.mapdata',function(){
+			$this = $(this);
+			var $view = $this.closest('.view');
+			$view.find('.jobdata').hide();
+			if ($this.is(':visible')) $this.hide();
+			else $this.show();
+		})
+		.on('tap','.jobdata',function(){
+			$this = $(this);
+			var $view = $this.closest('.view');
+			$view.find('.mapdata').hide();
+			if ($this.is(':visible')) $this.hide();
+			else $this.show();
+		})
+		.on('pick','.jobdata',function(event,$job){
+			var $this = $(this);
+			var $view = $this.closest('.view');
+			var $table = $this.show().find('table');
+			var $layout = $job.children('layout[name="detail"]');
+			var $location = $job.children('location');
+			$view.find('.mapdata').hide();
+			$this.show();
+			if ($layout.length){
+				$table.html('');
+				$layout.each(function(){
+					var $this = $(this);
+					$table.append('<tr><td width="25%">'+$this.attr('label')+'</td><td><small><b>'+htmldecode($this.text())+'</b></small></td></tr>');
+				});
+				if ($location.length){
+					$table.append('<tr><td width="25%" colspan="2" style="text-align:center;"><br><a class="navigate">Navegar até aqui</a></td></tr>');
+					$table.find('.navigate').on('tap',function(){
+						var pos = mobserv.geolocation.position;
+						launchnavigator.navigate(
+							($location.attr('type') == 'geoposition') ? [$location.attr('lat'), $location.attr('lng')] : $location.text(),
+							[pos.latitude, pos.longitude],
+							function(){
+								mobserv.log({
+									type : 'notice',
+									name : 'launchnavigator.navigate',
+									message : 'launchnavigator has called successful'
+								});	
+							},
+							function(error){
+								mobserv.log({
+									type : 'error',
+									name : 'launchnavigator.navigate',
+									message : error
+								});	
+							}
+						);
+					});
+				}
+			}
+			$this.find('#jobid').append($job.attr('id'))
+			$this.find('#jobid').text($job.attr('id'))
+		})
+		/*
 		.on('current','#map',function(){
 			mobserv.geolocation.watchPosition({
 				enableHighAccuracy : true,
@@ -684,7 +796,7 @@ $(function(){
 					var $this = $(this);
 					$table.append('<tr><td width="25%">'+$this.attr('label')+'</td><td><small><b>'+htmldecode($this.text())+'</b></small></td></tr>');
 				});
-				if ($location.length /*&& launchnavigator*/){
+				if ($location.length){
 					$table.append('<tr><td width="25%" colspan="2" style="text-align:center;"><br><a class="navigate">Navegar até aqui</a></td></tr>');
 					$table.find('.navigate').on('tap',function(){
 						var pos = mobserv.geolocation.position;
@@ -713,6 +825,7 @@ $(function(){
 			$this.find('#jobid').append($job.attr('id'))
 			$this.find('#jobid').text($job.attr('id'))
 		})
+		*/
 		;
 		$('.section').on('scroll',function() {
 			var $this = $(this);
